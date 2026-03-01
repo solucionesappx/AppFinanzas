@@ -109,7 +109,7 @@
 
     <script>
         const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID'};
-        document.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem(KEYS.CORREO))window.location.replace('index_SPA1.html');initUI();if(window.lucide)lucide.createIcons()});
+        document.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem(KEYS.CORREO))window.location.replace('index.html');initUI();if(window.lucide)lucide.createIcons()});
         function initUI(){
             const nom = localStorage.getItem(KEYS.NOMBRE);
             if(nom) document.querySelector('h1').textContent = `¡Hola, ${nom.trim().split(/\s+/)[0]}!`;
@@ -153,7 +153,7 @@
             if (loader) { loader.classList.toggle('hidden', !show);
             if (show && window.lucide) lucide.createIcons(); }
         }
-        function logout(){localStorage.clear();window.location.href='index_SPA1.html'}
+        function logout(){localStorage.clear();window.location.href='index.html'}
     </script>
 
     <script>
