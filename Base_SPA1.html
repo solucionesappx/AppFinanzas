@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>ZXC - Inicio</title>
+    <script src="https://cdn.tailwindcss.com"></script><script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        html { font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+        :root { --bg: #1f2937;--txt: #f3f4f6;--surf: #374151;--p-soft: #60a5fa;--th: #374151; }
+        .light-mode { --bg: #f9fafb; --txt: #111827; --surf: #ffffff; } 
+        .light-mode header, .light-mode footer { border-color: #e5e7eb; }
+        html, body { background-color: var(--bg); color: var(--txt); transition: background .3s, color .3s; }   
+        #app-container { width:100%; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; box-shadow:0 0 20px rgba(0,0,0,.2); position:relative; transition:max-width .4s ease-in-out; }
+        #app-container { background-color: var(--bg); }
+        .mode-mobile { max-width:500px; }
+        .mode-desktop { max-width:100%!important; }
+        header, footer { width:100%; max-width:inherit; z-index:50; left:50%; transform:translateX(-50%); position:fixed; background:var(--surf); border-color:#4b5563; }
+        header, .footer-tienda { background: #374151 !important;color: #f3f4f6 !important;border-color: #4b5563 !important;}
+        header h1 { color: white !important; }       
+        main { flex-grow:1; overflow-y:auto; padding:76px 1rem 72px; }
+        .footer-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.75rem; color:var(--txt); cursor:pointer; transition:color .2s; }
+        .footer-btn:hover { color:#152c94; }
+        .footer-btn.active { color:var(--p-soft); font-weight:700; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(17,24,39,.8); backdrop-filter:blur(4px); z-index:100; display:flex; justify-content:center; align-items:center; }
+        .modal-content { background:var(--surf); border:1px solid #4b5563; border-radius:1rem; width:90%; max-width:320px; }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+    <style>
+        /* ESTILOS ESPECÍFICOS DE LA SECCIÓN (SPA INICIO) */
+        .footer-tienda { width: auto !important; min-width: 140px; max-width: fit-content; height: 40px !important; bottom: 20px !important; }
+        .footer-tienda { border-radius: 9999px; border: 1px solid #4b5563; background: var(--surf); padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .footer-tienda { left: 50%; transform: translateX(-50%); position: fixed; display: flex; align-items: center; justify-content: center; gap: 0.5rem; z-index: 40; font-size: 0.75rem; text-transform: uppercase; }  
+        .footer-tienda span { color: #f3f4f6 !important; }
+        .menu-btn { background-color: var(--surf); border: 1px solid #4b5563; }  
+        .light-mode .menu-btn { border-color: #d1d5db; }  
+    </style>
+</head>
+<body class="dark">
+    <div id="app-container" class="mode-mobile shadow-xl">
+        <header class="top-0 h-14 border-b flex items-center justify-between px-6">
+            <h1 class="text-xl font-bold text-white truncate mr-2">Cargando...</h1>
+            <div class="flex items-center gap-3">
+                <button class="p-2" onclick="toggleView()"><div id="view-icon-container"></div></button>
+                <button class="p-2 text-red-400 rounded-full hover:bg-gray-600" onclick="logout()"><i data-lucide="log-out" class="w-6 h-6"></i></button>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <div class="flex flex-col gap-4 mt-6">
+                <div class="p-6 rounded-2xl border border-gray-700 text-center mb-2">
+                    <i data-lucide="layout-dashboard" class="w-12 h-12 mx-auto mb-3 text-blue-400"></i>
+                    <h2 class="text-2xl font-bold">Panel Principal ZXC</h2>
+                    <p class="text-sm text-gray-400 mt-1">Gestión de operaciones.</p>
+                </div>
+
+                <button onclick="loadContent('Datos')" class="w-full p-5 rounded-xl border border-gray-700 flex items-center justify-between hover:border-blue-500 transition-all active:scale-95 group">
+                    <div class="flex items-center gap-4"><i data-lucide="database" class="w-7 h-7 text-blue-400"></i><span class="text-lg font-semibold">Consultar Datos</span></div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600 group-hover:text-blue-400"></i>
+                </button>
+
+                <button onclick="loadContent('Agregar')" class="w-full p-5 rounded-xl border border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-all active:scale-95 group">
+                    <div class="flex items-center gap-4"><i data-lucide="plus-circle" class="w-7 h-7 text-emerald-400"></i><span class="text-lg font-semibold">Agregar Registro</span></div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600 group-hover:text-emerald-400"></i>
+                </button>
+
+                <button onclick="loadContent('Perfil')" class="w-full p-5 rounded-xl border border-gray-700 flex items-center justify-between hover:border-purple-500 transition-all active:scale-95 group">
+                    <div class="flex items-center gap-4"><i data-lucide="user" class="w-7 h-7 text-purple-400"></i><span class="text-lg font-semibold">Mi Perfil</span></div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600 group-hover:text-purple-400"></i>
+                </button>
+
+                <button onclick="loadContent('Configuracion')" class="w-full p-5 rounded-xl border border-gray-700 flex items-center justify-between hover:border-amber-500 transition-all active:scale-95 group">
+                    <div class="flex items-center gap-4"><i data-lucide="settings" class="w-7 h-7 text-amber-400"></i><span class="text-lg font-semibold">Configuración Tablas</span></div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600 group-hover:text-amber-400"></i>
+                </button>
+            </div>
+        </main>
+        <footer id="app-footer" class="bottom-0 h-18 border-t flex items-center justify-around px-2 py-1">
+            <button class="footer-btn active" data-section="Base"><i data-lucide="house-plus" class="w-6 h-6"></i><span>Base</span></button>
+            <button class="footer-btn hidden" data-section="Inicio"><i data-lucide="home" class="w-6 h-6"></i><span>Inicio</span></button>
+            <button id="btn-datos" class="footer-btn" data-section="Datos"><i data-lucide="database" class="w-6 h-6"></i><span>Datos</span></button>
+            <button id="btn-agregar" class="footer-btn" data-section="Agregar"><i data-lucide="plus-circle" class="w-6 h-6"></i><span>Agregar</span></button>
+            <button class="footer-btn" data-section="Perfil"><i data-lucide="user" class="w-6 h-6"></i><span>Perfil</span></button>
+            <button class="footer-btn" data-section="Configuracion"><i data-lucide="settings" class="w-6 h-6"></i><span>Config</span></button>
+        </footer>
+    </div>
+
+    <div id="global-loader" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm">
+        <div class="flex flex-col items-center p-8 bg-gray-800 border border-blue-500/30 rounded-2xl shadow-2xl max-w-[280px] text-center">
+            <div class="relative mb-4">
+                <div class="w-10 h-10"></div>
+                <i data-lucide="loader-2" class="w-10 h-10 text-blue-400 spinner absolute top-0 left-0"></i>
+            </div>
+            <span class="text-blue-400 font-bold text-sm tracking-wider uppercase">Cargando Base de Datos</span>
+            <p class="text-gray-500 text-xs mt-2">Esto puede demorar unos segundos...</p>
+        </div>
+    </div>
+
+    <div id="system-modal" class="hidden modal-overlay">
+        <div class="modal-content p-6 text-center">
+            <div id="sys-modal-icon" class="mb-4 flex justify-center"></div>
+            <h3 id="sys-modal-title" class="text-lg font-bold text-white mb-2"></h3>
+            <p id="sys-modal-text" class="text-gray-400 text-sm mb-6"></p>
+            <div id="sys-modal-actions" class="flex gap-3 justify-center"></div>
+        </div>
+    </div>
+
+    <script>
+        const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID'};
+        document.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem(KEYS.CORREO))window.location.replace('index_SPA1.html');initUI();if(window.lucide)lucide.createIcons()});
+        function initUI(){
+            const nom = localStorage.getItem(KEYS.NOMBRE);
+            if(nom) document.querySelector('h1').textContent = `¡Hola, ${nom.trim().split(/\s+/)[0]}!`;
+            applyViewMode(localStorage.getItem(KEYS.VIEW_MODE) || 'mobile');
+            document.querySelectorAll('.footer-btn').forEach(b => b.onclick = () => loadContent(b.getAttribute('data-section')));
+            if(!localStorage.getItem(KEYS.INPUT_ID)){['btn-agregar'].forEach(id => {const el = document.getElementById(id);if(el) el.classList.add('btn-disabled'); });}
+        }
+        function toggleView(){const m=localStorage.getItem(KEYS.VIEW_MODE)==='desktop'?'mobile':'desktop';localStorage.setItem(KEYS.VIEW_MODE,m);applyViewMode(m)}
+        function applyViewMode(m){
+            const c=document.getElementById('app-container'),i=document.getElementById('view-icon-container');
+            if(m==='desktop'){c.classList.replace('mode-mobile','mode-desktop');i.innerHTML='<i data-lucide="smartphone" class="w-5 h-5 text-blue-400"></i>'}
+            else{c.classList.replace('mode-desktop','mode-mobile');i.innerHTML='<i data-lucide="monitor" class="w-5 h-5 text-emerald-400"></i>'}
+            if(window.lucide)lucide.createIcons();
+        }
+        async function loadContent(s){
+            const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html'};
+            if(NAV[s]) window.location.href=NAV[s];
+        }     
+        function showSystemModal({title,text,type='info'}){
+            return new Promise(res=>{
+                const m=document.getElementById('system-modal'),ti=document.getElementById('sys-modal-title'),te=document.getElementById('sys-modal-text'),ic=document.getElementById('sys-modal-icon'),ac=document.getElementById('sys-modal-actions');
+                ti.textContent=title;te.textContent=text;const colors={warning:'text-amber-400',info:'text-blue-400'},icons={warning:'alert-triangle',info:'info'};
+                ic.innerHTML=`<i data-lucide="${icons[type]}" class="w-12 h-12 ${colors[type]}"></i>`;ac.innerHTML='';
+                const b=document.createElement('button');b.className='px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold';b.textContent='Aceptar';
+                b.onclick=()=>{m.classList.add('hidden');res(true)};ac.appendChild(b);m.classList.remove('hidden');lucide.createIcons();
+            });
+        }
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light-mode');
+            localStorage.setItem(KEYS.THEME, isLight ? 'light' : 'dark');
+            renderTiendaFooter();
+            if(window.lucide) lucide.createIcons();
+        }
+        function applyTheme() {
+            const theme = localStorage.getItem(KEYS.THEME) || 'dark';
+            if (theme === 'light') {document.documentElement.classList.add('light-mode');} 
+            else {document.documentElement.classList.remove('light-mode');}
+        }
+        function toggleGlobalLoader(show) {
+            const loader = document.getElementById('global-loader');
+            if (loader) { loader.classList.toggle('hidden', !show);
+            if (show && window.lucide) lucide.createIcons(); }
+        }
+        function logout(){localStorage.clear();window.location.href='index_SPA1.html'}
+    </script>
+
+    <script>
+        console.log("Valores de Perfil:");
+        Object.entries(KEYS).forEach(([key, storageKey]) => {
+            console.log(`${key}: ${localStorage.getItem(storageKey)}`);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const footerPrincipal = document.getElementById('app-footer');
+            if(footerPrincipal) {
+                footerPrincipal.classList.add('hidden');
+                if(footerPrincipal.classList.contains('hidden')) renderTiendaFooter();
+                if(window.lucide) lucide.createIcons();
+            }
+        });
+
+        function renderTiendaFooter() {
+            const tienda = localStorage.getItem(KEYS.TIENDA) || 'General';
+            const container = document.getElementById('app-container');
+            const isLight = document.documentElement.classList.contains('light-mode');
+
+            const oldFooter = document.querySelector('.footer-tienda');
+            if (oldFooter) oldFooter.remove();
+
+            const f = document.createElement('footer');
+            f.className = `footer-tienda flex items-center gap-4 ${isLight ? 'bg-white shadow-lg border-gray-200' : ''}`;
+            
+            f.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i data-lucide="store" class="w-4 h-4 text-emerald-500"></i>
+                    <span class="font-bold text-xs tracking-wider">${tienda}</span>
+                </div>
+                <div class="w-[2px] h-4 ${isLight ? 'bg-gray-300' : 'bg-gray-500/30'}"></div>
+                <button onclick="toggleTheme()" class="p-1 hover:bg-gray-900/40 rounded-full transition-colors">
+                    <i data-lucide="${isLight ? 'moon' : 'sun'}" 
+                    class="w-4 h-4 ${isLight ? 'text-indigo-600' : 'text-amber-400'}"></i>
+                </button>
+            `;
+
+            container.appendChild(f);
+            if (window.lucide) lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
