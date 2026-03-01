@@ -280,7 +280,7 @@
 
     // 2. INICIALIZACIÓN
     document.addEventListener('DOMContentLoaded', () => {
-        if(!localStorage.getItem(KEYS.CORREO)) {window.location.replace('index_SPA1.html');return;}
+        if(!localStorage.getItem(KEYS.CORREO)) {window.location.replace('index.html');return;}
         initUI(); initDataApp(); setupSearch();
     });
 
@@ -335,7 +335,7 @@ function initUI() {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
+    function logout(){localStorage.clear();window.location.href='index.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -1739,4 +1739,5 @@ function restaurarVistaOriginal(datos) {
 
 </script>
 </body>
+
 </html>
