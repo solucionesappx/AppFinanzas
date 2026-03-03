@@ -1377,7 +1377,7 @@ function openDetailModal(row) {
         const isNormalCase = cleanKey.includes('CONFIG');
 
         const item = document.createElement('div');
-        // Items-start para que el label no flote; justify-items-start fuerza la celda a la izquierda
+        // Items-start para que el label no flote; justify-items-start fuerza la celda a la izquierda justify-items-start
         item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
         
         let valueHTML = '';
@@ -1389,20 +1389,20 @@ function openDetailModal(row) {
                 <textarea 
                     readonly 
                     tabindex="-1"
-                    class="bg-gray-500/10 border border-transparent rounded px-2 py-1 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
+                    class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
                     style="height: 60px; text-align: left !important; display: block !important;"
                 >${row[key] || ''}</textarea>`;
         } else {
             // RESTO DE CAMPOS: Alineación consistente a la izquierda con justify-self-start
             valueHTML = `
                 <span class="text-white font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
-                      style="text-align: left !important;">
+                    style="text-align: left !important;">
                     ${getFormattedValue(key, row[key])}
                 </span>`;
         }
             
         item.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-1.5' : 'self-center'}" style="text-align: left !important;">
+            <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-0' : 'self-center'}" style="text-align: left !important;">
                 ${cfg.label || key}
             </span>
             ${valueHTML}`;
@@ -1836,3 +1836,4 @@ function disableButton(title) {
 </script>
 </body>
 </html>
+
