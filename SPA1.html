@@ -27,7 +27,7 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .hidden { display: none !important; }
     </style>
-        <style>    
+    <style>    
         /* Buscador */
         .metric-card { width: 33.333333%; padding: 0 0.375rem; border-radius: 0.75rem; background-color: var(--bg); display: flex; align-items: center; gap: 0.5rem; }
         .search-actions-container { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; width: 100%; }
@@ -63,8 +63,53 @@
         .custom-date-input::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.8) sepia(100%) saturate(500%) hue-rotate(180deg); opacity: 0.9; transition: opacity 0.2s;}
         .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1;
         }
-        
-    </style>
+        /* --- AJUSTES DE RESPONSIVIDAD PARA EL MODAL --- */
+/* --- MODAL EN MODO DESKTOP (Basado en tu lógica de SPA) --- */
+
+/* Cuando el contenedor padre tiene .mode-desktop, el modal se ensancha */
+.mode-desktop + #detail-modal .relative.max-w-\[340px\],
+.mode-desktop ~ #detail-modal .relative.max-w-\[340px\] {
+    max-width: 70% !important;
+    width: 70% !important;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Si el modal no es hermano directo, usamos este selector más seguro: */
+body:has(.mode-desktop) #detail-modal .relative.max-w-\[340px\] {
+    max-width: 70% !important;
+    width: 70% !important;
+}
+
+/* Asegurar que en modo desktop el texto sea más legible */
+body:has(.mode-desktop) #detail-modal-content span.text-sm,
+body:has(.mode-desktop) #detail-modal-content textarea {
+    font-size: 0.95rem !important;
+}
+
+/* Scrollbar sutil para el contenido largo */
+#detail-modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 transparent;
+}
+
+#detail-modal-content { scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
+#detail-modal-content::-webkit-scrollbar { width: 6px; }
+#detail-modal-content::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; }
+
+/* Posicionamiento fijo para el Modal Overlay */
+#detail-modal.modal-overlay {
+    align-items: flex-start !important; /* Alinea al inicio (arriba) en lugar del centro */
+    padding-top: 2rem; /* Margen fijo desde el borde superior del navegador */
+    padding-bottom: 2rem; /* Espacio de seguridad abajo para el scroll */
+}
+
+/* Ajuste específico cuando estamos en modo Desktop para que no se pegue al header */
+.mode-desktop ~ #detail-modal.modal-overlay,
+body:has(.mode-desktop) #detail-modal.modal-overlay {
+    padding-top: 5rem; /* Un poco más de espacio en desktop para lucir mejor */
+}
+
+</style>
     </head>
 
 <body class="dark">
@@ -265,7 +310,7 @@
 
     // 2. INICIALIZACIÓN
     document.addEventListener('DOMContentLoaded', () => {
-        if(!localStorage.getItem(KEYS.CORREO)) {window.location.replace('index.html');return;}
+        if(!localStorage.getItem(KEYS.CORREO)) {window.location.replace('index_SPA1.html');return;}
         initUI(); initDataApp(); setupSearch();
     });
 
@@ -320,7 +365,7 @@
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -662,15 +707,47 @@
         applyFiltersAndSort();
     }
 
-    function applyFiltersAndSort() {
+function applyFiltersAndSort() {
         let data = [...originalData];
+        
         if (currentSearchTerm) {
-            data = data.filter(row => Object.values(row).some(v => String(v).toLowerCase().includes(currentSearchTerm)));
+            data = data.filter(row => 
+                Object.entries(row).some(([key, v]) => {
+                    const cleanKey = key.toUpperCase();
+                    
+                    // 1. Lógica de exclusión flexible (por coincidencia de palabras)
+                    // Si la columna contiene cualquiera de estas palabras, se ignora en la búsqueda
+                    const isExcluded = cleanKey.includes('ID_INTERNO') || 
+                                       cleanKey.includes('NOTAS') || 
+                                       cleanKey.includes('METODO');
+                    
+                    if (isExcluded) return false;
+
+                    if (v === null || v === undefined) return false;
+
+                    // 2. Obtenemos el valor formateado (para asegurar dd/mm/yyyy)
+                    const displayValue = String(getFormattedValue(key, v)).toLowerCase();
+                    
+                    // 3. Obtenemos el valor crudo como string (por si acaso)
+                    const rawValue = String(v).toLowerCase();
+
+                    // Buscamos en ambos para no fallar con caracteres especiales como "/" o "+"
+                    return displayValue.includes(currentSearchTerm) || rawValue.includes(currentSearchTerm);
+                })
+            );
         }
+        
         if (sortConfig.key) {
             data.sort((a, b) => {
                 let vA = a[sortConfig.key], vB = b[sortConfig.key];
-                return sortConfig.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+                if (vA == null) vA = '';
+                if (vB == null) vB = '';
+                
+                if (sortConfig.direction === 'asc') {
+                    return vA > vB ? 1 : (vA < vB ? -1 : 0);
+                } else {
+                    return vA < vB ? 1 : (vA > vB ? -1 : 0);
+                }
             });
         }
         renderTable(data);
@@ -1085,755 +1162,755 @@
         }
     }
 
-async function executeSubmit(payload) {
-    toggleGlobalLoader(true);
-    const loaderLabel = document.querySelector('#global-loader span');
-    
-    if (loaderLabel) {
-        if (payload.action.includes('delete')) loaderLabel.textContent = "Eliminando Registro...";
-        else if (payload.action.includes('edit')) loaderLabel.textContent = "Actualizando Datos...";
-        else if (payload.action.includes('register')) loaderLabel.textContent = "Guardando Nuevo Registro...";
-        else loaderLabel.textContent = "Procesando Solicitud...";
-    }
-
-    try {
-        const r = await fetch(GAS_URL, { 
-            method: 'POST', 
-            body: new URLSearchParams(payload) 
-        });
+    async function executeSubmit(payload) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toggleGlobalLoader(true);
+        const loaderLabel = document.querySelector('#global-loader span');
         
-        const res = await r.json();
+        if (loaderLabel) {
+            if (payload.action.includes('delete')) loaderLabel.textContent = "Eliminando Registro...";
+            else if (payload.action.includes('edit')) loaderLabel.textContent = "Actualizando Datos...";
+            else if (payload.action.includes('register')) loaderLabel.textContent = "Guardando Nuevo Registro...";
+            else loaderLabel.textContent = "Procesando Solicitud...";
+        }
 
-        if (res.success) {
-            // Sincronización inmediata del registro en TABLE_DATA
-            if (res.data) {
-                const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-                currentData.DATOS_REGISTRO = res.data; 
-                localStorage.setItem('TABLE_DATA', JSON.stringify(currentData));
+        try {
+            const r = await fetch(GAS_URL, { 
+                method: 'POST', 
+                body: new URLSearchParams(payload) 
+            });
+            
+            const res = await r.json();
+
+            if (res.success) {
+                // Sincronización inmediata del registro en TABLE_DATA
+                if (res.data) {
+                    const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+                    currentData.DATOS_REGISTRO = res.data; 
+                    localStorage.setItem('TABLE_DATA', JSON.stringify(currentData));
+                }
+                // NO quitamos el loader ni mostramos modal aquí. 
+                // Devolvemos el control a quien llamó la función (ej: saveRecord).
+                return true; 
+            } else {
+                toggleGlobalLoader(false);
+                await showSystemModal({ title: 'Atención', text: res.message, type: 'warning' });
+                return false;
             }
-            // NO quitamos el loader ni mostramos modal aquí. 
-            // Devolvemos el control a quien llamó la función (ej: saveRecord).
-            return true; 
-        } else {
+        } catch (err) {
             toggleGlobalLoader(false);
-            await showSystemModal({ title: 'Atención', text: res.message, type: 'warning' });
+            console.error("Error técnico:", err);
+            await showSystemModal({ title: 'Error de Aplicación', text: err.message, type: 'danger' });
             return false;
         }
-    } catch (err) {
-        toggleGlobalLoader(false);
-        console.error("Error técnico:", err);
-        await showSystemModal({ title: 'Error de Aplicación', text: err.message, type: 'danger' });
-        return false;
-    }
-}
-
-async function saveRecord() {
-    toggleGlobalLoader(true, 'Procesando datos...');
-
-    const container = document.getElementById('detail-modal-content');
-    const inputs = container.querySelectorAll('[data-field]');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-    let missingFields = [];
-    let payload = {};
-
-    // 1. Limpieza de errores visuales
-    inputs.forEach(i => {
-        i.classList.remove('border-red-500', 'bg-red-500/10');
-        i.classList.add('border-transparent'); 
-    });
-
-    // 2. EXTRACCIÓN Y FORMATEO
-    inputs.forEach(input => {
-        const key = input.dataset.field;
-        const cleanKey = key.toUpperCase();
-        const cfg = configMap[cleanKey] || {};
-        
-        // Identificamos si es un campo de fecha
-        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-        
-        let value;
-
-        // Extracción base
-        if (input.hasAttribute('data-raw')) {
-            value = input.getAttribute('data-raw');
-        } else if (input.type === 'checkbox') {
-            value = input.checked;
-        } else {
-            value = input.value.trim();
-        }
-
-        // --- LÓGICA DE FORMATEO DE FECHAS ---
-        if (isDate && value) {
-            // El input type="date" devuelve "yyyy-mm-dd". 
-            // Lo convertimos a "dd/mm/yyyy" para que Sheets lo entienda mejor.
-            const parts = value.split('-');
-            if (parts.length === 3) {
-                value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-        }
-
-        // Validación de obligatorios
-        if (cfg.Es_Obligatorio === true && !value) {
-            missingFields.push(cfg.label || key);
-            input.classList.add('border-red-500', 'bg-red-500/10');
-        }
-
-        payload[key] = value;
-    });
-
-    // 3. Bloqueo si faltan campos
-    if (missingFields.length > 0) {
-        toggleGlobalLoader(false);
-        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-        return; 
     }
 
-    // 4. Preparación de envío (Modo, ID y Usuario)
-    const badgeText = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
-    const isNewOrDuplicate = badgeText.includes('BORRADOR') || badgeText.includes('DUPLICADO');
-    const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const idFieldName = `${tablePrefix}ID`;
-    const userId = localStorage.getItem('Usuario_ID') || ""; 
+    async function saveRecord() {
+        toggleGlobalLoader(true, 'Procesando datos...');
 
-    if (isNewOrDuplicate) {
-        delete payload[idFieldName];
-    }
+        const container = document.getElementById('detail-modal-content');
+        const inputs = container.querySelectorAll('[data-field]');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-    const finalPayload = {
-        ...payload,
-        action: gasAction,
-        TABLA_DESTINO: currentTableName,
-        currentUser: userId
-    };
+        let missingFields = [];
+        let payload = {};
 
-    // 5. ENVÍO Y SINCRONIZACIÓN
-    const success = await executeSubmit(finalPayload); 
-
-    if (success) {
-        const loaderLabel = document.querySelector('#global-loader span');
-        if (loaderLabel) loaderLabel.textContent = "Sincronizando con Servidor...";
-
-        needsRefresh = true; 
-        await fetchData(currentTableName); 
-
-        const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const registroProcesado = updatedStorage.DATOS_REGISTRO;
-
-        // Cierre de modal y loader
-        document.getElementById('detail-modal')?.classList.add('hidden');
-        toggleGlobalLoader(false);
-        
-        await showSystemModal({ 
-            title: 'Solicitud completada', 
-            text: 'Registro procesado correctamente.', 
-            type: 'info' 
+        // 1. Limpieza de errores visuales
+        inputs.forEach(i => {
+            i.classList.remove('border-red-500', 'bg-red-500/10');
+            i.classList.add('border-transparent'); 
         });
 
-        // Reapertura en modo vista
-        if (registroProcesado) {
-            openDetailModal(registroProcesado);
+        // 2. EXTRACCIÓN Y FORMATEO
+        inputs.forEach(input => {
+            const key = input.dataset.field;
+            const cleanKey = key.toUpperCase();
+            const cfg = configMap[cleanKey] || {};
+            
+            // Identificamos si es un campo de fecha
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            
+            let value;
+
+            // Extracción base
+            if (input.hasAttribute('data-raw')) {
+                value = input.getAttribute('data-raw');
+            } else if (input.type === 'checkbox') {
+                value = input.checked;
+            } else {
+                value = input.value.trim();
+            }
+
+            // --- LÓGICA DE FORMATEO DE FECHAS ---
+            if (isDate && value) {
+                // El input type="date" devuelve "yyyy-mm-dd". 
+                // Lo convertimos a "dd/mm/yyyy" para que Sheets lo entienda mejor.
+                const parts = value.split('-');
+                if (parts.length === 3) {
+                    value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+
+            // Validación de obligatorios
+            if (cfg.Es_Obligatorio === true && !value) {
+                missingFields.push(cfg.label || key);
+                input.classList.add('border-red-500', 'bg-red-500/10');
+            }
+
+            payload[key] = value;
+        });
+
+        // 3. Bloqueo si faltan campos
+        if (missingFields.length > 0) {
+            toggleGlobalLoader(false);
+            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+            return; 
+        }
+
+        // 4. Preparación de envío (Modo, ID y Usuario)
+        const badgeText = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
+        const isNewOrDuplicate = badgeText.includes('BORRADOR') || badgeText.includes('DUPLICADO');
+        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        const idFieldName = `${tablePrefix}ID`;
+        const userId = localStorage.getItem('Usuario_ID') || ""; 
+
+        if (isNewOrDuplicate) {
+            delete payload[idFieldName];
+        }
+
+        const finalPayload = {
+            ...payload,
+            action: gasAction,
+            TABLA_DESTINO: currentTableName,
+            currentUser: userId
+        };
+
+        // 5. ENVÍO Y SINCRONIZACIÓN
+        const success = await executeSubmit(finalPayload); 
+
+        if (success) {
+            const loaderLabel = document.querySelector('#global-loader span');
+            if (loaderLabel) loaderLabel.textContent = "Sincronizando con Servidor...";
+
+            needsRefresh = true; 
+            await fetchData(currentTableName); 
+
+            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+            const registroProcesado = updatedStorage.DATOS_REGISTRO;
+
+            // Cierre de modal y loader
+            document.getElementById('detail-modal')?.classList.add('hidden');
+            toggleGlobalLoader(false);
+            
+            await showSystemModal({ 
+                title: 'Solicitud completada', 
+                text: 'Registro procesado correctamente.', 
+                type: 'info' 
+            });
+
+            // Reapertura en modo vista
+            if (registroProcesado) {
+                openDetailModal(registroProcesado);
+            }
         }
     }
-}
 
-function normalizeToolbar() {
-    const ids = ['btn-modal-save', 'btn-modal-cancel', 'btn-modal-return'];
-    const titles = ['Duplicar', 'Borrar', 'Nuevo', 'Editar'];
+    function normalizeToolbar() {
+        const ids = ['btn-modal-save', 'btn-modal-cancel', 'btn-modal-return'];
+        const titles = ['Duplicar', 'Borrar', 'Nuevo', 'Editar'];
 
-    // 1. Resetear clases y estilos de todos los botones
-    const allButtons = [
-        ...ids.map(id => document.getElementById(id)), 
-        ...titles.map(t => document.querySelector(`[title="${t}"]`))
-    ];
+        // 1. Resetear clases y estilos de todos los botones
+        const allButtons = [
+            ...ids.map(id => document.getElementById(id)), 
+            ...titles.map(t => document.querySelector(`[title="${t}"]`))
+        ];
 
-    allButtons.forEach(btn => {
-        if (btn) {
-            // ELIMINAMOS EL ESTADO "CONGELADO" (de disableButton)
-            btn.classList.remove('hidden', 'btn-disabled', 'opacity-20', 'grayscale');
-            
-            // RESTAURAMOS INTERACCIÓN
-            btn.style.pointerEvents = 'auto';
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-            
-            // Si habías atenuado el icono interno, lo limpiamos también
-            const icon = btn.querySelector('i');
-            if (icon) icon.classList.remove('opacity-50');
+        allButtons.forEach(btn => {
+            if (btn) {
+                // ELIMINAMOS EL ESTADO "CONGELADO" (de disableButton)
+                btn.classList.remove('hidden', 'btn-disabled', 'opacity-20', 'grayscale');
+                
+                // RESTAURAMOS INTERACCIÓN
+                btn.style.pointerEvents = 'auto';
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+                
+                // Si habías atenuado el icono interno, lo limpiamos también
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.remove('opacity-50');
+            }
+        });
+
+        // 2. Re-vinculación de eventos (La "Verdad" del HTML)
+        // Esto es vital porque disableButton pone los onclick en null
+        document.getElementById('btn-modal-save').onclick = () => saveRecord();
+        document.getElementById('btn-modal-cancel').onclick = () => CancelForm();
+        document.getElementById('btn-modal-return').onclick = () => closeDetailModal();
+        
+        const btnNew = document.querySelector('[title="Nuevo"]');
+        if (btnNew) btnNew.onclick = () => showRegisterMode();
+        
+        const btnEdit = document.querySelector('[title="Editar"]');
+        if (btnEdit) btnEdit.onclick = () => showEditMode();
+        
+        const btnCopy = document.querySelector('[title="Duplicar"]');
+        if (btnCopy) btnCopy.onclick = () => duplicateCurrentRecord();
+
+        const btnDel = document.querySelector('[title="Borrar"]');
+        if (btnDel) btnDel.onclick = () => deleteRecord();
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function CancelForm() {
+        // 1. Recuperar el estado previo del storage
+        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const row = storageData.DATOS_REGISTRO;
+
+        // 2. Decisión de retorno
+        if (row) {
+            console.log("Cancelando edición/duplicado. Restaurando vista de lectura...");
+            // Al llamar a openDetailModal, se ejecuta normalizeToolbar() y se limpian los inputs
+            openDetailModal(row);
+        } else {
+            console.log("Cancelando registro nuevo. Cerrando modal...");
+            closeDetailModal();
         }
-    });
-
-    // 2. Re-vinculación de eventos (La "Verdad" del HTML)
-    // Esto es vital porque disableButton pone los onclick en null
-    document.getElementById('btn-modal-save').onclick = () => saveRecord();
-    document.getElementById('btn-modal-cancel').onclick = () => CancelForm();
-    document.getElementById('btn-modal-return').onclick = () => closeDetailModal();
-    
-    const btnNew = document.querySelector('[title="Nuevo"]');
-    if (btnNew) btnNew.onclick = () => showRegisterMode();
-    
-    const btnEdit = document.querySelector('[title="Editar"]');
-    if (btnEdit) btnEdit.onclick = () => showEditMode();
-    
-    const btnCopy = document.querySelector('[title="Duplicar"]');
-    if (btnCopy) btnCopy.onclick = () => duplicateCurrentRecord();
-
-    const btnDel = document.querySelector('[title="Borrar"]');
-    if (btnDel) btnDel.onclick = () => deleteRecord();
-
-    if (window.lucide) lucide.createIcons();
-}
-
-function CancelForm() {
-    // 1. Recuperar el estado previo del storage
-    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const row = storageData.DATOS_REGISTRO;
-
-    // 2. Decisión de retorno
-    if (row) {
-        console.log("Cancelando edición/duplicado. Restaurando vista de lectura...");
-        // Al llamar a openDetailModal, se ejecuta normalizeToolbar() y se limpian los inputs
-        openDetailModal(row);
-    } else {
-        console.log("Cancelando registro nuevo. Cerrando modal...");
-        closeDetailModal();
     }
-}
 
-function closeDetailModal() {
-    normalizeToolbar(); // Reset antes de cerrar para evitar "memoria" de estados
+    function closeDetailModal() {
+        normalizeToolbar(); // Reset antes de cerrar para evitar "memoria" de estados
 
-    const modal = document.getElementById('detail-modal');
-    if (modal) modal.classList.add('hidden');
-    
-    if (needsRefresh) {
-        fetchData(currentTableName).then(() => { needsRefresh = false; });
+        const modal = document.getElementById('detail-modal');
+        if (modal) modal.classList.add('hidden');
+        
+        if (needsRefresh) {
+            fetchData(currentTableName).then(() => { needsRefresh = false; });
+        }
+        localStorage.removeItem('TABLE_DATA_REGISTRO'); 
     }
-    localStorage.removeItem('TABLE_DATA_REGISTRO'); 
-}
 
-function openDetailModal(row) {
-    // 1. Inicialización de estado
-    needsRefresh = false;
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    
-    // Normalización de configMap para búsqueda segura
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+    function openDetailModal(row) {
+        // 1. Inicialización de estado
+        needsRefresh = false;
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        
+        // Normalización de configMap para búsqueda segura
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-    // 2. Normalización de la Barra de Herramientas
-    normalizeToolbar();
-    
-    // 3. Ajuste estético para Modo Lectura
-    document.getElementById('btn-modal-save')?.classList.add('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.add('hidden');
-    document.getElementById('footer-save-container')?.classList.add('hidden');
+        // 2. Normalización de la Barra de Herramientas
+        normalizeToolbar();
+        
+        // 3. Ajuste estético para Modo Lectura
+        document.getElementById('btn-modal-save')?.classList.add('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden');
+        document.getElementById('footer-save-container')?.classList.add('hidden');
 
-    // 4. Preparación de contenedores y prefijos
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        // 4. Preparación de contenedores y prefijos
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
 
-    // 5. Renderizado del Título Dinámico
-    content.innerHTML = '';
-    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
-    
-    title.innerHTML = `
-        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-            <div class="min-w-10 flex justify-start">
-                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                <span class="text-blue-400 text-2xl font-bold truncate">${row[tablePrefix + 'ID'] || 'Detalle'}</span>
-            </div>
-            <div class="flex justify-center min-w-0">
-                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${
-                    isActuallyBlocked 
-                    ? 'bg-red-500/20 text-red-400 border-red-500/30' 
-                    : 'bg-green-500/20 text-green-400 border-green-500/30'
-                }">${rawStatus}</span>
-            </div>
-            <div id="status-icon-container" class="flex justify-end">
-                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-            </div>
-        </div>`;
+        // 5. Renderizado del Título Dinámico
+        content.innerHTML = '';
+        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+        
+        title.innerHTML = `
+            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+                <div class="min-w-10 flex justify-start">
+                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                    <span class="text-blue-400 text-2xl font-bold truncate">${row[tablePrefix + 'ID'] || 'Detalle'}</span>
+                </div>
+                <div class="flex justify-center min-w-0">
+                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${
+                        isActuallyBlocked 
+                        ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                        : 'bg-green-500/20 text-green-400 border-green-500/30'
+                    }">${rawStatus}</span>
+                </div>
+                <div id="status-icon-container" class="flex justify-end">
+                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+                </div>
+            </div>`;
 
-// 6. Renderizado de Campos de Datos
-    Object.keys(row).forEach(key => {
-        const cleanKey = key.toUpperCase();
+    // 6. Renderizado de Campos de Datos
+        Object.keys(row).forEach(key => {
+            const cleanKey = key.toUpperCase();
+            const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+            const idFieldName = tablePrefix + 'ID';
+                    
+            // Omitimos nombres, status y el ID (que ya está en el título)
+            if (cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
+            
+            const cfg = configMap[cleanKey] || {};
+            if (String(cfg.visible).toLowerCase() !== 'x') return;
+
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isNormalCase = cleanKey.includes('CONFIG');
+
+            const item = document.createElement('div');
+            // Items-start para que el label no flote; justify-items-start fuerza la celda a la izquierda justify-items-start
+            item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
+            
+            let valueHTML = '';
+
+            if (isDescription) {
+                // TEXTAREA ORIGINAL BLOQUEADO
+                // Se agrega pointer-events-none para anular interacción y text-left para corregir centrado
+                valueHTML = `
+                    <textarea 
+                        readonly 
+                        tabindex="-1"
+                        class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
+                        style="height: 60px; text-align: left !important; display: block !important;"
+                    >${row[key] || ''}</textarea>`;
+            } else {
+                // RESTO DE CAMPOS: Alineación consistente a la izquierda con justify-self-start
+                valueHTML = `
+                    <span class="text-white font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
+                        style="text-align: left !important;">
+                        ${getFormattedValue(key, row[key])}
+                    </span>`;
+            }
+                
+            item.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-0' : 'self-center'}" style="text-align: left !important;">
+                    ${cfg.label || key}
+                </span>
+                ${valueHTML}`;
+                
+            content.appendChild(item);
+        });
+
+        // 7. Mostrar Modal y Refrescar Iconos
+        const modal = document.getElementById('detail-modal');
+        if (modal) modal.classList.remove('hidden');
+        
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    function showEditMode() {
+        normalizeToolbar(); // Limpiamos la barra de herramientas
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+        
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        
+        // Normalización del configMap
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+
+        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const row = storageData.DATOS_REGISTRO;
+        if (!row) return;
+
         const tablePrefix = currentTableName.split('_')[0].toUpperCase();
         const idFieldName = tablePrefix + 'ID';
+        content.innerHTML = '';
+
+        // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
+        const hiddenId = document.createElement('input');
+        hiddenId.type = 'hidden';
+        hiddenId.dataset.field = idFieldName;
+        hiddenId.value = row[idFieldName] || '';
+        content.appendChild(hiddenId);
+
+        // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
+        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+
+        title.innerHTML = `
+            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+                <div class="min-w-10 flex justify-start">
+                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                    <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
+                </div>
+                <div class="flex justify-center min-w-0">
+                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
+                </div>
+                <div id="status-icon-container" class="flex justify-end">
+                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+                </div>
+            </div>`;
+
+        // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
+        Object.keys(row).forEach(key => {
+            const cleanKey = key.toUpperCase();
+            
+            // Excluimos campos de auditoría y el ID (que ya inyectamos oculto)
+            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+            
+            const cfg = configMap[cleanKey] || {};
+            if (String(cfg.visible).toLowerCase() !== 'x') return;
+
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            const isCalculated = cfg.Es_Calculado === true;
+            const isEditable = cfg.editable !== false;
+            const istoggle = cleanKey.includes('TYPEREG');
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+            const isDescription = cleanKey.includes('DESCRIPCION');
+
+            const item = document.createElement('div');
+            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+            let valueElement = '';
+
+            // A. CAMPOS NO EDITABLES O CALCULADOS
+            if (!isEditable || isCalculated) {
+                const rawValue = row[key] !== null ? row[key] : '';
+                valueElement = `<div class="flex items-center h-[24px] px-2 py-0"><span class="text-sm text-gray-500 font-bold uppercase tracking-tight opacity-90">${getFormattedValue(key, rawValue)}</span><input type="hidden" data-field="${key}" value="${rawValue}"><i data-lucide="calculator" class="w-4 h-4 text-sm text-gray-500 ml-12 opacity-90"></i></div>`;
+            } 
+            // B. TOGGLE DE STATUS (REGISTRADO/BLOQUEADO)
+            else if (istoggle) {
+                const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
+                valueElement = `<div class="flex items-center gap-3"><button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}"><i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i></button><span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span><input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}"></div>`;
+            } 
+            // C. CAMPOS DE FECHA (Formato ISO para el input)
+            else if (isDate) {
+                let rawDate = row[key] || '';
+                let dateISO = '';
+                if (rawDate) {
+                    // Si viene dd/mm/yyyy -> yyyy-mm-dd. Si no, tomamos la parte T00...
+                    dateISO = rawDate.includes('/') ? rawDate.split('/').reverse().join('-') : rawDate.split('T')[0];
+                }
+                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            } 
+            // D. CAMPOS NUMÉRICOS (Máscara contable)
+            else if (isNumeric) {
+                const rawValue = row[key] !== null ? row[key] : '';
+                valueElement = `<input type="text" data-field="${key}" data-raw="${rawValue}" value="" placeholder="${getFormattedValue(key, rawValue)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
+            } 
+            // E. ÁREAS DE TEXTO
+            else if (isDescription) {
+                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${row[key] || ''}</textarea>`;
+            } 
+            // F. TEXTO SIMPLE
+            else {
+                valueElement = `<input type="text" data-field="${key}" value="${row[key] || ''}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            }
+
+            item.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${valueElement}`;
                 
-        // Omitimos nombres, status y el ID (que ya está en el título)
-        if (cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
-        
-        const cfg = configMap[cleanKey] || {};
-        if (String(cfg.visible).toLowerCase() !== 'x') return;
+            content.appendChild(item);
+        });
 
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        const isNormalCase = cleanKey.includes('CONFIG');
-
-        const item = document.createElement('div');
-        // Items-start para que el label no flote; justify-items-start fuerza la celda a la izquierda justify-items-start
-        item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
-        
-        let valueHTML = '';
-
-        if (isDescription) {
-            // TEXTAREA ORIGINAL BLOQUEADO
-            // Se agrega pointer-events-none para anular interacción y text-left para corregir centrado
-            valueHTML = `
-                <textarea 
-                    readonly 
-                    tabindex="-1"
-                    class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
-                    style="height: 60px; text-align: left !important; display: block !important;"
-                >${row[key] || ''}</textarea>`;
-        } else {
-            // RESTO DE CAMPOS: Alineación consistente a la izquierda con justify-self-start
-            valueHTML = `
-                <span class="text-white font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
-                    style="text-align: left !important;">
-                    ${getFormattedValue(key, row[key])}
-                </span>`;
-        }
-            
-        item.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-0' : 'self-center'}" style="text-align: left !important;">
-                ${cfg.label || key}
-            </span>
-            ${valueHTML}`;
-            
-        content.appendChild(item);
-    });
-
-    // 7. Mostrar Modal y Refrescar Iconos
-    const modal = document.getElementById('detail-modal');
-    if (modal) modal.classList.remove('hidden');
-    
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-}
-
-function showEditMode() {
-    normalizeToolbar(); // Limpiamos la barra de herramientas
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    
-    // Normalización del configMap
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-
-    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const row = storageData.DATOS_REGISTRO;
-    if (!row) return;
-
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const idFieldName = tablePrefix + 'ID';
-    content.innerHTML = '';
-
-    // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
-    const hiddenId = document.createElement('input');
-    hiddenId.type = 'hidden';
-    hiddenId.dataset.field = idFieldName;
-    hiddenId.value = row[idFieldName] || '';
-    content.appendChild(hiddenId);
-
-    // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
-    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
-
-    title.innerHTML = `
-        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-            <div class="min-w-10 flex justify-start">
-                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
-            </div>
-            <div class="flex justify-center min-w-0">
-                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
-            </div>
-            <div id="status-icon-container" class="flex justify-end">
-                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-            </div>
-        </div>`;
-
-    // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
-    Object.keys(row).forEach(key => {
-        const cleanKey = key.toUpperCase();
-        
-        // Excluimos campos de auditoría y el ID (que ya inyectamos oculto)
-        if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-        
-        const cfg = configMap[cleanKey] || {};
-        if (String(cfg.visible).toLowerCase() !== 'x') return;
-
-        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-        const isCalculated = cfg.Es_Calculado === true;
-        const isEditable = cfg.editable !== false;
-        const istoggle = cleanKey.includes('TYPEREG');
-        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-        const isDescription = cleanKey.includes('DESCRIPCION');
-
-        const item = document.createElement('div');
-        item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-        let valueElement = '';
-
-        // A. CAMPOS NO EDITABLES O CALCULADOS
-        if (!isEditable || isCalculated) {
-            const rawValue = row[key] !== null ? row[key] : '';
-            valueElement = `<div class="flex items-center h-[24px] px-2 py-0"><span class="text-sm text-gray-500 font-bold uppercase tracking-tight opacity-90">${getFormattedValue(key, rawValue)}</span><input type="hidden" data-field="${key}" value="${rawValue}"><i data-lucide="calculator" class="w-4 h-4 text-sm text-gray-500 ml-12 opacity-90"></i></div>`;
-        } 
-        // B. TOGGLE DE STATUS (REGISTRADO/BLOQUEADO)
-        else if (istoggle) {
-            const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
-            valueElement = `<div class="flex items-center gap-3"><button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}"><i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i></button><span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span><input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}"></div>`;
-        } 
-        // C. CAMPOS DE FECHA (Formato ISO para el input)
-        else if (isDate) {
-            let rawDate = row[key] || '';
-            let dateISO = '';
-            if (rawDate) {
-                // Si viene dd/mm/yyyy -> yyyy-mm-dd. Si no, tomamos la parte T00...
-                dateISO = rawDate.includes('/') ? rawDate.split('/').reverse().join('-') : rawDate.split('T')[0];
-            }
-            valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-        } 
-        // D. CAMPOS NUMÉRICOS (Máscara contable)
-        else if (isNumeric) {
-            const rawValue = row[key] !== null ? row[key] : '';
-            valueElement = `<input type="text" data-field="${key}" data-raw="${rawValue}" value="" placeholder="${getFormattedValue(key, rawValue)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
-        } 
-        // E. ÁREAS DE TEXTO
-        else if (isDescription) {
-            valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${row[key] || ''}</textarea>`;
-        } 
-        // F. TEXTO SIMPLE
-        else {
-            valueElement = `<input type="text" data-field="${key}" value="${row[key] || ''}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-        }
-
-        item.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${valueElement}`;
-            
-        content.appendChild(item);
-    });
-
-    if (window.lucide) lucide.createIcons();
-}
-
-function showRegisterMode() {
-    // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-    
-    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-        TABLA_ORIGEN: tableOrigin,
-        DATOS_REGISTRO: null 
-    }));
-
-    // 2. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar(); // Limpiamos primero
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    // Aseguramos que el modal sea visible
-    document.getElementById('detail-modal')?.classList.remove('hidden');
-
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
-
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    
-    // Normalización de configMap para búsqueda segura
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => {
-        configMap[k.toUpperCase()] = configMapRaw[k];
-    });
-    
-    content.innerHTML = '';
-
-    // 3. TÍTULO
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    BORRADOR
-                </span>
-                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-            </div>
-        </div>`;
-
-    // 4. RENDERIZADO DINÁMICO DE CAMPOS
-    // Usamos las llaves del configMap para construir el formulario de registro nuevo
-    Object.keys(configMap).forEach(key => {
-        const cfg = configMap[key]; // Ya está en mayúsculas por la normalización anterior
-        const cleanKey = key.toUpperCase();
-        
-        // Exclusiones
-        if (String(cfg.visible).toLowerCase() !== 'x') return;
-        if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
-        if (cfg.editable === false) return;
-        if (cleanKey.endsWith('ID') || cleanKey.includes('TYPEREG')) return;
-
-        // --- LÓGICA DE OBLIGATORIEDAD (Booleano real del backend) ---
-        const isRequired = cfg.Es_Obligatorio === true;
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-        // Identificación de tipos
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-        const rowItem = document.createElement('div');
-        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-        
-        let inputHTML = '';
-
-        if (isDescription) {
-            inputHTML = `
-                <textarea data-field="${key}" 
-                    class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">
-                </textarea>`;
-
-        } else if (isDate) {
-            inputHTML = `
-                <input type="date" data-field="${key}" 
-                    class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-
-        } else if (isNumeric) {
-            inputHTML = `
-                <input type="text" data-field="${key}" data-raw="0" value="0,00"
-                    onfocus="this.select()"
-                    oninput="applyAccountingMask(this)"
-                    class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-
-        } else {
-            inputHTML = `
-                <input type="text" data-field="${key}" 
-                    class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors"
-                >`;
-        }
-
-        rowItem.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-center flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${inputHTML}`;
-            
-        content.appendChild(rowItem);
-    });
-
-    // 5. RENDERIZACIÓN DE ICONOS Y FOCO
-    if (window.lucide) lucide.createIcons();
-    
-    setTimeout(() => {
-        const firstInput = content.querySelector('input, textarea');
-        if (firstInput) firstInput.focus();
-    }, 200);
-}
-
-function duplicateCurrentRecord() {
-    const rawData = localStorage.getItem('TABLE_DATA');
-    const dataObj = JSON.parse(rawData || '{}');
-    const registroOriginal = dataObj.DATOS_REGISTRO;
-    
-    if (!registroOriginal) {
-        console.error("No se encontró el registro base para duplicar.");
-        return;
+        if (window.lucide) lucide.createIcons();
     }
 
-    const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
-    const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
-
-    // 1. PREPARACIÓN DE DATOS (Clonación sin ID)
-    const registroParaDuplicar = { ...registroOriginal };
-
-    localStorage.setItem('TABLE_DATA', JSON.stringify({
-        ...dataObj,
-        DATOS_REGISTRO: registroParaDuplicar
-    }));
-
-    // 2. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar(); // Limpiamos primero
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) {
-        btnCancel.onclick = () => openDetailModal(registroOriginal);
-    }
-
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    
-    content.innerHTML = '';
-
-    // 3. TÍTULO
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                    NUEVO (DUPLICADO)
-                </span>
-                <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-400"></i>
-            </div>
-        </div>`;
-
-    // 4. RENDERIZADO DINÁMICO
-    Object.keys(configMap).forEach(key => {
-        const cfg = configMap[key] || configMap[key.toUpperCase()] || {};
-        const cleanKey = key.toUpperCase();
+    function showRegisterMode() {
+        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
         
-        if (String(cfg.visible).toLowerCase() !== 'x') return;
-        if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO')) return;
+        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+            TABLA_ORIGEN: tableOrigin,
+            DATOS_REGISTRO: null 
+        }));
 
-        const isRequired = cfg.Es_Obligatorio === true;
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-        const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-        const isEditable = cfg.editable !== false;
-        const istoggle = cleanKey.includes('TYPEREG');
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-        const rawValue = registroOriginal[key] !== undefined ? registroOriginal[key] : '';
-        const formattedValue = getFormattedValue(key, rawValue);
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); // Limpiamos primero
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
         
-        const rowItem = document.createElement('div');
-        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        // Aseguramos que el modal sea visible
+        document.getElementById('detail-modal')?.classList.remove('hidden');
+
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
         
-        let inputHTML = '';
+        // Normalización de configMap para búsqueda segura
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => {
+            configMap[k.toUpperCase()] = configMapRaw[k];
+        });
+        
+        content.innerHTML = '';
 
-        if ((isCalculated || !isEditable) && !istoggle) {
-            inputHTML = `
-                <div class="flex items-center h-[24px] px-2 w-full gap-2 text-gray-400 font-bold uppercase opacity-70 text-sm">
-                    ${formattedValue}
-                    <input type="hidden" data-field="${key}" value="${rawValue}">
-                    ${isCalculated ? '<i data-lucide="calculator" class="w-3.5 h-3.5 text-gray-600 ml-auto"></i>' : ''}
-                </div>`;
-
-        } else if (istoggle) {
-            const isBlocked = String(rawValue).toUpperCase() === 'BLOQUEADO';
-            // AGREGADOS IDs: btn-toggle, label e input para que toggleStatus() funcione
-            inputHTML = `
-                <div class="flex items-center gap-3 px-2 h-[24px]">
-                    <button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-95" id="btn-toggle-${key}">
-                        <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
-                    </button>
-                    <span id="label-${key}" class="text-[10px] font-bold uppercase tracking-wider ${isBlocked ? 'text-red-500' : 'text-green-500'}">
-                        ${isBlocked ? 'Bloqueado' : 'Registrado'}
+        // 3. TÍTULO
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        BORRADOR
                     </span>
-                    <input type="hidden" data-field="${key}" id="input-${key}" value="${rawValue}">
-                </div>`;
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+                </div>
+            </div>`;
 
-        } else if (isDescription) {
-            inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${rawValue}</textarea>`;
+        // 4. RENDERIZADO DINÁMICO DE CAMPOS
+        // Usamos las llaves del configMap para construir el formulario de registro nuevo
+        Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key]; // Ya está en mayúsculas por la normalización anterior
+            const cleanKey = key.toUpperCase();
+            
+            // Exclusiones
+            if (String(cfg.visible).toLowerCase() !== 'x') return;
+            if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
+            if (cfg.editable === false) return;
+            if (cleanKey.endsWith('ID') || cleanKey.includes('TYPEREG')) return;
 
-        } else if (isDate) {
-            let dateISO = '';
-            if (rawValue) {
-                const d = new Date(rawValue);
-                if (!isNaN(d)) dateISO = d.toISOString().split('T')[0];
-            }
-            inputHTML = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+            // --- LÓGICA DE OBLIGATORIEDAD (Booleano real del backend) ---
+            const isRequired = cfg.Es_Obligatorio === true;
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
 
-        } else if (isNumeric) {
-            inputHTML = `
-                <div class="relative w-full">
-                    <input type="text" data-field="${key}" data-raw="${rawValue}" value="${formattedValue}"
+            // Identificación de tipos
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+            const rowItem = document.createElement('div');
+            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-start hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            if (isDescription) {
+                inputHTML = `
+                    <textarea data-field="${key}" 
+                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">
+                    </textarea>`;
+
+            } else if (isDate) {
+                inputHTML = `
+                    <input type="date" data-field="${key}" 
+                        class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+
+            } else if (isNumeric) {
+                inputHTML = `
+                    <input type="text" data-field="${key}" data-raw="0" value="0,00"
                         onfocus="this.select()"
                         oninput="applyAccountingMask(this)"
-                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">
-                </div>`;
+                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
 
-        } else {
-            inputHTML = `<input type="text" data-field="${key}" value="${rawValue}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            } else {
+                inputHTML = `
+                    <input type="text" data-field="${key}" 
+                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors"
+                    >`;
+            }
+
+            rowItem.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+        // 5. RENDERIZACIÓN DE ICONOS Y FOCO
+        if (window.lucide) lucide.createIcons();
+        
+        setTimeout(() => {
+            const firstInput = content.querySelector('input, textarea');
+            if (firstInput) firstInput.focus();
+        }, 200);
+    }
+
+    function duplicateCurrentRecord() {
+        const rawData = localStorage.getItem('TABLE_DATA');
+        const dataObj = JSON.parse(rawData || '{}');
+        const registroOriginal = dataObj.DATOS_REGISTRO;
+        
+        if (!registroOriginal) {
+            console.error("No se encontró el registro base para duplicar.");
+            return;
         }
 
-        rowItem.innerHTML = `
-            <span class="text-gray-500 font-medium uppercase text-[10px] self-center flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${inputHTML}`;
+        const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
+        const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
+
+        // 1. PREPARACIÓN DE DATOS (Clonación sin ID)
+        const registroParaDuplicar = { ...registroOriginal };
+
+        localStorage.setItem('TABLE_DATA', JSON.stringify({
+            ...dataObj,
+            DATOS_REGISTRO: registroParaDuplicar
+        }));
+
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); // Limpiamos primero
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+        
+
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) {
+            btnCancel.onclick = () => openDetailModal(registroOriginal);
+        }
+
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        
+        content.innerHTML = '';
+
+        // 3. TÍTULO
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                        NUEVO (DUPLICADO)
+                    </span>
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-400"></i>
+                </div>
+            </div>`;
+
+        // 4. RENDERIZADO DINÁMICO
+        Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key] || configMap[key.toUpperCase()] || {};
+            const cleanKey = key.toUpperCase();
             
-        content.appendChild(rowItem);
-    });
+            if (String(cfg.visible).toLowerCase() !== 'x') return;
+            if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO')) return;
 
-    if (window.lucide) lucide.createIcons();
-}
+            const isRequired = cfg.Es_Obligatorio === true;
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
 
-function restaurarVistaOriginal(datos) {
-    if (!datos) {
-        console.warn("restaurarVistaOriginal: No se recibieron datos para restaurar.");
-        closeDetailModal();
-        return;
+            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+            const isEditable = cfg.editable !== false;
+            const istoggle = cleanKey.includes('TYPEREG');
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+            const rawValue = registroOriginal[key] !== undefined ? registroOriginal[key] : '';
+            const formattedValue = getFormattedValue(key, rawValue);
+            
+            const rowItem = document.createElement('div');
+            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            if ((isCalculated || !isEditable) && !istoggle) {
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 w-full gap-2 text-gray-400 font-bold uppercase opacity-70 text-sm">
+                        ${formattedValue}
+                        <input type="hidden" data-field="${key}" value="${rawValue}">
+                        ${isCalculated ? '<i data-lucide="calculator" class="w-3.5 h-3.5 text-gray-600 ml-auto"></i>' : ''}
+                    </div>`;
+
+            } else if (istoggle) {
+                const isBlocked = String(rawValue).toUpperCase() === 'BLOQUEADO';
+                // AGREGADOS IDs: btn-toggle, label e input para que toggleStatus() funcione
+                inputHTML = `
+                    <div class="flex items-center gap-3 px-2 h-[24px]">
+                        <button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-95" id="btn-toggle-${key}">
+                            <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
+                        </button>
+                        <span id="label-${key}" class="text-[10px] font-bold uppercase tracking-wider ${isBlocked ? 'text-red-500' : 'text-green-500'}">
+                            ${isBlocked ? 'Bloqueado' : 'Registrado'}
+                        </span>
+                        <input type="hidden" data-field="${key}" id="input-${key}" value="${rawValue}">
+                    </div>`;
+
+            } else if (isDescription) {
+                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${rawValue}</textarea>`;
+
+            } else if (isDate) {
+                let dateISO = '';
+                if (rawValue) {
+                    const d = new Date(rawValue);
+                    if (!isNaN(d)) dateISO = d.toISOString().split('T')[0];
+                }
+                inputHTML = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+
+            } else if (isNumeric) {
+                inputHTML = `
+                    <div class="relative w-full">
+                        <input type="text" data-field="${key}" data-raw="${rawValue}" value="${formattedValue}"
+                            onfocus="this.select()"
+                            oninput="applyAccountingMask(this)"
+                            class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">
+                    </div>`;
+
+            } else {
+                inputHTML = `<input type="text" data-field="${key}" value="${rawValue}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            }
+
+            rowItem.innerHTML = `
+                <span class="text-gray-500 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+        if (window.lucide) lucide.createIcons();
     }
 
-    // 1. Sincronización del LocalStorage
-    // Es vital que DATOS_REGISTRO sea el objeto limpio original para que
-    // el botón 'Editar' o 'Duplicar' tengan una base sólida si se pulsan de nuevo.
-    const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    localStorage.setItem('TABLE_DATA', JSON.stringify({
-        ...currentData,
-        DATOS_REGISTRO: datos
-    }));
+    function restaurarVistaOriginal(datos) {
+        if (!datos) {
+            console.warn("restaurarVistaOriginal: No se recibieron datos para restaurar.");
+            closeDetailModal();
+            return;
+        }
 
-    // 2. Delegación de UI
-    // No manipulamos botones aquí. Llamamos a openDetailModal porque:
-    // a) Ejecuta normalizeToolbar() (Limpia bloqueos de edición/duplicado).
-    // b) Oculta Save/Cancel (Estado natural de lectura).
-    // c) Renderiza los datos en formato texto (no inputs).
-    console.log("Restaurando integridad de vista para Doc:", datos[currentTableName.split('_')[0].toUpperCase() + 'ID']);
-    
-    openDetailModal(datos);
-}
+        // 1. Sincronización del LocalStorage
+        // Es vital que DATOS_REGISTRO sea el objeto limpio original para que
+        // el botón 'Editar' o 'Duplicar' tengan una base sólida si se pulsan de nuevo.
+        const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        localStorage.setItem('TABLE_DATA', JSON.stringify({
+            ...currentData,
+            DATOS_REGISTRO: datos
+        }));
 
-function disableButton(title) {
-    const btn = document.querySelector(`button[title="${title}"]`);
-    if (btn) {
-        // 1. Matamos la funcionalidad
-        btn.onclick = null;
+        // 2. Delegación de UI
+        // No manipulamos botones aquí. Llamamos a openDetailModal porque:
+        // a) Ejecuta normalizeToolbar() (Limpia bloqueos de edición/duplicado).
+        // b) Oculta Save/Cancel (Estado natural de lectura).
+        // c) Renderiza los datos en formato texto (no inputs).
+        console.log("Restaurando integridad de vista para Doc:", datos[currentTableName.split('_')[0].toUpperCase() + 'ID']);
         
-        // 2. Bloqueamos TODA interacción del ratón (esto anula el hover automáticamente)
-        btn.style.pointerEvents = 'none'; 
-        
-        // 3. Bajamos la opacidad mucho más para que el color original se "lave"
-        // Al estar al 20%, el verde o azul se verán como un gris muy suave
-        btn.classList.add('opacity-20', 'grayscale'); 
-        
-        // 4. Cambiamos el cursor para que no parezca clickeable
-        btn.style.cursor = 'default';
+        openDetailModal(datos);
     }
-}
+
+    function disableButton(title) {
+        const btn = document.querySelector(`button[title="${title}"]`);
+        if (btn) {
+            // 1. Matamos la funcionalidad
+            btn.onclick = null;
+            
+            // 2. Bloqueamos TODA interacción del ratón (esto anula el hover automáticamente)
+            btn.style.pointerEvents = 'none'; 
+            
+            // 3. Bajamos la opacidad mucho más para que el color original se "lave"
+            // Al estar al 20%, el verde o azul se verán como un gris muy suave
+            btn.classList.add('opacity-20', 'grayscale'); 
+            
+            // 4. Cambiamos el cursor para que no parezca clickeable
+            btn.style.cursor = 'default';
+        }
+    }
 
 </script>
 </body>
 </html>
-
