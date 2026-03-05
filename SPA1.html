@@ -201,11 +201,18 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
                             </span>
                             
                             <div class="h-4 w-[1px] bg-gray-700"></div> 
+
+                            <button id="btn-main-transfer-record" 
+                                class="text-blue-400 hover:scale-110 transition-transform p-1 flex items-center justify-center" 
+                                title="Transferencia entre Cuentas">
+                                <i data-lucide="arrow-right-left" class="w-6 h-6"></i>
+                            </button>
                             <button id="btn-main-add-record" 
                                 class="text-green-400 hover:scale-110 transition-transform p-1 flex items-center justify-center" 
                                 title="Nuevo Registro">
                                 <i data-lucide="file-plus-2" class="w-6 h-6"></i>
                             </button>
+
                         </div>
                     </div>
 
@@ -267,10 +274,10 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
                         <button onclick="showEditMode()" class="text-yellow-400 hover:scale-110 transition-transform" title="Editar">
                             <i data-lucide="file-pen" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-modal-return" onclick="closeDetailModal()" class="text-blue-400 hover:scale-110 transition-transform" title="Volver">
+                        <button id="btn-modal-return" onclick="closeDetailModal()" class="text-blue-400 hover:scale-110 transition-transform" title="Datos">
                             <i data-lucide="circle-arrow-left" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-modal-cancel" onclick="CancelForm()" class="text-red-400 hover:scale-110 transition-transform" title="Cancelar">
+                        <button id="btn-modal-cancel" onclick="cancelActualForm()" class="text-red-400 hover:scale-110 transition-transform" title="Cancelar">
                             <i data-lucide="circle-x" class="w-5 h-5"></i>
                         </button>
                     </div>              
@@ -345,12 +352,23 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
 
         // 3. BOTÓN NUEVO REGISTRO (El rescatado)
         const btnNew = document.getElementById('btn-main-add-record');
+        const btnTransfer = document.getElementById('btn-main-transfer-record');
+        
         if (btnNew) {
             btnNew.removeAttribute('onclick'); 
             btnNew.onclick = (e) => {
                 e.preventDefault();
                 console.log("Iniciando modo registro desde UI principal...");
                 showRegisterMode();
+            };
+        }
+
+        if (btnTransfer) {
+            btnTransfer.removeAttribute('onclick'); 
+            btnTransfer.onclick = (e) => {
+                e.preventDefault();
+                console.log("Iniciando modo transferencia desde UI principal...");
+                TransferAccountRecord();
             };
         }
 
@@ -445,7 +463,7 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
             const formatOptions = { useGrouping: true, style: 'decimal' };
             
             // --- REGLA A: PRECISIÓN ALTA (+4 decimales) ---
-            if (cleanKey.endsWith('ML2') || cleanKey.includes('TASAREF')) {
+            if (cleanKey.endsWith('MONTOML2') || cleanKey.includes('TASAREF')) {
                 return new Intl.NumberFormat('es-ES', { 
                     ...formatOptions, 
                     minimumFractionDigits: 2, 
@@ -598,7 +616,7 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
         }
     }
 
-    function renderTable(data) {
+function renderTable(data) {
         const container = document.getElementById('data-table-container');
         if (!container) return;
         
@@ -606,17 +624,25 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
         
         const tableHeader = document.getElementById('table-header');
         const tableBody = document.getElementById('table-body');
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
         
-        // Numeración
+        // Obtenemos la configuración completa para validar visibilidad
+        const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+
+        // Numeración (#)
         const thId = document.createElement('th');
         thId.className = 'sticky-id-cell';
         thId.innerHTML = '<span>#</span>';
         tableHeader.appendChild(thId);
 
-        // Encabezados
+        // 1. GENERAR ENCABEZADOS
         tableConfig.columnOrder.forEach(h => {
             const cleanH = h.toUpperCase();
+            
+            // --- VALIDACIÓN DE VISIBILIDAD ---
+            const cfg = configMap[h] || {};
+            const visibility = String(cfg.visible || '').toLowerCase();
+            if (visibility !== 'x' && visibility !== 'xx') return; 
+            
             if (cleanH.endsWith('TYPEREG')) return;
 
             const th = document.createElement('th');
@@ -626,53 +652,49 @@ body:has(.mode-desktop) #detail-modal.modal-overlay {
             tableHeader.appendChild(th);
         });
 
-        // Filas
+        // 2. GENERAR FILAS
         data.forEach((row, idx) => {
             const tr = document.createElement('tr');
             tr.className = 'cursor-pointer hover:bg-blue-500/10 transition-colors';
+            
             tr.ondblclick = () => {
-                // 1. Creamos la estructura
                 const tableDataStorage = {
                     TABLA_ORIGEN: currentTableName,
                     IS_NEW: false,
                     DATOS_REGISTRO: row 
                 };
-
-                // 2. Guardamos en LocalStorage
                 localStorage.setItem('TABLE_DATA', JSON.stringify(tableDataStorage));
-
-                // 3. Visualización elegante en Consola
-                console.group("📝 Registro Seleccionado (SPA)");
-                console.log("Tabla Origen:", tableDataStorage.TABLA_ORIGEN);
-                console.log("Es Nuevo:", tableDataStorage.IS_NEW);
-                
-                // Mostramos solo la parte de los DATOS en la tabla para que sea legible
-                console.log("Contenido de DATOS_REGISTRO:");
-                console.table(tableDataStorage.DATOS_REGISTRO); 
-                
-                console.groupEnd();
-
                 openDetailModal(row);
             };
 
+            // Celda de numeración
             const tdIdx = document.createElement('td');
             tdIdx.className = 'sticky-id-cell text-center';
             tdIdx.textContent = idx + 1;
             tr.appendChild(tdIdx);
 
+            // Celdas de datos
             tableConfig.columnOrder.forEach(h => {
                 const cleanH = h.toUpperCase();
+
+                // --- MISMA VALIDACIÓN DE VISIBILIDAD QUE EN EL HEADER ---
+                const cfg = configMap[h] || {};
+                const visibility = String(cfg.visible || '').toLowerCase();
+                if (visibility !== 'x' && visibility !== 'xx') return;
+
                 if (cleanH.endsWith('TYPEREG')) return;
 
                 const td = document.createElement('td');
                 td.className = 'px-3';
                 td.style.textAlign = tableConfig.alignMap[h] || 'left';
+                
                 const val = getFormattedValue(h, row[h]);
                 td.innerHTML = highlightText(val, currentSearchTerm);
                 tr.appendChild(td);
             });
             tableBody.appendChild(tr);
         });
+
         if (window.lucide) lucide.createIcons();
     }
 
@@ -1345,10 +1367,15 @@ function applyFiltersAndSort() {
             }
         });
 
+        document.getElementById('btn-modal-save')?.classList.add('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden');
+        // El de "Regresar" (Return) suele estar siempre visible en modo lectura
+        document.getElementById('btn-modal-return')?.classList.remove('hidden');
+
         // 2. Re-vinculación de eventos (La "Verdad" del HTML)
         // Esto es vital porque disableButton pone los onclick en null
         document.getElementById('btn-modal-save').onclick = () => saveRecord();
-        document.getElementById('btn-modal-cancel').onclick = () => CancelForm();
+        document.getElementById('btn-modal-cancel').onclick = () => cancelActualForm();
         document.getElementById('btn-modal-return').onclick = () => closeDetailModal();
         
         const btnNew = document.querySelector('[title="Nuevo"]');
@@ -1366,19 +1393,50 @@ function applyFiltersAndSort() {
         if (window.lucide) lucide.createIcons();
     }
 
-    function CancelForm() {
-        // 1. Recuperar el estado previo del storage
+async function cancelActualForm() {
         const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const row = storageData.DATOS_REGISTRO;
+        const originalRow = storageData.DATOS_REGISTRO; // null si es registro nuevo
+        
+        // 1. Detectar si hay cambios en los inputs
+        const currentInputs = document.querySelectorAll('#detail-modal-content [data-field]');
+        let hasChanges = false;
 
-        // 2. Decisión de retorno
-        if (row) {
-            console.log("Cancelando edición/duplicado. Restaurando vista de lectura...");
-            // Al llamar a openDetailModal, se ejecuta normalizeToolbar() y se limpian los inputs
-            openDetailModal(row);
+        currentInputs.forEach(input => {
+            const field = input.getAttribute('data-field');
+            const currentValue = input.hasAttribute('data-raw') ? input.getAttribute('data-raw') : input.value;
+            const originalValue = originalRow && originalRow[field] !== undefined ? String(originalRow[field]) : "";
+            
+            // Si el valor actual no es vacío y no hay original, o si son diferentes
+            if (String(currentValue) !== originalValue && !(currentValue === "" && originalValue === "null")) {
+                // Pequeña excepción: si es registro nuevo y el valor es "0,00" o vacío, no lo contamos como cambio importante aún
+                if (!originalRow && (currentValue === "0" || currentValue === "")) return;
+                hasChanges = true;
+            }
+        });
+
+        // 2. Si hay cambios, pedimos confirmación usando tu SystemModal
+        if (hasChanges) {
+            const confirmed = await showSystemModal({
+                title: 'Cambios Pendientes',
+                text: '¿Estás seguro de que deseas descartar los cambios o avances?',
+                type: 'warning',
+                showCancel: true
+            });
+            
+            if (!confirmed) return; // El usuario decidió quedarse
+        }
+
+        // 3. Lógica de retorno
+        if (originalRow) {
+            // Caso: Veníamos de Editar o Duplicar -> Volvemos a la vista de lectura
+            console.log("Restaurando vista de lectura...");
+            openDetailModal(originalRow);
         } else {
-            console.log("Cancelando registro nuevo. Cerrando modal...");
+            // Caso: Registro Nuevo (showRegisterMode) -> Cerramos y refrescamos tabla
+            console.log("Cancelando registro nuevo. Volviendo a tabla principal...");
             closeDetailModal();
+            // Forzamos un render para asegurar que la interfaz esté limpia
+            renderTable(originalData); 
         }
     }
 
@@ -1405,6 +1463,7 @@ function applyFiltersAndSort() {
 
         // 2. Normalización de la Barra de Herramientas
         normalizeToolbar();
+        ['Cancelar'].forEach(disableButton);
         
         // 3. Ajuste estético para Modo Lectura
         document.getElementById('btn-modal-save')?.classList.add('hidden');
@@ -1444,25 +1503,29 @@ function applyFiltersAndSort() {
             const cleanKey = key.toUpperCase();
             const tablePrefix = currentTableName.split('_')[0].toUpperCase();
             const idFieldName = tablePrefix + 'ID';
-                    
-            // Omitimos nombres, status y el ID (que ya está en el título)
-            if (cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
             
+            // 1. Omitimos status (typereg) y el ID (que suele ir en el título)
+            if (cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
+            
+            // 2. Lógica de Visibilidad Forzada
             const cfg = configMap[cleanKey] || {};
-            if (String(cfg.visible).toLowerCase() !== 'x') return;
+            const visibility = String(cfg.visible || '').toLowerCase();
+            const isForced = cleanKey.includes('REGISTRO') || cleanKey.includes('MOVIMIENTO');
+
+            // Si no es 'x', ni 'xx', Y no es un campo forzado, omitimos.
+            if (visibility !== 'x' && visibility !== 'xx' && !isForced) return;
 
             const isDescription = cleanKey.includes('DESCRIPCION');
             const isNormalCase = cleanKey.includes('CONFIG');
 
             const item = document.createElement('div');
-            // Items-start para que el label no flote; justify-items-start fuerza la celda a la izquierda justify-items-start
+            // Mantenemos tu estructura de grid alineada a la izquierda
             item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
             
             let valueHTML = '';
 
+            // 3. Renderizado de Contenido
             if (isDescription) {
-                // TEXTAREA ORIGINAL BLOQUEADO
-                // Se agrega pointer-events-none para anular interacción y text-left para corregir centrado
                 valueHTML = `
                     <textarea 
                         readonly 
@@ -1471,9 +1534,12 @@ function applyFiltersAndSort() {
                         style="height: 60px; text-align: left !important; display: block !important;"
                     >${row[key] || ''}</textarea>`;
             } else {
-                // RESTO DE CAMPOS: Alineación consistente a la izquierda con justify-self-start
+                // Si es un campo forzado o 'xx', podrías darle un color sutilmente distinto 
+                // o mantenerlo blanco para lectura clara en el modal de detalle.
+                const textColor = isForced ? 'text-blue-400' : 'text-white';
+                
                 valueHTML = `
-                    <span class="text-white font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
+                    <span class="${textColor} font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
                         style="text-align: left !important;">
                         ${getFormattedValue(key, row[key])}
                     </span>`;
@@ -1512,6 +1578,7 @@ function applyFiltersAndSort() {
         document.getElementById('btn-modal-save')?.classList.remove('hidden');
         document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
         document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.add('hidden');
 
         const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
         const row = storageData.DATOS_REGISTRO;
@@ -1631,10 +1698,19 @@ function applyFiltersAndSort() {
         ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
         
         document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); // oculto botón
         document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.remove('hidden');
         // Aseguramos que el modal sea visible
         document.getElementById('detail-modal')?.classList.remove('hidden');
+
+        const btnReturn = document.getElementById('btn-modal-return');
+        if (btnReturn) {
+            btnReturn.onclick = (e) => {
+                e.preventDefault();
+                cancelActualForm();
+            };
+        }
 
         const btnCancel = document.getElementById('btn-modal-cancel');
         if (btnCancel) btnCancel.onclick = () => closeDetailModal();
@@ -1656,7 +1732,7 @@ function applyFiltersAndSort() {
             <div class="flex items-center justify-end w-full px-2 py-1">
                 <div class="flex items-center gap-2">
                     <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        BORRADOR
+                        BORRADOR NV
                     </span>
                     <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
                 </div>
@@ -1731,7 +1807,141 @@ function applyFiltersAndSort() {
         }, 200);
     }
 
-    function duplicateCurrentRecord() {
+    function TransferAccountRecord() {
+        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+        
+        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+            TABLA_ORIGEN: tableOrigin,
+            DATOS_REGISTRO: null 
+        }));
+
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); // Limpiamos primero
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
+        
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); // oculto botón
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        // Aseguramos que el modal sea visible
+        document.getElementById('detail-modal')?.classList.remove('hidden');
+
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        
+        // Normalización de configMap para búsqueda segura
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => {
+            configMap[k.toUpperCase()] = configMapRaw[k];
+        });
+        
+        content.innerHTML = '';
+
+        // 3. TÍTULO
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        BORRADOR TR
+                    </span>
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+                </div>
+            </div>`;
+
+        // 4. RENDERIZADO DINÁMICO DE CAMPOS               
+        // Usamos las llaves del configMap para construir el formulario de registro nuevo
+        Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key]; 
+            const cleanKey = key.toUpperCase();
+            
+            const visibility = String(cfg.visible).toLowerCase();
+            
+            // Si no tiene 'x' ni 'xx', no se muestra en absoluto
+            if (visibility !== 'x' && visibility !== 'xx') return;
+            
+            // Exclusiones técnicas
+            if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
+            if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO')) return;
+
+            // --- LÓGICA DE ESTADO ---
+            const isMovementField = cleanKey.includes('MOVIMIENTO');
+            const isReadOnly = visibility === 'xx' || cfg.editable === false;
+            
+            const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
+            const asterisco = isRequired && !isReadOnly ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            // Identificación de tipos para el renderizado
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+            const rowItem = document.createElement('div');
+            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-start hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            // Caso Especial: Es el campo de MOVIMIENTO en una Transferencia
+            if (isMovementField) {
+                const defaultValue = "TRANSFERENCIA";
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 py-0">
+                        <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">
+                            ${defaultValue}
+                        </span>
+                        <input type="hidden" data-field="${key}" value="${defaultValue}">
+                    </div>`;
+            } 
+            // Caso General: Campo Visible pero NO Editable (xx)
+            else if (isReadOnly) {
+                // Si es un registro nuevo, el valor suele ser vacío o 0, 
+                // pero lo mostramos como texto estático.
+                const val = isNumeric ? "0,00" : "";
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 py-0">
+                        <span class="text-sm text-gray-500 font-bold uppercase opacity-70">
+                            ${val}
+                        </span>
+                        <input type="hidden" data-field="${key}" value="${val}">
+                    </div>`;
+            }
+            // Caso General: Campo Editable (x)
+            else {
+                if (isDescription) {
+                    inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
+                } else if (isDate) {
+                    const today = new Date().toISOString().split('T')[0];
+                    inputHTML = `<input type="date" data-field="${key}" value="${today}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+                } else if (isNumeric) {
+                    inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
+                } else {
+                    inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+                }
+            }
+
+            rowItem.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+        // 5. RENDERIZACIÓN DE ICONOS Y FOCO
+        if (window.lucide) lucide.createIcons();
+        
+        setTimeout(() => {
+            const firstInput = content.querySelector('input, textarea');
+            if (firstInput) firstInput.focus();
+        }, 200);
+    }
+       
+function duplicateCurrentRecord() {
         const rawData = localStorage.getItem('TABLE_DATA');
         const dataObj = JSON.parse(rawData || '{}');
         const registroOriginal = dataObj.DATOS_REGISTRO;
@@ -1744,28 +1954,28 @@ function applyFiltersAndSort() {
         const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
         const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
 
-        // 1. PREPARACIÓN DE DATOS (Clonación sin ID)
+        // 1. PREPARACIÓN DE DATOS (Clonación conservando el original para comparar cambios)
         const registroParaDuplicar = { ...registroOriginal };
 
-        localStorage.setItem('TABLE_DATA', JSON.stringify({
-            ...dataObj,
-            DATOS_REGISTRO: registroParaDuplicar
-        }));
-
         // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); // Limpiamos primero
+        normalizeToolbar(); 
         ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-        
 
         document.getElementById('btn-modal-save')?.classList.remove('hidden');
         document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
         document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.add('hidden');
 
+        // AJUSTE CLAVE: Vinculación al validador seguro (Igual que en showRegisterMode)
         const btnCancel = document.getElementById('btn-modal-cancel');
         if (btnCancel) {
-            btnCancel.onclick = () => openDetailModal(registroOriginal);
+            btnCancel.onclick = (e) => {
+                e.preventDefault();
+                cancelActualForm(); 
+            };
         }
 
+       // RENDERIZADO DEL FORMULARIO
         const content = document.getElementById('detail-modal-content');
         const title = document.getElementById('detail-modal-title');
         const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
@@ -1867,6 +2077,7 @@ function applyFiltersAndSort() {
         if (window.lucide) lucide.createIcons();
     }
 
+    // no hace nada
     function restaurarVistaOriginal(datos) {
         if (!datos) {
             console.warn("restaurarVistaOriginal: No se recibieron datos para restaurar.");
