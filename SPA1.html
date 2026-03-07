@@ -154,13 +154,13 @@
                             autocomplete="off">
                         <i data-lucide="search" class="search-icon w-5 h-5 text-gray-500 dark:text-gray-300"></i>
                     </div>
-                    <button id="clear-search-btn" class="p-1.5 rounded-full text-yellow-500 hover:bg-gray-700 transition duration-150" title="Configurar Búsqueda">
+                    <button id="config-search-btn" class="p-0 rounded-full text-yellow-500 hover:bg-gray-700 transition duration-150" title="Configurar Búsqueda">
                         <i data-lucide="sliders-horizontal" class="w-8 h-8"></i>
                     </button>                    
-                    <button id="clear-search-btn" class="p-1.5 rounded-full text-red-500 hover:bg-gray-700 transition duration-150" title="Reiniciar Filtros y Ordenación">
+                    <button id="clear-search-btn" class="p-0 rounded-full text-red-500 hover:bg-gray-700 transition duration-150" title="Reiniciar Filtros y Ordenación">
                         <i data-lucide="x-circle" class="w-8 h-8"></i>
                     </button>
-                    <button id="reload-icon" class="p-1 rounded-full text-blue-400 hover:bg-gray-700 transition duration-150" title="Recargar Datos (Omitir Caché)">
+                    <button id="reload-icon" class="p-0 rounded-full text-blue-400 hover:bg-gray-700 transition duration-150" title="Recargar Datos (Omitir Caché)">
                         <i data-lucide="refresh-cw" class="w-8 h-8"></i>
                     </button>
                 </div>
@@ -311,6 +311,7 @@
     let TABLE_CACHE = { data: null, config: null, timestamp: 0, tableName: "" };
     const CACHE_DURATION = 15 * 60 * 1000; // 15 minutos en milisegundos
     let currentCurrency = 'VED'; // Moneda por defecto
+    let columnFilters = {};
 
     // 2. INICIALIZACIÓN
     document.addEventListener('DOMContentLoaded', () => {
@@ -516,6 +517,8 @@ function initUI() {
     function setupSearch() {
         const input = document.getElementById('search-input');
         const clear = document.getElementById('clear-search-btn');
+        const config = document.getElementById('config-search-btn');
+
         if(!input) return;
         input.addEventListener('input', (e) => {
             currentSearchTerm = e.target.value.toLowerCase();
@@ -525,6 +528,9 @@ function initUI() {
             input.value = '';
             currentSearchTerm = "";
             applyFiltersAndSort();
+        };
+        if(config) config.onclick = () => {
+            setColumnFilter();
         };
     }
 
@@ -820,6 +826,12 @@ function applyFiltersAndSort() {
     // 4. RENDERIZADO
     // renderTable se encarga de dibujar y llamar a updateMetrics() internamente
     renderTable(data);
+
+    // Ilumina el botón si hay filtros de columna activos
+    const hasColumnFilters = Object.keys(columnFilters).length > 0;
+    config.classList.toggle('text-blue-500', hasColumnFilters);
+    config.classList.toggle('text-yellow-500', !hasColumnFilters);
+
 }
 
     function updateStatusTag(n) {
@@ -2309,6 +2321,75 @@ function changeCurrency(currency, btn) {
 
     // 4. Actualizamos los números
     updateMetrics(); 
+}
+
+async function setColumnFilter(colId) {
+    const currentValue = columnFilters[colId] || '';
+    
+    const newValue = await showSystemModal({
+        title: `Filtrar: ${colId}`,
+        text: `Escribe el valor para buscar en esta columna:`,
+        showInput: true,
+        inputValue: currentValue,
+        type: 'info',
+        confirmText: 'Aplicar Filtro',
+        cancelText: 'Limpiar'
+    });
+
+    // Si newValue es null, el usuario canceló. 
+    // Si es "", el usuario limpió el filtro.
+    if (newValue === null) return; 
+
+    if (newValue === "") {
+        delete columnFilters[colId];
+    } else {
+        columnFilters[colId] = newValue.toLowerCase();
+    }
+
+    applyFiltersAndSort();
+    
+    // Opcional: Volver a mostrar el menú de filtros para seguir configurando
+    showFilterConfigModal(); 
+}
+
+async function showFilterConfigModal() {
+    if (!originalData || originalData.length === 0) return;
+
+    // Obtener las llaves de la tabla
+    const headers = Object.keys(originalData[0]);
+    
+    // Crear el HTML de la lista de columnas para el modal
+    let columnsHtml = `<div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-2">`;
+    
+    headers.forEach(header => {
+        const isActive = columnFilters[header] ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600';
+        const filterVal = columnFilters[header] ? `<span class="text-[10px] text-blue-400 block">${columnFilters[header]}</span>` : '';
+        
+        columnsHtml += `
+            <button onclick="setColumnFilter('${header}')" 
+                    class="flex items-center justify-between p-3 rounded-lg border ${isActive} hover:bg-gray-700 transition-colors text-left">
+                <div>
+                    <span class="text-sm font-medium text-gray-200">${header}</span>
+                    ${filterVal}
+                </div>
+                <i data-lucide="search-code" class="w-4 h-4 ${columnFilters[header] ? 'text-blue-500' : 'text-gray-500'}"></i>
+            </button>`;
+    });
+    
+    columnsHtml += `</div>`;
+
+    // Usar tu showSystemModal para mostrar la lista
+    // Nota: Si tu showSystemModal no acepta HTML personalizado, 
+    // podrías inyectar este HTML en el modal de detalles o uno genérico.
+    await showSystemModal({
+        title: 'Filtrar por Columna',
+        html: columnsHtml, // Asumiendo que tu modal soporta contenido HTML
+        type: 'info',
+        confirmText: 'Cerrar'
+    });
+    
+    // Re-ejecutar Lucide para los iconos nuevos dentro del modal
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 </script>
