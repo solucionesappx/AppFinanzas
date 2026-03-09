@@ -78,9 +78,44 @@
         .table-scroll-container { max-height: calc(100vh - 200px); } 
     }
 
+#columns-list-container {
+    max-height: 615px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+/* Scrollbar sutil */
+#columns-list-container::-webkit-scrollbar { width: 4px; }
+#columns-list-container::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+
+/* Ancho estricto: 80% de 500px = 400px */
+.config-modal-container {
+    width: 400px !important;
+    min-width: 400px !important;
+    min-height: 700px
+}
+
+/* Ajuste para que en pantallas muy pequeñas (menos de 400px) no se rompa */
+@media (max-width: 420px) {
+    .config-modal-container {
+        width: 95% !important;
+        min-width: auto !important;
+    }
+}
+
+/* Scroll sutil estilo la imagen */
+#columns-list-container::-webkit-scrollbar {
+    width: 5px;
+}
+#columns-list-container::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 10px;
+}
+#system-modal {
+    z-index: 9999 !important;
+}
 </style>
 
-    </head>
+</head>
 
 <body class="dark">
     <div id="app-container" class="mode-mobile shadow-xl">
@@ -99,8 +134,8 @@
                         Gestión de Datos: 
                         <span id="header-tienda-id" class="text-xl font-bold text-gray-200"></span>
                     </h2>
-                    <div class="w-full flex justify-center py-6">
-                        <div class="grid grid-cols-3 gap-16 w-full max-w-xl px-8 items-stretch">
+                    <div class="w-full flex justify-center py-4">
+                        <div class="grid grid-cols-3 gap-16 w-full max-w-8xl px-8 items-stretch">
 
                             <div class="metric-card flex items-center justify-center min-w-[70px] sm:min-w-[90px]">
                                 <i data-lucide="wallet" class="w-7 h-7 text-blue-500 flex-shrink-0"></i>
@@ -127,19 +162,19 @@
                             </div>        
                         </div>
                     </div>
-                    <div class="w-full max-w-4xl mx-auto px-8 mt-4">
+                    <div class="w-full max-w-3xl mx-auto px-8 mt-2">
                         <div class="metric-card bg-gray-900/60 border border-gray-500 p-1 rounded-xl w-full">
                             <div class="flex items-center w-full justify-between gap-1" id="currency-selector">
                                 <button onclick="changeCurrency('VED', this)"        
-                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-800 hover:text-gray-300 border border-transparent whitespace-nowrap">
+                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-500 hover:text-gray-300 border border-transparent whitespace-nowrap">
                                     VED
                                 </button>
                                 <button onclick="changeCurrency('USD', this)" 
-                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-800 hover:text-gray-300 border border-transparent whitespace-nowrap">
+                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-500 hover:text-gray-300 border border-transparent whitespace-nowrap">
                                     USD
                                 </button>
                                 <button onclick="changeCurrency('USDT', this)" 
-                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-800 hover:text-gray-300 border border-transparent whitespace-nowrap">
+                                    class="currency-btn flex-1 text-[10px] sm:text-xs font-black py-2.5 rounded-lg transition-all text-gray-500 hover:bg-gray-500 hover:text-gray-300 border border-transparent whitespace-nowrap">
                                     USDT
                                 </button>
                             </div>
@@ -154,13 +189,13 @@
                             autocomplete="off">
                         <i data-lucide="search" class="search-icon w-5 h-5 text-gray-500 dark:text-gray-300"></i>
                     </div>
-                    <button id="config-search-btn" class="p-0 rounded-full text-yellow-500 hover:bg-gray-700 transition duration-150" title="Configurar Búsqueda">
+                    <button id="config-search-btn" class="p-0 rounded-full text-yellow-500 hover:scale-110 transition-transform" title="Configurar Búsqueda">
                         <i data-lucide="sliders-horizontal" class="w-8 h-8"></i>
                     </button>                    
-                    <button id="clear-search-btn" class="p-0 rounded-full text-red-500 hover:bg-gray-700 transition duration-150" title="Reiniciar Filtros y Ordenación">
+                    <button id="clear-search-btn" class="p-0 rounded-full text-red-500 hover:scale-110 transition-transform" title="Reiniciar Filtros y Ordenación">
                         <i data-lucide="x-circle" class="w-8 h-8"></i>
                     </button>
-                    <button id="reload-icon" class="p-0 rounded-full text-blue-400 hover:bg-gray-700 transition duration-150" title="Recargar Datos (Omitir Caché)">
+                    <button id="reload-icon" class="p-0 rounded-full text-blue-400 hover:scale-110 transition-transform" title="Recargar Datos (Omitir Caché)">
                         <i data-lucide="refresh-cw" class="w-8 h-8"></i>
                     </button>
                 </div>
@@ -295,12 +330,64 @@
             </div>
         </div>
     </div>
+
+    <div id="column-config-panel" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        
+        <div class="config-modal-container flex flex-col shadow-2xl border border-gray-700 rounded-xl overflow-hidden bg-[#1a222e]">
+            
+            <div class="flex items-center justify-between p-4 bg-[#1e293b] border-b border-gray-800">
+                <div class="flex flex-col">
+                    <h3 class="text-blue-400 font-bold text-[13px] flex items-center gap-2">
+                        Configuración: <span id="config-table-title" class="text-gray-300">TD101_MAIN</span>
+                    </h3>
+                </div>
+            <div class="flex items-center gap-2">
+                <button id="clear-filter-btn" onclick="resetAllColumnFilters()" 
+                        class="text-gray-400 hover:text-red-400 hover:bg-red-500/10 p-0.5 rounded-lg hover:scale-[1.2] transition-all duration-200 antialiased"
+                        title="Limpiar todos los filtros">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+                
+                <button id="save-config-btn" onclick="saveCurrentConfig()" 
+                        class="text-green-500 hover:bg-green-500/10 p-0.5 rounded-lg hover:scale-[1.2] transition-all duration-200 antialiased"
+                        title="Guardar configuración">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                </button>
+                
+                <button onclick="document.getElementById('column-config-panel').classList.add('hidden')" 
+                        class="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-0.5 rounded-lg hover:scale-[1.2] transition-all duration-200 antialiased"
+                        title="Cerrar">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            </div>
+
+            <div id="columns-list-container" class="flex-grow overflow-y-auto p-4 space-y-2 bg-[#111827]">
+                <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border border-gray-700/50">
+
+                    <div class="flex-grow text-[12px] font-medium text-gray-300 uppercase tracking-tight">
+                        ID Doc
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-600 cursor-pointer"></i>
+                        <div class="w-5 h-5 bg-green-600/20 border border-green-500/50 rounded flex items-center justify-center">
+                            <i data-lucide="check" class="w-3 h-3 text-green-500 font-bold"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+   
     
 </body>
 <script>
     // 1. CONSTANTES Y ESTADO GLOBAL
     const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID'};
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbySY71ObLBUZeO9LwdOkH1Qh5Mmv-V-uws_Yvz_cN8L51baFWm9WgloRBCzteqBRCUi/exec';
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCNpyLy2e59m3A03v10PZKYSsRvyJz4llCk_6OWQPQV0yMotgTj303bXGcxTiClVmTGQ/exec";
     const DEFAULT_TABLE_NAME = 'TD101_MAIN';   
     let currentTableName = localStorage.getItem('LAST_VISITED_TABLE') || DEFAULT_TABLE_NAME;
     let originalData = []; 
@@ -312,12 +399,14 @@
     const CACHE_DURATION = 15 * 60 * 1000; // 15 minutos en milisegundos
     let currentCurrency = 'VED'; // Moneda por defecto
     let columnFilters = {};
+    let currentHeadersConfig = [];
+    let originalFiltersBackup = {}; // Para guardar el estado previo
 
     // 2. INICIALIZACIÓN
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index_SPA1.html');
+            window.location.replace('index.html');
             return;
         }
         
@@ -405,7 +494,7 @@ function initUI() {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
+    function logout(){localStorage.clear();window.location.href='index.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -454,65 +543,65 @@ function initUI() {
         return `${datePart} ${timePart}`;
     }
 
-    function getFormattedValue(key, value) {
-        // 1. Manejo de nulos o vacíos
-        if (value === null || value === undefined || value === '') return '';        
+function getFormattedValue(key, value) {
+    // 1. Manejo de nulos o vacíos
+    if (value === null || value === undefined || value === '') return '';        
+    
+    const cleanKey = String(key).toUpperCase();
+    let stringValue = String(value).trim();
+
+    // 2. Normalización de guiones
+    if (stringValue === '-') stringValue = '0';
+
+    // 3. EXCEPCIONES DE TEXTO (Configuración y EO)
+    if (cleanKey.endsWith('CONFIG')) {
+        return stringValue.replace(/([spdf])(\d+)/g, '$1<sup>$2</sup>');
+    }
+    if (cleanKey.substring(5, 7) === 'EO') return stringValue;
+
+    // 4. TRATAMIENTO DE IDs Y USUARIOS
+    if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTROUSER')) return stringValue;
+
+    // 5. FECHAS Y HORAS (Restaurado a tu lógica original)
+    if (cleanKey.includes('REGISTRODATA')) return formatDateTime(value);
+    if (cleanKey.includes('FECHA')) return formatDate(value);
+    
+    // 6. TRATAMIENTO NUMÉRICO (Corrección quirúrgica aquí)
+    // Antes de pasar por parseFloat, verificamos si es un código alfanumérico (letras + números)
+    const esAlfanumerico = /[a-zA-Z]/.test(stringValue) && /\d/.test(stringValue);
+    
+    if (esAlfanumerico) return stringValue; // Si es ZX4000X, sale aquí intacto.
+
+    const numValue = parseFloat(stringValue.replace(',', '.'));
+
+    if (!isNaN(numValue) && isFinite(numValue)) {
+        const formatOptions = { useGrouping: true, style: 'decimal' };
         
-        const cleanKey = String(key).toUpperCase();
-        let stringValue = String(value).trim();
-
-        // 2. Normalización de guiones a cero para proceso numérico
-        if (stringValue === '-') stringValue = '0';
-
-        // 3. EXCEPCIONES DE TEXTO (Configuración y EO)
-        if (cleanKey.endsWith('CONFIG')) {
-            return stringValue.replace(/([spdf])(\d+)/g, '$1<sup>$2</sup>');
-        }
-        if (cleanKey.substring(5, 7) === 'EO') return stringValue;
-
-        // 4. TRATAMIENTO DE IDs Y USUARIOS (No se formatean como números)
-        if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTROUSER')) return stringValue;
-
-        // 5. FECHAS Y HORAS
-        if (cleanKey.includes('REGISTRODATA')) return formatDateTime(value);
-        if (cleanKey.includes('FECHA')) return formatDate(value);
-        
-        // 6. TRATAMIENTO NUMÉRICO
-        // Convertimos a número manejando el caso de la coma como separador decimal
-        const numValue = parseFloat(stringValue.replace(',', '.'));
-
-        if (!isNaN(numValue) && isFinite(numValue)) {
-            const formatOptions = { useGrouping: true, style: 'decimal' };
-            
-            // --- REGLA A: PRECISIÓN ALTA (+4 decimales) ---
-            if (cleanKey.endsWith('MONTOML2') || cleanKey.includes('TASAREF')) {
-                return new Intl.NumberFormat('es-ES', { 
-                    ...formatOptions, 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 5 
-                }).format(numValue);
-            }
-
-            // --- REGLA B: IMPORTES, MONTOS (2 decimales fijos) ---
-            if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
-                
-                return new Intl.NumberFormat('es-ES', { 
-                    ...formatOptions, 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                }).format(numValue);
-            }
-
-            // --- FORMATO ESTÁNDAR PARA OTROS NÚMEROS ---
+        if (cleanKey.endsWith('MONTOML2') || cleanKey.includes('TASAREF')) {
             return new Intl.NumberFormat('es-ES', { 
                 ...formatOptions, 
-                minimumFractionDigits: (numValue === 0 ? 2 : 0), 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 5 
+            }).format(numValue);
+        }
+
+        if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+            return new Intl.NumberFormat('es-ES', { 
+                ...formatOptions, 
+                minimumFractionDigits: 2, 
                 maximumFractionDigits: 2 
             }).format(numValue);
         }
 
-        return value;
+        return new Intl.NumberFormat('es-ES', { 
+            ...formatOptions, 
+            minimumFractionDigits: (numValue === 0 ? 2 : 0), 
+            maximumFractionDigits: 2 
+        }).format(numValue);
     }
+
+    return value;
+}
 
     function setupSearch() {
         const input = document.getElementById('search-input');
@@ -530,201 +619,232 @@ function initUI() {
             applyFiltersAndSort();
         };
         if(config) config.onclick = () => {
-            setColumnFilter();
+            const panel = document.getElementById('column-config-panel');
+            if(panel.classList.contains('hidden')) {
+                renderColumnConfig();
+            } else {
+                closeConfigPanel();
+            }
         };
     }
 
     // 5. FETCH Y CARGA DE TABLAS
-    async function fetchData(tableName) {
-        const now = Date.now();
+async function fetchData(tableName) {
+    const now = Date.now();
+    
+    // 1. Verificación de Caché
+    if (!needsRefresh && 
+        TABLE_CACHE.tableName === tableName && 
+        (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
+        TABLE_CACHE.data) {
         
-        // 1. Verificación de Caché
-        if (!needsRefresh && 
-            TABLE_CACHE.tableName === tableName && 
-            (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
-            TABLE_CACHE.data) {
-            
-            console.log("Carga desde Caché > 15min");
-            renderTable(TABLE_CACHE.data);
-            updateStatusTag(tableName);
-            return;
-        }
-
-        // 2. Preparación de UI
-        const tag = document.getElementById('table-status-tag');
-        if (tag) {
-            tag.textContent = 'Actualizando...'; 
-            tag.classList.add('animate-pulse');
-
-            tag.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
-            tag.classList.add('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
-        }
-
-        toggleGlobalLoader(true, "Sincronizando Datos...");
-
-        const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
-        const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
-        const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}&userTienda=${encodeURIComponent(userTienda)}&appId=${encodeURIComponent(appId)}`;
-
-        try {
-            const response = await fetch(url);
-            const res = await response.json();
-
-            if (res.success) {
-                currentTableName = tableName;
-                originalData = res.data || [];
-                const configArray = res.fullConfig || res.config || [];
-                rawConfig = configArray; 
-
-                // Inicializamos los mapas que renderTable espera
-                const mappedConfig = {};
-                tableConfig.displayMap = {}; // Para nombres amigables en el header
-                tableConfig.alignMap = {};   // Para justificación de celdas
-                
-                const tablePrefix = String(tableName).split('_')[0].toUpperCase();
-
-                // 3. PROCESAMIENTO ÚNICO DE CONFIGURACIÓN
-                configArray.forEach(item => {
-                    const colKey = String(item.ID_Columna).trim();
-                    const colKeyUpper = colKey.toUpperCase();
-                    const marca = String(item.Visible_Encabezado || "").trim().toUpperCase();
-                    
-                    const isCalculated = item.Es_Calculado === true || String(item.Es_Calculado).toLowerCase() === "calc";
-                    const isXX = marca.includes('XX');
-                    const isPK = colKeyUpper === `${tablePrefix}ID`;
-                    const isSystem = colKeyUpper.includes('REGISTRO') || colKeyUpper.includes('NOMBREC');
-
-                    // Llenamos el objeto mappedConfig (para Modales)
-                    mappedConfig[colKey] = {
-                        label: item.Nombre_Encabezado || colKey,
-                        visible: item.Visible_Encabezado,
-                        align: item.Justificado_Campo || 'left',
-                        editable: !isCalculated && !isXX && !isPK && !isSystem, 
-                        Es_Obligatorio: item.Es_Obligatorio === true || String(item.Es_Obligatorio).toLowerCase() === "true",
-                        Es_Calculado: isCalculated,
-                        type: (colKeyUpper.includes('IDNOMBRE')) ? 'select' : (colKeyUpper.includes('FECHA')) ? 'date' : 'text'
-                    };
-
-                    // Llenamos los mapas para renderTable (Mundo Tabla)
-                    tableConfig.displayMap[colKey] = item.Nombre_Encabezado || colKey;
-                    tableConfig.alignMap[colKey] = item.Justificado_Campo || 'left';
-                });
-
-                // Validación de la configuración de la tabla
-                console.log(`📊 Configuración final para ${tableName}:`);
-                console.table(mappedConfig);
-
-                // 4. ACTUALIZACIÓN DE CACHÉ Y STORAGE
-                TABLE_CACHE = {
-                    data: originalData,
-                    config: mappedConfig,
-                    timestamp: Date.now(),
-                    tableName: tableName
-                };
-                
-                localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
-                localStorage.setItem('LAST_VISITED_TABLE', tableName);
-
-                tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
-                               
-                updateStatusTag(tableName);
-                renderTable(originalData);
-                needsRefresh = false; 
-            }
-
-            if (res.availableTables) {
-                // updateTableSelector se encarga de buscar los nombres amigables
-                updateTableSelector(res.availableTables); 
-            }
-        } catch (err) {
-            console.error("Error fetchData:", err);
-        } finally {
-            toggleGlobalLoader(false);
-        }
+        console.log("Carga desde Caché");
+        renderTable(TABLE_CACHE.data);
+        updateStatusTag(tableName);
+        return;
     }
+
+    // 2. Preparación de UI
+    const tag = document.getElementById('table-status-tag');
+    if (tag) {
+        tag.textContent = 'Actualizando...'; 
+        tag.classList.add('animate-pulse');
+        tag.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+        tag.classList.add('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
+    }
+
+    toggleGlobalLoader(true, "Sincronizando Datos...");
+
+    const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
+    const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
+    const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}&userTienda=${encodeURIComponent(userTienda)}&appId=${encodeURIComponent(appId)}`;
+
+    try {
+        const response = await fetch(url);
+        const res = await response.json();
+
+        if (res.success) {
+            currentTableName = tableName;
+            originalData = res.data || [];
+            const configArray = res.fullConfig || res.config || [];
+            rawConfig = configArray; 
+
+            // RESET DE MAPAS PARA EVITAR RESIDUOS
+            const mappedConfig = {};
+            tableConfig.displayMap = {}; 
+            tableConfig.alignMap = {};   
+            
+            const tablePrefix = String(tableName).split('_')[0].toUpperCase();
+
+            // 3. PROCESAMIENTO DE CONFIGURACIÓN DE COLUMNAS
+            configArray.forEach(item => {
+                const colKey = String(item.ID_Columna).trim();
+                const colKeyUpper = colKey.toUpperCase();
+                const marca = String(item.Visible_Encabezado || "").trim().toUpperCase();
+                
+                const isCalculated = item.Es_Calculado === true || String(item.Es_Calculado).toLowerCase() === "calc";
+                const isXX = marca.includes('XX');
+                const isPK = colKeyUpper === `${tablePrefix}ID`;
+                const isSystem = colKeyUpper.includes('REGISTRO') || colKeyUpper.includes('NOMBREC');
+
+                mappedConfig[colKey] = {
+                    label: item.Nombre_Encabezado || colKey,
+                    visible: item.Visible_Encabezado,
+                    align: item.Justificado_Campo || 'left',
+                    editable: !isCalculated && !isXX && !isPK && !isSystem, 
+                    Es_Obligatorio: item.Es_Obligatorio === true || String(item.Es_Obligatorio).toLowerCase() === "true",
+                    Es_Calculado: isCalculated,
+                    type: (colKeyUpper.includes('IDNOMBRE')) ? 'select' : (colKeyUpper.includes('FECHA')) ? 'date' : 'text'
+                };
+
+                tableConfig.displayMap[colKey] = item.Nombre_Encabezado || colKey;
+                tableConfig.alignMap[colKey] = item.Justificado_Campo || 'left';
+            });
+
+            // 4. PROCESAMIENTO DEL DICCIONARIO DINÁMICO (VALUE_DICTIONARY)
+            if (res.dictionary) {
+                const dictionaryMap = {};
+                res.dictionary.forEach(item => {
+                    // Llave compuesta: "NOMBRE_TABLA|ID_COLUMNA"
+                    const dictKey = `${item.Nombre_Tabla}|${item.Encabezado_Tabla}`.toUpperCase();
+                    try {
+                        // Intentamos parsear el JSON de valores ["V1", "V2"...]
+                        dictionaryMap[dictKey] = JSON.parse(item.Valores_Encabezado || "[]");
+                    } catch (e) {
+                        console.error("Error parseando diccionario para " + dictKey, e);
+                        dictionaryMap[dictKey] = [];
+                    }
+                });
+                
+                // Guardar en LocalStorage para uso en Modales
+                localStorage.setItem('VALUE_DICTIONARY', JSON.stringify(dictionaryMap));
+                console.log("📖 Diccionario de valores sincronizado");
+            }
+
+            // 5. ACTUALIZACIÓN DE CACHÉ Y ESTADOS
+            TABLE_CACHE = {
+                data: originalData,
+                config: mappedConfig,
+                timestamp: Date.now(),
+                tableName: tableName
+            };
+            
+            localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
+            localStorage.setItem('LAST_VISITED_TABLE', tableName);
+
+            tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
+                                           
+            updateStatusTag(tableName);
+            renderTable(originalData);
+            needsRefresh = false; 
+        }
+
+        if (res.availableTables) {
+            updateTableSelector(res.availableTables); 
+        }
+
+    } catch (err) {
+        console.error("Error fetchData:", err);
+    } finally {
+        toggleGlobalLoader(false);
+    }
+}
 
 function renderTable(data) {
-        const container = document.getElementById('data-table-container');
-        if (!container) return;
-        
-        container.innerHTML = `<table id="main-table"><thead><tr id="table-header"></tr></thead><tbody id="table-body"></tbody></table>`;
-        
-        const tableHeader = document.getElementById('table-header');
-        const tableBody = document.getElementById('table-body');
-        
-        // Obtenemos la configuración completa para validar visibilidad
-        const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const container = document.getElementById('data-table-container');
+    if (!container) return;
+    
+    container.innerHTML = `<table id="main-table"><thead><tr id="table-header"></tr></thead><tbody id="table-body"></tbody></table>`;
+    
+    const tableHeader = document.getElementById('table-header');
+    const tableBody = document.getElementById('table-body');
+    const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
 
-        // Numeración (#)
-        const thId = document.createElement('th');
-        thId.className = 'sticky-id-cell';
-        thId.innerHTML = '<span>#</span>';
-        tableHeader.appendChild(thId);
+    // Numeración
+    const thId = document.createElement('th');
+    thId.className = 'sticky-id-cell';
+    thId.innerHTML = '<span>#</span>';
+    tableHeader.appendChild(thId);
 
-        // 1. GENERAR ENCABEZADOS
+    // 1. ENCABEZADOS
+    tableConfig.columnOrder.forEach(h => {
+        const cleanH = h.toUpperCase();
+        const cfg = configMap[h] || {};
+        if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return; 
+        if (cleanH.endsWith('TYPEREG')) return;
+
+        const colFilterObj = currentHeadersConfig.find(c => c.id === h);
+        const hasActiveFilter = colFilterObj && colFilterObj.filterValue && colFilterObj.filterValue.trim() !== "";
+        let filterIndicator = hasActiveFilter ? `<span class="relative inline-flex items-center justify-center h-4 w-4 ml-1 flex-shrink-0"><span class="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75"></span><span class="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-red-600 text-[9px] font-bold text-white cursor-help shadow-sm leading-none">f</span></span>` : '';
+
+        const th = document.createElement('th');
+        th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group"; 
+        const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
+
+        th.innerHTML = `
+            <div class="grid grid-cols-[1fr_auto] items-center gap-2 w-full leading-tight">
+                <div class="flex items-center min-w-0">
+                    <span class="font-semibold uppercase tracking-wider text-[13px] text-blue-500 font-bold group-hover:whitespace-normal">
+                        ${tableConfig.displayMap[h] || h}
+                    </span>
+                    ${filterIndicator}
+                </div>
+                <div class="flex items-center justify-end w-5 h-5 flex-shrink-0">
+                    <i data-lucide="${iconName}" class="w-4 h-4 ${sortConfig.key === h ? 'text-blue-400 opacity-100' : 'opacity-80 group-hover:opacity-50'} transition-all"></i>
+                </div>
+            </div>`;
+            
+        th.onclick = () => handleSort(h);
+        tableHeader.appendChild(th);
+    });
+
+    // 2. FILAS
+    data.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer hover:bg-blue-500/10 transition-colors group border-b border-gray-700/50';
+        
+        tr.ondblclick = () => {
+            const tableDataStorage = { TABLA_ORIGEN: currentTableName, IS_NEW: false, DATOS_REGISTRO: row };
+            localStorage.setItem('TABLE_DATA', JSON.stringify(tableDataStorage));
+            if (typeof openDetailModal === 'function') openDetailModal(row);
+        };
+
+        const tdIdx = document.createElement('td');
+        tdIdx.className = 'sticky-id-cell text-center text-[13px] text-blue-500 font-medium';
+        tdIdx.textContent = idx + 1;
+        tr.appendChild(tdIdx);
+
         tableConfig.columnOrder.forEach(h => {
-            const cleanH = h.toUpperCase();
-            
-            // --- VALIDACIÓN DE VISIBILIDAD ---
             const cfg = configMap[h] || {};
-            const visibility = String(cfg.visible || '').toLowerCase();
-            if (visibility !== 'x' && visibility !== 'xx') return; 
-            
+            const cleanH = h.toUpperCase();
+            if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return;
             if (cleanH.endsWith('TYPEREG')) return;
 
-            const th = document.createElement('th');
-            const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
-            th.innerHTML = `<div class="header-content"><span>${tableConfig.displayMap[h] || h}</span><i data-lucide="${iconName}" class="w-4 h-4 opacity-30"></i></div>`;
-            th.onclick = () => handleSort(h);
-            tableHeader.appendChild(th);
-        });
-
-        // 2. GENERAR FILAS
-        data.forEach((row, idx) => {
-            const tr = document.createElement('tr');
-            tr.className = 'cursor-pointer hover:bg-blue-500/10 transition-colors';
+            const td = document.createElement('td');
+            td.className = 'px-3 py-1 text-[12px] text-gray-300 font-bold';
+            td.style.textAlign = tableConfig.alignMap[h] || 'left';
             
-            tr.ondblclick = () => {
-                const tableDataStorage = {
-                    TABLA_ORIGEN: currentTableName,
-                    IS_NEW: false,
-                    DATOS_REGISTRO: row 
-                };
-                localStorage.setItem('TABLE_DATA', JSON.stringify(tableDataStorage));
-                openDetailModal(row);
-            };
+            // Lógica de Formato
+            let val = getFormattedValue(h, row[h]);
 
-            // Celda de numeración
-            const tdIdx = document.createElement('td');
-            tdIdx.className = 'sticky-id-cell text-center';
-            tdIdx.textContent = idx + 1;
-            tr.appendChild(tdIdx);
+            // Forzar dd/mm/yyyy si es campo fecha
+            if (cleanH.includes('FECHA') || cleanH.includes('DATE')) {
+                const d = new Date(row[h]);
+                if (!isNaN(d.getTime())) {
+                    val = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                }
+            }
 
-            // Celdas de datos
-            tableConfig.columnOrder.forEach(h => {
-                const cleanH = h.toUpperCase();
-
-                // --- MISMA VALIDACIÓN DE VISIBILIDAD QUE EN EL HEADER ---
-                const cfg = configMap[h] || {};
-                const visibility = String(cfg.visible || '').toLowerCase();
-                if (visibility !== 'x' && visibility !== 'xx') return;
-
-                if (cleanH.endsWith('TYPEREG')) return;
-
-                const td = document.createElement('td');
-                td.className = 'px-3';
-                td.style.textAlign = tableConfig.alignMap[h] || 'left';
-                
-                const val = getFormattedValue(h, row[h]);
-                td.innerHTML = highlightText(val, currentSearchTerm);
-                tr.appendChild(td);
-            });
-            tableBody.appendChild(tr);
+            td.innerHTML = highlightText(val, currentSearchTerm);
+            tr.appendChild(td);
         });
+        
+        tableBody.appendChild(tr);
+    });
 
-        updateMetrics(); 
-        if (window.lucide) lucide.createIcons();
-    }
+    if (typeof updateMetrics === 'function') updateMetrics(); 
+    if (window.lucide) lucide.createIcons();
+}
 
     // Auxiliares finales
 function activateButtonVisuals(btn) {
@@ -764,74 +884,76 @@ function activateButtonVisuals(btn) {
     }
 
 function applyFiltersAndSort() {
-    // 1. Clonamos los datos originales para no mutar la fuente principal
+    // 1. Clonamos los datos originales
     let data = [...originalData];
     
-    // 2. LÓGICA DE FILTRADO (Buscador)
+    // 2. LÓGICA DE FILTRADO GLOBAL (Buscador superior)
     if (currentSearchTerm) {
+        const term = currentSearchTerm.toLowerCase();
         data = data.filter(row => 
             Object.entries(row).some(([key, v]) => {
                 const cleanKey = key.toUpperCase();
-                
-                // Exclusiones técnicas de la búsqueda para mejorar precisión
                 const isExcluded = cleanKey.includes('ID_INTERNO') || 
                                    cleanKey.includes('NOTAS') || 
-                                   cleanKey.includes('METODO') ||
-                                   cleanKey.endsWith('ID'); // Excluimos IDs largos que ensucian la búsqueda
+                                   cleanKey.endsWith('ID');
                 
-                if (isExcluded) return false;
-                if (v === null || v === undefined) return false;
+                if (isExcluded || v == null) return false;
 
-                // Buscamos tanto en el valor formateado (ej. "01/05/2024") 
-                // como en el valor crudo (ej. "2024-05-01")
                 const displayValue = String(getFormattedValue(key, v)).toLowerCase();
                 const rawValue = String(v).toLowerCase();
-
-                return displayValue.includes(currentSearchTerm) || rawValue.includes(currentSearchTerm);
+                return displayValue.includes(term) || rawValue.includes(term);
             })
         );
     }
-    
+
+    // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
+    // Solo filtramos si hay algún valor escrito en currentHeadersConfig
+    const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
+
+    if (activeColFilters.length > 0) {
+        data = data.filter(row => {
+            // "every" asegura que la fila cumpla TODOS los filtros de columna activos (Lógica AND)
+            return activeColFilters.every(filterObj => {
+                const cellValue = row[filterObj.id];
+                if (cellValue == null) return false;
+
+                const searchTarget = String(cellValue).toLowerCase();
+                const filterTerm = filterObj.filterValue.toLowerCase();
+                
+                return searchTarget.includes(filterTerm);
+            });
+        });
+    }
+
     // 3. LÓGICA DE ORDENAMIENTO (Sort)
     if (sortConfig.key) {
         data.sort((a, b) => {
-            let vA = a[sortConfig.key];
-            let vB = b[sortConfig.key];
+            let vA = a[sortConfig.key] ?? '';
+            let vB = b[sortConfig.key] ?? '';
             
-            // Tratamiento de nulos para que siempre queden al final
-            if (vA == null) vA = '';
-            if (vB == null) vB = '';
-            
-            // Si son números, comparamos como tales
             if (typeof vA === 'number' && typeof vB === 'number') {
                 return sortConfig.direction === 'asc' ? vA - vB : vB - vA;
             }
 
-            // Comparación de strings (fechas en formato ISO o texto)
             vA = String(vA).toLowerCase();
             vB = String(vB).toLowerCase();
 
-            if (sortConfig.direction === 'asc') {
-                return vA > vB ? 1 : (vA < vB ? -1 : 0);
-            } else {
-                return vA < vB ? 1 : (vA > vB ? -1 : 0);
-            }
+            return sortConfig.direction === 'asc' 
+                ? vA.localeCompare(vB) 
+                : vB.localeCompare(vA);
         });
     }
 
-    // --- PASO CRÍTICO PARA MÉTRICAS EN TIEMPO REAL ---
-    // Sincronizamos los datos filtrados con la variable que lee updateMetrics()
+    // --- ACTUALIZACIÓN DE ESTADO Y UI ---
     window.currentTableData = data; 
-    
-    // 4. RENDERIZADO
-    // renderTable se encarga de dibujar y llamar a updateMetrics() internamente
     renderTable(data);
 
-    // Ilumina el botón si hay filtros de columna activos
-    const hasColumnFilters = Object.keys(columnFilters).length > 0;
-    config.classList.toggle('text-blue-500', hasColumnFilters);
-    config.classList.toggle('text-yellow-500', !hasColumnFilters);
-
+    // Iluminar el botón de configuración si hay filtros de columna activos
+    const configBtn = document.getElementById('config-columns-btn'); // Ajusta al ID real de tu botón
+    if (configBtn) {
+        configBtn.classList.toggle('text-blue-400', activeColFilters.length > 0);
+        configBtn.classList.toggle('animate-pulse', activeColFilters.length > 0);
+    }
 }
 
     function updateStatusTag(n) {
@@ -1027,109 +1149,110 @@ function applyFiltersAndSort() {
         input.value = getFormattedValue(key, rawValue);
     }
 
-    function showSystemModal({
-        title,
-        text,
-        type = 'info',
-        showCancel = false,
-        isPrompt = false,
-        placeholder = '...',
-        inputType = 'text'
-    }) {
-        return new Promise(res => {
-            const m = document.getElementById('system-modal'),
-                ti = document.getElementById('sys-modal-title'),
-                te = document.getElementById('sys-modal-text'),
-                ic = document.getElementById('sys-modal-icon'),
-                ac = document.getElementById('sys-modal-actions'),
-                iCont = document.getElementById('sys-modal-input-container'),
-                input = document.getElementById('sys-modal-input');
+function setupHeadersConfig(tableName, result) {
+    const savedConfig = JSON.parse(localStorage.getItem(`config_${tableName}`) || 'null');
+    
+    // Usamos el displayMap de la respuesta para obtener el Friendly Name
+    currentHeadersConfig = result.columnOrder.map((id, idx) => {
+        const saved = savedConfig ? savedConfig.find(x => x.id === id) : null;
+        
+        // Prioridad: 1. Nombre guardado, 2. Mapa amigable, 3. ID técnico
+        const friendlyName = saved ? saved.label : (result.displayMap[id] || id);
 
-            // 1. Configuración de Título y Texto (HTML habilitado)
-            ti.textContent = title;
-            te.innerHTML = text; // Permite interpretar <br> y <b>
+        return {
+            id: id,
+            label: friendlyName, 
+            order: saved ? saved.order : idx + 1,
+            visible: saved ? saved.visible : true,
+            filterValue: saved ? (saved.filterValue || "") : ""
+        };
+    }).sort((a, b) => a.order - b.order);
+}
 
-            const colors = { 
-                warning: 'text-amber-400', 
-                info: 'text-blue-400', 
-                danger: 'text-red-400' 
-            };
-            const icons = { 
-                warning: 'alert-triangle', 
-                info: 'info', 
-                danger: 'trash-2' 
-            };
+function showSystemModal({
+    title,
+    text,
+    type = 'info',
+    showCancel = false,
+    isPrompt = false,
+    placeholder = 'Valor...',
+    inputType = 'text',
+    inputValue = '' // Nuevo parámetro para recibir el filtro actual
+}) {
+    return new Promise(res => {
+        const m = document.getElementById('system-modal'),
+            ti = document.getElementById('sys-modal-title'),
+            te = document.getElementById('sys-modal-text'),
+            ic = document.getElementById('sys-modal-icon'),
+            ac = document.getElementById('sys-modal-actions'),
+            iCont = document.getElementById('sys-modal-input-container'),
+            input = document.getElementById('sys-modal-input');
 
-            ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
-            ac.innerHTML = '';
+        ti.textContent = title;
+        te.innerHTML = text;
 
-            // 2. Manejo del Input (Modo Prompt)
-            if (isPrompt) {
-                iCont.classList.remove('hidden');
-                iCont.className = "relative mt-4 mb-6"; 
-                
-                input.value = '';
-                input.type = inputType; 
-                input.placeholder = placeholder;
-                
-                // Reset de botones toggle previos (para passwords)
-                const oldToggle = iCont.querySelector('.toggle-password-btn');
-                if (oldToggle) oldToggle.remove();
+        // Iconografía y Colores
+        const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
+        const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
+        ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
+        
+        ac.innerHTML = '';
 
-                if (inputType === 'password') {
-                    const toggleBtn = document.createElement('button');
-                    toggleBtn.type = "button";
-                    toggleBtn.className = "toggle-password-btn absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-400 transition-colors";
-                    toggleBtn.innerHTML = `<i data-lucide="eye" class="w-5 h-5"></i>`;
-                    
-                    toggleBtn.onclick = () => {
-                        const isPass = input.type === 'password';
-                        input.type = isPass ? 'text' : 'password';
-                        toggleBtn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" class="w-5 h-5"></i>`;
-                        if (window.lucide) lucide.createIcons();
-                    };
-                    iCont.appendChild(toggleBtn);
-                }
+        // Manejo del Input (Modo Prompt)
+        if (isPrompt) {
+            iCont.classList.remove('hidden');
+            iCont.className = "relative mt-4 mb-6 flex items-center"; 
+            
+            input.value = inputValue; 
+            input.type = inputType; 
+            input.placeholder = placeholder;
+            // Estilo del input según tu diseño
+            input.className = "w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-4 pr-10 text-sm text-white outline-none focus:border-blue-500";
 
-                setTimeout(() => input.focus(), 150);
-            } else {
-                iCont.classList.add('hidden');
-            }
+            // Limpiar botones previos (como el ojo de password o X antiguas)
+            const oldExtras = iCont.querySelectorAll('.absolute');
+            oldExtras.forEach(el => el.remove());
 
-            // 3. Control de cierre
-            const close = (val) => {
-                input.type = 'text'; 
-                m.classList.add('hidden');
-                res(val);
-            };
+            // Botón de limpieza rápida (X)
+            const clearBtn = document.createElement('button');
+            clearBtn.type = "button";
+            clearBtn.className = "absolute right-3 text-gray-500 hover:text-red-500 transition-colors";
+            clearBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+            clearBtn.onclick = () => { input.value = ''; input.focus(); };
+            iCont.appendChild(clearBtn);
 
-            // 4. Acciones (Botones)
-            if (showCancel || isPrompt) {
-                const bc = document.createElement('button');
-                bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium border-2 border-transparent hover:bg-red-700 hover:border-red-500 transition-all duration-300';
-                bc.textContent = 'Cancelar';
-                bc.onclick = () => close(isPrompt ? null : false);
-                ac.appendChild(bc);
-            }
+            setTimeout(() => input.focus(), 150);
+        } else {
+            iCont.classList.add('hidden');
+        }
 
-            const bp = document.createElement('button');
-            bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium border-2 border-transparent hover:bg-blue-800 hover:border-blue-400 transition-all duration-300';
-            bp.textContent = 'Aceptar';
-            bp.onclick = () => close(isPrompt ? input.value : true);
-            ac.appendChild(bp);
+        const close = (val) => {
+            m.classList.add('hidden');
+            res(val);
+        };
 
-            // Evento Enter
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    bp.click();
-                }
-            };
+        // Botón Cancelar
+        if (showCancel || isPrompt) {
+            const bc = document.createElement('button');
+            bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
+            bc.textContent = 'Cancelar';
+            bc.onclick = () => close(null);
+            ac.appendChild(bc);
+        }
 
-            m.classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-        });
-    }
+        // Botón Aceptar
+        const bp = document.createElement('button');
+        bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
+        bp.textContent = 'Aceptar';
+        bp.onclick = () => close(isPrompt ? input.value : true);
+        ac.appendChild(bp);
+
+        input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); bp.click(); } };
+
+        m.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    });
+}
 
     async function deleteRecord() {
         // 1. Extraer datos del Usuario Logueado (Usando tus nombres de localStorage)
@@ -1622,286 +1745,319 @@ async function cancelActualForm() {
         }
     }
 
-    function showEditMode() {
-        normalizeToolbar(); // Limpiamos la barra de herramientas
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+function showEditMode() {
+    normalizeToolbar(); // Limpiamos la barra de herramientas
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    console.log(dictionary);
+
+    // Normalización del configMap
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const row = storageData.DATOS_REGISTRO;
+    if (!row) return;
+
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const idFieldName = tablePrefix + 'ID';
+    content.innerHTML = '';
+
+    // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
+    const hiddenId = document.createElement('input');
+    hiddenId.type = 'hidden';
+    hiddenId.dataset.field = idFieldName;
+    hiddenId.value = row[idFieldName] || '';
+    content.appendChild(hiddenId);
+
+    // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
+    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+
+    title.innerHTML = `
+        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+            <div class="min-w-10 flex justify-start">
+                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
+            </div>
+            <div class="flex justify-center min-w-0">
+                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
+            </div>
+            <div id="status-icon-container" class="flex justify-end">
+                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+            </div>
+        </div>`;
+
+    // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
+    Object.keys(row).forEach(key => {
+        const cleanKey = key.toUpperCase();
         
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        // Exclusión de campos técnicos
+        if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
         
-        // Normalización del configMap
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+        const cfg = configMap[cleanKey] || {};
+        const visValue = String(cfg.visible || '').toLowerCase().trim();
 
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.add('hidden');
+        // REGLA: Si está vacío, no se renderiza.
+        if (visValue === "") return;
 
-        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const row = storageData.DATOS_REGISTRO;
-        if (!row) return;
+        // REGLA DE EDICIÓN: Solo si es exactamente 'x' y no es calculado.
+        const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
 
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-        const idFieldName = tablePrefix + 'ID';
-        content.innerHTML = '';
+        const istoggle = cleanKey.includes('TYPEREG');
+        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+        const isDescription = cleanKey.includes('DESCRIPCION');
+        
+        // Lógica de Diccionario: TABLA|CAMPO
+        const dictKey = `${currentTableName}|${key}`.toUpperCase();
+        const dictOptions = dictionary[dictKey];
+        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
+        );
 
-        // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
-        const hiddenId = document.createElement('input');
-        hiddenId.type = 'hidden';
-        hiddenId.dataset.field = idFieldName;
-        hiddenId.value = row[idFieldName] || '';
-        content.appendChild(hiddenId);
+        const item = document.createElement('div');
+        item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+        
+        let valueElement = '';
+        const val = row[key] || '';
 
-        // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
-        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+        // --- LÓGICA DE RENDERIZADO ---
+        if (!isEditable) {
+            // A. CAMPOS BLOQUEADOS
+            const rawValue = row[key] !== null ? row[key] : '';
+            valueElement = `
+                <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between">
+                    <span class="text-sm text-gray-500 font-bold uppercase tracking-tight opacity-90">
+                        ${getFormattedValue(key, rawValue)}
+                    </span>
+                    <input type="hidden" data-field="${key}" value="${rawValue}">
+                    <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                </div>`;
+        } 
+        else if (istoggle) {
+            // B. TOGGLE
+            const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
+            valueElement = `<div class="flex items-center gap-3"><button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}"><i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i></button><span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span><input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}"></div>`;
+        } 
+        else if (isSelect) {
+                    // C. SELECT (DICCIONARIO) - INTEGRADO CON VARIABLES CSS DE TEMA
+                    const optionsHtml = dictOptions.map(opt => {
+                        const isSelected = String(opt).trim().toUpperCase() === String(val).trim().toUpperCase();
+                        return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+                    }).join('');
 
-        title.innerHTML = `
-            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-                <div class="min-w-10 flex justify-start">
-                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                    <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
-                </div>
-                <div class="flex justify-center min-w-0">
-                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
-                </div>
-                <div id="status-icon-container" class="flex justify-end">
-                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-                </div>
-            </div>`;
-
-        // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
-        Object.keys(row).forEach(key => {
-            const cleanKey = key.toUpperCase();
-            
-            // Exclusión de campos técnicos
-            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-            
-            const cfg = configMap[cleanKey] || {};
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-
-            // REGLA: Si está vacío, no se renderiza.
-            if (visValue === "") return;
-
-            // REGLA DE EDICIÓN: Solo si es exactamente 'x' y no es calculado.
-            const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
-
-            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            const istoggle = cleanKey.includes('TYPEREG');
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-            const isDescription = cleanKey.includes('DESCRIPCION');
-
-            const item = document.createElement('div');
-            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-            
-            let valueElement = '';
-            const val = row[key] || '';
-
-            // --- LÓGICA DE RENDERIZADO ---
-
-            if (!isEditable) {
-                // A. CAMPOS BLOQUEADOS (Visibilidad 'xx', 'calculado', etc.)
-                const rawValue = row[key] !== null ? row[key] : '';
-                valueElement = `
-                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between">
-                        <span class="text-sm text-gray-500 font-bold uppercase tracking-tight opacity-90">
-                            ${getFormattedValue(key, rawValue)}
-                        </span>
-                        <input type="hidden" data-field="${key}" value="${rawValue}">
-                        <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-            } 
-            else if (istoggle) {
-                // B. TOGGLE
-                const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
-                valueElement = `<div class="flex items-center gap-3"><button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}"><i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i></button><span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span><input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}"></div>`;
-            } 
-            else if (isDate) {
-                // C. FECHA
-                let dateISO = '';
-                if (val) {
-                    dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
-                }
-                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            } 
-            else if (isNumeric) {
-                // D. NUMÉRICO
-                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
-            } 
-            else if (isDescription) {
-                // E. TEXTAREA
-                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${val}</textarea>`;
-            } 
-            else {
-                // F. TEXTO SIMPLE
-                valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+                    valueElement = `
+                        <div class="relative w-full group">
+                            <select data-field="${key}" 
+                                style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                                class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                                <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                                ${optionsHtml}
+                            </select>
+                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                            </div>
+                        </div>`;
+        }
+        else if (isDate) {
+            // D. FECHA
+            let dateISO = '';
+            if (val) {
+                dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
             }
-
-            item.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${valueElement}`;
-                
-            content.appendChild(item);
-        });
-
-        if (window.lucide) lucide.createIcons();
-
-    }
-
-    function showRegisterMode() {
-        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-        
-        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-            TABLA_ORIGEN: tableOrigin,
-            DATOS_REGISTRO: null 
-        }));
-
-        // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); // Limpiamos primero
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-        
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); // oculto botón
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.remove('hidden');
-        // Aseguramos que el modal sea visible
-        document.getElementById('detail-modal')?.classList.remove('hidden');
-
-        const btnReturn = document.getElementById('btn-modal-return');
-        if (btnReturn) {
-            btnReturn.onclick = (e) => {
-                e.preventDefault();
-                cancelActualForm();
-            };
+            valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+        } 
+        else if (isNumeric) {
+            // E. NUMÉRICO
+            valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
+        } 
+        else if (isDescription) {
+            // F. TEXTAREA
+            valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${val}</textarea>`;
+        } 
+        else {
+            // G. TEXTO SIMPLE
+            valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
         }
 
-        const btnCancel = document.getElementById('btn-modal-cancel');
-        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
-
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        
-        // Normalización de configMap para búsqueda segura
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => {
-            configMap[k.toUpperCase()] = configMapRaw[k];
-        });
-        
-        content.innerHTML = '';
-
-        // 3. TÍTULO
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <div class="flex items-center gap-2">
-                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        BORRADOR NV
-                    </span>
-                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-                </div>
-            </div>`;
-
-        // 4. RENDERIZADO DINÁMICO DE CAMPOS
-        // Usamos las llaves del configMap para construir el formulario de registro nuevo
-// 4. RENDERIZADO DINÁMICO DE CAMPOS (Nuevo Registro con Soporte X y XX)
-        Object.keys(configMap).forEach(key => {
-            const cfg = configMap[key]; 
-            const cleanKey = key.toUpperCase();
+        item.innerHTML = `
+            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                ${cfg.label || key}${asterisco}
+            </span>
+            ${valueElement}`;
             
-            // --- REGLA DE VISIBILIDAD ---
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-            if (visValue === "") return; // Si no tiene configuración, se oculta
+        content.appendChild(item);
+    });
 
-            // --- REGLA DE EXCLUSIÓN TÉCNICA ---
-            // ID y Auditoría no se muestran en el registro manual
-            if (cleanKey.endsWith('ID') || cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+    if (window.lucide) lucide.createIcons();
+}
 
-            // --- REGLA DE EDICIÓN ---
-            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
+function showRegisterMode() {
+    // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    
+    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+        TABLA_ORIGEN: tableOrigin,
+        DATOS_REGISTRO: null 
+    }));
 
-            // --- LÓGICA DE OBLIGATORIEDAD ---
-            const isRequired = cfg.Es_Obligatorio === true;
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+    // 2. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar(); 
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.remove('hidden');
+    document.getElementById('detail-modal')?.classList.remove('hidden');
 
-            // Identificación de tipos
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-            const rowItem = document.createElement('div');
-            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            // --- LÓGICA DE RENDERIZADO ---
-
-            if (!isEditable) {
-                // A. CAMPOS BLOQUEADOS EN REGISTRO (xx, Calculados, o TypeReg inicial)
-                // En un registro nuevo, estos suelen estar vacíos o con valor por defecto
-                const defaultValue = cleanKey.includes('TYPEREG') ? 'REGISTRADO' : ''; 
-                
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                        <span>${defaultValue || '---'}</span>
-                        <input type="hidden" data-field="${key}" value="${defaultValue}">
-                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-
-            } else if (isDescription) {
-                // B. TEXTAREA
-                inputHTML = `
-                    <textarea data-field="${key}" 
-                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
-
-            } else if (isDate) {
-                // C. FECHA (Por defecto hoy)
-                const hoy = new Date().toISOString().split('T')[0];
-                inputHTML = `
-                    <input type="date" data-field="${key}" value="${hoy}"
-                        class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-
-            } else if (isNumeric) {
-                // D. NUMÉRICO
-                inputHTML = `
-                    <input type="text" data-field="${key}" data-raw="0" value="0,00"
-                        onfocus="this.select()"
-                        oninput="applyAccountingMask(this)"
-                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-
-            } else {
-                // E. TEXTO SIMPLE
-                inputHTML = `
-                    <input type="text" data-field="${key}" 
-                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            }
-
-            rowItem.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
-        });
-
-        // 5. RENDERIZACIÓN DE ICONOS Y FOCO
-        if (window.lucide) lucide.createIcons();
-        
-        setTimeout(() => {
-            const firstInput = content.querySelector('input, textarea');
-            if (firstInput) firstInput.focus();
-        }, 200);
+    const btnReturn = document.getElementById('btn-modal-return');
+    if (btnReturn) {
+        btnReturn.onclick = (e) => {
+            e.preventDefault();
+            cancelActualForm();
+        };
     }
+
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => {
+        configMap[k.toUpperCase()] = configMapRaw[k];
+    });
+    
+    content.innerHTML = '';
+
+    // 3. TÍTULO
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <div class="flex items-center gap-2">
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    BORRADOR NV
+                </span>
+                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+            </div>
+        </div>`;
+
+    // 4. RENDERIZADO DINÁMICO DE CAMPOS
+    Object.keys(configMap).forEach(key => {
+        const cfg = configMap[key]; 
+        const cleanKey = key.toUpperCase();
+        
+        // --- REGLA DE VISIBILIDAD ---
+        const visValue = String(cfg.visible || '').toLowerCase().trim();
+        if (visValue === "") return;
+
+        // --- REGLA DE EXCLUSIÓN TÉCNICA ---
+        if (cleanKey.endsWith('ID') || cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+
+        // --- REGLA DE EDICIÓN ---
+        const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+        const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
+
+        // --- LÓGICA DE OBLIGATORIEDAD ---
+        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+        // --- DETECCIÓN DE SELECT (DICCIONARIO) ---
+        const currentTableClean = String(currentTableName).trim().toUpperCase();
+        const dictKey = `${currentTableClean}|${cleanKey}`;
+        const dictOptions = dictionary[dictKey];
+        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
+        );
+
+        const isDescription = cleanKey.includes('DESCRIPCION');
+        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+        const rowItem = document.createElement('div');
+        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+        
+        let inputHTML = '';
+
+        // --- LÓGICA DE RENDERIZADO ---
+        if (!isEditable) {
+            // A. CAMPOS BLOQUEADOS
+            inputHTML = `
+                <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
+                    <span>---</span>
+                    <input type="hidden" data-field="${key}" value="">
+                    <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                </div>`;
+
+        } else if (isSelect) {
+            // B. SELECT (DICCIONARIO)
+            const optionsHtml = dictOptions.map(opt => 
+                `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+            ).join('');
+
+            inputHTML = `
+                <div class="relative w-full group px-1">
+                    <select data-field="${key}" 
+                        style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                        class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                        <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                        ${optionsHtml}
+                    </select>
+                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                        <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                    </div>
+                </div>`;
+
+        } else if (isDescription) {
+            // C. TEXTAREA
+            inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
+
+        } else if (isDate) {
+            // D. FECHA
+            const hoy = new Date().toISOString().split('T')[0];
+            inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+
+        } else if (isNumeric) {
+            // E. NUMÉRICO
+            inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
+
+        } else {
+            // F. TEXTO SIMPLE
+            inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+        }
+
+        rowItem.innerHTML = `
+            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                ${cfg.label || key}${asterisco}
+            </span>
+            ${inputHTML}`;
+            
+        content.appendChild(rowItem);
+    });
+
+    if (window.lucide) lucide.createIcons();
+    
+    setTimeout(() => {
+        const firstInput = content.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }, 200);
+}
 
     function TransferAccountRecord() {
         // 1. LIMPIEZA DE DATOS Y RESET DE MODO
@@ -2038,158 +2194,187 @@ async function cancelActualForm() {
     }
        
 function duplicateCurrentRecord() {
-        const rawData = localStorage.getItem('TABLE_DATA');
-        const dataObj = JSON.parse(rawData || '{}');
-        const registroOriginal = dataObj.DATOS_REGISTRO;
-        
-        if (!registroOriginal) {
-            console.error("No se encontró el registro base para duplicar.");
-            return;
-        }
-
-        const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
-        const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
-
-        // 1. PREPARACIÓN DE DATOS (Clonación conservando el original para comparar cambios)
-        const registroParaDuplicar = { ...registroOriginal };
-
-        // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); 
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.add('hidden');
-
-        // AJUSTE CLAVE: Vinculación al validador seguro (Igual que en showRegisterMode)
-        const btnCancel = document.getElementById('btn-modal-cancel');
-        if (btnCancel) {
-            btnCancel.onclick = (e) => {
-                e.preventDefault();
-                cancelActualForm(); 
-            };
-        }
-
-       // RENDERIZADO DEL FORMULARIO
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        
-        content.innerHTML = '';
-
-        // 3. TÍTULO
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <div class="flex items-center gap-2">
-                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                        NUEVO (DUPLICADO)
-                    </span>
-                    <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-400"></i>
-                </div>
-            </div>`;
-
-        // 4. RENDERIZADO DINÁMICO
-        Object.keys(configMap).forEach(key => {
-            const cleanKey = key.toUpperCase();
-            const cfg = configMap[key] || configMap[cleanKey] || {};
-            
-            // Exclusión de campos técnicos
-            if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO') || cleanKey.endsWith('CUENTA2')) return;
-
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-            // REGLA: Si la visibilidad está vacía en la configuración, se ignora
-            if (visValue === "") return;
-
-            // REGLA DE EDICIÓN: Solo si es 'x' y no es calculado
-            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
-
-            const isRequired = cfg.Es_Obligatorio === true;
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            const istoggle = cleanKey.includes('TYPEREG');
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-            const rawValue = registroOriginal[key] !== undefined ? registroOriginal[key] : '';
-            const formattedValue = getFormattedValue(key, rawValue);
-            
-            const rowItem = document.createElement('div');
-            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            // --- LÓGICA DE RENDERIZADO ---
-
-            if (!isEditable && !istoggle) {
-                // A. CAMPOS BLOQUEADOS (Visibilidad 'xx', Calculados o Bloqueados)
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                        <span>${formattedValue}</span>
-                        <input type="hidden" data-field="${key}" value="${rawValue}">
-                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-
-            } else if (istoggle) {
-                // B. TOGGLE
-                const isBlocked = String(rawValue).toUpperCase() === 'BLOQUEADO';
-                inputHTML = `
-                    <div class="flex items-center gap-3 px-2 h-[24px]">
-                        <button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-95" id="btn-toggle-${key}">
-                            <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
-                        </button>
-                        <span id="label-${key}" class="text-[10px] font-bold uppercase tracking-wider ${isBlocked ? 'text-red-500' : 'text-green-500'}">
-                            ${isBlocked ? 'Bloqueado' : 'Registrado'}
-                        </span>
-                        <input type="hidden" data-field="${key}" id="input-${key}" value="${rawValue}">
-                    </div>`;
-
-            } else if (isDescription) {
-                // C. TEXTAREA
-                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${rawValue}</textarea>`;
-
-            } else if (isDate) {
-                // D. FECHA
-                let dateISO = '';
-                if (rawValue) {
-                    // Intento de parseo de fecha para el input type="date"
-                    const d = new Date(rawValue);
-                    if (!isNaN(d)) {
-                        dateISO = d.toISOString().split('T')[0];
-                    } else if (String(rawValue).includes('/')) {
-                        dateISO = rawValue.split('/').reverse().join('-');
-                    }
-                }
-                inputHTML = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-
-            } else if (isNumeric) {
-                // E. NUMÉRICO
-                inputHTML = `
-                    <div class="relative w-full">
-                        <input type="text" data-field="${key}" data-raw="${rawValue}" value="${formattedValue}"
-                            onfocus="this.select()"
-                            oninput="applyAccountingMask(this)"
-                            class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">
-                    </div>`;
-
-            } else {
-                // F. TEXTO SIMPLE
-                inputHTML = `<input type="text" data-field="${key}" value="${rawValue}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            }
-
-            rowItem.innerHTML = `
-                <span class="text-gray-500 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
-        });
-
-        if (window.lucide) lucide.createIcons();
+    const rawData = localStorage.getItem('TABLE_DATA');
+    const dataObj = JSON.parse(rawData || '{}');
+    const registroOriginal = dataObj.DATOS_REGISTRO;
+    
+    if (!registroOriginal) {
+        console.error("No se encontró el registro base para duplicar.");
+        return;
     }
+
+    const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
+    const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+
+    // 1. PREPARACIÓN DE DATOS
+    const registroParaDuplicar = { ...registroOriginal };
+
+    // 2. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar(); 
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    if (btnCancel) {
+        btnCancel.onclick = (e) => {
+            e.preventDefault();
+            cancelActualForm(); 
+        };
+    }
+
+    // RENDERIZADO DEL FORMULARIO
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    
+    // Normalización del configMap para búsqueda segura
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+    content.innerHTML = '';
+
+    // 3. TÍTULO
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <div class="flex items-center gap-2">
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                    NUEVO (DUPLICADO)
+                </span>
+                <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-400"></i>
+            </div>
+        </div>`;
+
+    // 4. RENDERIZADO DINÁMICO
+    Object.keys(configMap).forEach(key => {
+        const cleanKey = key.toUpperCase();
+        const cfg = configMap[cleanKey] || {};
+        
+        // Exclusión de campos técnicos
+        if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO') || cleanKey.endsWith('CUENTA2')) return;
+
+        const visValue = String(cfg.visible || '').toLowerCase().trim();
+        if (visValue === "") return;
+
+        // REGLAS DE EDICIÓN
+        const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+        const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
+
+        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+        // DETECCIÓN DE SELECT (DICCIONARIO)
+        const currentTableClean = String(currentTableName).trim().toUpperCase();
+        const dictKey = `${currentTableClean}|${cleanKey}`;
+        const dictOptions = dictionary[dictKey];
+        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
+        );
+
+        const istoggle = cleanKey.includes('TYPEREG');
+        const isDescription = cleanKey.includes('DESCRIPCION');
+        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+        const rawValue = registroOriginal[key] !== undefined ? registroOriginal[key] : '';
+        const formattedValue = getFormattedValue(key, rawValue);
+        
+        const rowItem = document.createElement('div');
+        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+        
+        let inputHTML = '';
+
+        // --- LÓGICA DE RENDERIZADO ---
+        if (!isEditable && !istoggle) {
+            // A. CAMPOS BLOQUEADOS
+            inputHTML = `
+                <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
+                    <span>${formattedValue}</span>
+                    <input type="hidden" data-field="${key}" value="${rawValue}">
+                    <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                </div>`;
+
+        } else if (istoggle) {
+            // B. TOGGLE
+            const isBlocked = String(rawValue).toUpperCase() === 'BLOQUEADO';
+            inputHTML = `
+                <div class="flex items-center gap-3 px-2 h-[24px]">
+                    <button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-95" id="btn-toggle-${key}">
+                        <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
+                    </button>
+                    <span id="label-${key}" class="text-[10px] font-bold uppercase tracking-wider ${isBlocked ? 'text-red-500' : 'text-green-500'}">
+                        ${isBlocked ? 'Bloqueado' : 'Registrado'}
+                    </span>
+                    <input type="hidden" data-field="${key}" id="input-${key}" value="${rawValue}">
+                </div>`;
+
+        } else if (isSelect) {
+            // C. SELECT (DICCIONARIO) - INTEGRADO CON VARIABLES CSS
+            const optionsHtml = dictOptions.map(opt => {
+                const isSelected = String(opt).trim().toUpperCase() === String(rawValue).trim().toUpperCase();
+                return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+            }).join('');
+
+            inputHTML = `
+                <div class="relative w-full group px-1">
+                    <select data-field="${key}" 
+                        style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                        class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                        <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                        ${optionsHtml}
+                    </select>
+                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                        <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                    </div>
+                </div>`;
+
+        } else if (isDescription) {
+            // D. TEXTAREA
+            inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${rawValue}</textarea>`;
+
+        } else if (isDate) {
+            // E. FECHA
+            let dateISO = '';
+            if (rawValue) {
+                if (String(rawValue).includes('/')) {
+                    dateISO = rawValue.split('/').reverse().join('-');
+                } else {
+                    const d = new Date(rawValue);
+                    if (!isNaN(d)) dateISO = d.toISOString().split('T')[0];
+                }
+            }
+            inputHTML = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+
+        } else if (isNumeric) {
+            // F. NUMÉRICO
+            inputHTML = `
+                <div class="relative w-full">
+                    <input type="text" data-field="${key}" data-raw="${rawValue}" value="${formattedValue}"
+                        onfocus="this.select()"
+                        oninput="applyAccountingMask(this)"
+                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">
+                </div>`;
+
+        } else {
+            // G. TEXTO SIMPLE
+            inputHTML = `<input type="text" data-field="${key}" value="${rawValue}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+        }
+
+        rowItem.innerHTML = `
+            <span class="text-gray-500 font-medium uppercase text-[10px] self-start flex items-center">
+                ${cfg.label || key}${asterisco}
+            </span>
+            ${inputHTML}`;
+            
+        content.appendChild(rowItem);
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
 
     // no hace nada
     function restaurarVistaOriginal(datos) {
@@ -2323,73 +2508,264 @@ function changeCurrency(currency, btn) {
     updateMetrics(); 
 }
 
-async function setColumnFilter(colId) {
-    const currentValue = columnFilters[colId] || '';
+function updateModalTitle(technicalName) {
+    const titleElement = document.getElementById('config-table-title');
+    if (!titleElement) return;
+
+    // 1. Recuperamos el mismo "Diccionario" que usa tu selector
+    const friendlyMap = JSON.parse(localStorage.getItem('TABLE_FRIENDLY_NAMES') || '{}');
+
+    // 2. Aplicamos exactamente tu misma lógica de validación:
+    // Si existe el ID técnico en el mapa y tiene un .label, lo usamos.
+    const label = (friendlyMap[technicalName] && friendlyMap[technicalName].label) 
+                ? friendlyMap[technicalName].label 
+                : technicalName;
+
+    // 3. Actualizamos el texto del encabezado en el modal
+    //titleElement.textContent = `${label} (${technicalName})`; // opcional
+    titleElement.textContent = label + " (" + technicalName + ")";      
     
-    const newValue = await showSystemModal({
-        title: `Filtrar: ${colId}`,
-        text: `Escribe el valor para buscar en esta columna:`,
-        showInput: true,
-        inputValue: currentValue,
-        type: 'info',
-        confirmText: 'Aplicar Filtro',
-        cancelText: 'Limpiar'
-    });
-
-    // Si newValue es null, el usuario canceló. 
-    // Si es "", el usuario limpió el filtro.
-    if (newValue === null) return; 
-
-    if (newValue === "") {
-        delete columnFilters[colId];
-    } else {
-        columnFilters[colId] = newValue.toLowerCase();
-    }
-
-    applyFiltersAndSort();
-    
-    // Opcional: Volver a mostrar el menú de filtros para seguir configurando
-    showFilterConfigModal(); 
 }
 
-async function showFilterConfigModal() {
-    if (!originalData || originalData.length === 0) return;
+function renderColumnConfig() {
+    const container = document.getElementById('columns-list-container');
+    const panel = document.getElementById('column-config-panel');
 
-    // Obtener las llaves de la tabla
-    const headers = Object.keys(originalData[0]);
-    
-    // Crear el HTML de la lista de columnas para el modal
-    let columnsHtml = `<div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-2">`;
-    
-    headers.forEach(header => {
-        const isActive = columnFilters[header] ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600';
-        const filterVal = columnFilters[header] ? `<span class="text-[10px] text-blue-400 block">${columnFilters[header]}</span>` : '';
+    // --- NUEVO: RESPALDO DE SEGURIDAD ---
+    // Si el panel está oculto, significa que el usuario lo está abriendo AHORA.
+    // Guardamos una copia profunda de los filtros actuales.
+    if (panel && panel.classList.contains('hidden')) {
+        originalFiltersBackup = currentHeadersConfig.map(col => ({
+            id: col.id,
+            filterValue: col.filterValue || ""
+        }));
+    }
+
+    // 1. Sincronizar el título del modal
+    if (typeof currentTableName !== 'undefined' && currentTableName) {
+        updateModalTitle(currentTableName);
+    }
+
+    // 2. Inicialización de currentHeadersConfig (Tu lógica intacta)
+    if (currentHeadersConfig.length === 0 && originalData.length > 0) {
+        const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
+        const filteredHeaders = rawHeaders.filter(header => {
+            const cleanKey = header.toUpperCase();
+            return !cleanKey.includes('REGISTRO'); 
+        });
+
+        currentHeadersConfig = filteredHeaders.map((header, index) => {
+            const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
+            return {
+                id: header,
+                label: (tableConfig.displayMap && tableConfig.displayMap[header]) ? tableConfig.displayMap[header] : header,
+                order: index + 1,
+                visible: colConfig ? colConfig.visible : true,
+                filterValue: ""
+            };
+        });
+    }
+
+    // 3. Renderizado del HTML
+    let html = "";
+    currentHeadersConfig.forEach((col, idx) => {
+        const hasFilter = col.filterValue && col.filterValue.trim() !== "";
+        const isVisible = col.visible !== false;
         
-        columnsHtml += `
-            <button onclick="setColumnFilter('${header}')" 
-                    class="flex items-center justify-between p-3 rounded-lg border ${isActive} hover:bg-gray-700 transition-colors text-left">
-                <div>
-                    <span class="text-sm font-medium text-gray-200">${header}</span>
-                    ${filterVal}
+        html += `
+            <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
+                <div class="flex flex-row gap-1 text-gray-300"> 
+                    <button onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="moveColumn(${idx}, 1)" ${idx === currentHeadersConfig.length - 1 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
                 </div>
-                <i data-lucide="search-code" class="w-4 h-4 ${columnFilters[header] ? 'text-blue-500' : 'text-gray-500'}"></i>
-            </button>`;
+                <div class="flex-grow min-w-0">
+                    <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
+                    ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
+                        <i data-lucide="${hasFilter ? 'search-x' : 'search'}" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="updateColVis(${idx}, ${!isVisible})" class="w-5 h-5 ${isVisible ? 'bg-green-600/20 border-green-500/50' : 'bg-gray-800 border-gray-700'} border rounded flex items-center justify-center transition-all hover:scale-110">
+                        <i data-lucide="check" class="w-3.5 h-3.5 ${isVisible ? 'text-green-500' : 'text-transparent'} font-black"></i>
+                    </button>
+                </div>
+            </div>`;
     });
-    
-    columnsHtml += `</div>`;
 
-    // Usar tu showSystemModal para mostrar la lista
-    // Nota: Si tu showSystemModal no acepta HTML personalizado, 
-    // podrías inyectar este HTML en el modal de detalles o uno genérico.
-    await showSystemModal({
-        title: 'Filtrar por Columna',
-        html: columnsHtml, // Asumiendo que tu modal soporta contenido HTML
-        type: 'info',
-        confirmText: 'Cerrar'
-    });
+    container.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+    panel.classList.remove('hidden');
+}
+
+function closeConfigPanel() {
+    // 1. Restaurar filtros desde el respaldo
+    if (originalFiltersBackup.length > 0) {
+        currentHeadersConfig.forEach(col => {
+            const backup = originalFiltersBackup.find(b => b.id === col.id);
+            if (backup) {
+                col.filterValue = backup.filterValue;
+            }
+        });
+    }
+
+    // 2. Ocultar el panel
+    document.getElementById('column-config-panel').classList.add('hidden');
+
+    // 3. Refrescar la tabla para revertir cualquier cambio visual "volátil"
+    // Esto asegura que si el usuario movió columnas o filtró y no guardó, la tabla regrese a su ser.
+    if (typeof applyFiltersAndSort === 'function') {
+        applyFiltersAndSort();
+    }
+}
+
+function moveColumn(idx, dir) {
+    const target = idx + dir;
+    // Validar que el movimiento esté dentro de los límites del array
+    if (target < 0 || target >= currentHeadersConfig.length) return;
+
+    // Intercambio de posiciones (Swap)
+    [currentHeadersConfig[idx], currentHeadersConfig[target]] = 
+    [currentHeadersConfig[target], currentHeadersConfig[idx]];
     
-    // Re-ejecutar Lucide para los iconos nuevos dentro del modal
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    // Actualizamos el índice de propiedad 'order' para mantener coherencia
+    currentHeadersConfig.forEach((col, i) => col.order = i + 1);
+    
+    // Refrescar solo el panel para ver el cambio de posición
+    renderColumnConfig();
+}
+
+async function setColumnFilter(idx) {
+    const col = currentHeadersConfig[idx];
+    
+    const newValue = await showSystemModal({
+        title: `Filtrar: ${col.label}`,
+        text: `Criterio para "${col.label}":`,
+        isPrompt: true,
+        inputValue: col.filterValue || '',
+        type: 'info',
+        showCancel: true
+    });
+
+    if (newValue !== null) {
+    currentHeadersConfig[idx].filterValue = newValue.trim();
+    renderColumnConfig(); // Esto refresca el modal para mostrar el texto "Filtrando: ..."
+}
+}
+
+function updateColVis(idx, val) { 
+    // val es un booleano (true para mostrar, false para ocultar)
+    currentHeadersConfig[idx].visible = val; 
+    renderColumnConfig(); 
+}
+
+async function saveCurrentConfig() {
+    if (!currentTableName) return;
+
+    // 1. Elementos de UI
+    const loader = document.getElementById('global-loader');
+    const configPanel = document.getElementById('column-config-panel');
+    const friendlyName = document.getElementById('config-table-title')?.textContent?.trim() || "Tabla";
+
+    // 2. Resolver mappedConfig (El corazón del problema)
+    // Intentamos obtener la variable global, si no existe, la cargamos del localStorage
+    let activeMappedConfig = (typeof mappedConfig !== 'undefined') 
+        ? mappedConfig 
+        : JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+
+    // Mostrar Loader
+    if (loader) loader.classList.remove('hidden');
+
+    try {
+        // --- A. ACTUALIZACIÓN DE LÓGICA LOCAL ---
+        
+        // Actualizamos el orden global de las columnas
+        tableConfig.columnOrder = currentHeadersConfig.map(col => col.id);
+
+        // Sincronizamos la visibilidad en el mapa de configuración
+        currentHeadersConfig.forEach(col => {
+            if (activeMappedConfig[col.id]) {
+                // Traducimos el booleano del modal al formato 'X' que espera renderTable
+                activeMappedConfig[col.id].visible = col.visible ? 'X' : '';
+            }
+        });
+
+        // 3. Persistencia local obligatoria para que renderTable lea los cambios
+        const configData = JSON.stringify(currentHeadersConfig);
+        localStorage.setItem(`config_${currentTableName}`, configData);
+        localStorage.setItem('TABLE_CONFIG', JSON.stringify(activeMappedConfig));
+
+        // Actualizamos la referencia global si existe para que otros procesos la vean
+        if (typeof mappedConfig !== 'undefined') {
+            mappedConfig = activeMappedConfig;
+        }
+
+        // --- B. SINCRONIZACIÓN CON EL BACKEND ---
+        const userId = localStorage.getItem(KEYS.USUARIO_ID); 
+        const userName = localStorage.getItem(KEYS.NOMBRE);    
+        const userTienda = localStorage.getItem(KEYS.TIENDA);  
+        const userTiendaID = localStorage.getItem(KEYS.TIENDA_ID);
+
+        const url = `${SCRIPT_URL}?action=saveTableConfig` + 
+                    `&userId=${encodeURIComponent(userId)}` + 
+                    `&userName=${encodeURIComponent(userName || 'Sin Nombre')}` +      
+                    `&userTienda=${encodeURIComponent(userTienda || 'General')}` +  
+                    `&userTiendaID=${encodeURIComponent(userTiendaID || 'N/A')}` + 
+                    `&tableName=${encodeURIComponent(currentTableName)}` + 
+                    `&configData=${encodeURIComponent(configData)}`;
+                    
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            if (configPanel) configPanel.classList.add('hidden');
+
+            showSystemModal({ 
+                title: 'Proceso Completado', 
+                text: `Configuración de "${currentTableName}" sincronizada.`, 
+                type: 'success' 
+            });
+
+            // CAMBIO CLAVE: No llamar a renderTable(originalData)
+            // Llamar a la función maestra que considera filtros y orden
+            applyFiltersAndSort(); 
+        }
+    } catch (e) { 
+        console.error("Error en saveCurrentConfig:", e);
+        // Fallback: renderizar aunque falle el servidor para que el usuario vea el cambio local
+        if (typeof renderTable === 'function') renderTable(originalData);
+    } finally {
+        if (loader) loader.classList.add('hidden');
+    }
+}
+
+function resetAllColumnFilters() {
+    // 1. Limpiar el estado de los filtros en el array de configuración
+    if (currentHeadersConfig) {
+        currentHeadersConfig.forEach(col => {
+            col.filterValue = "";
+        });
+    }
+
+    // 2. Refrescar la interfaz visual del modal
+    renderColumnConfig();
+
+    // 3. RE-APLICAR LA LÓGICA GLOBAL
+    // Llamamos a applyFiltersAndSort para que recalcule la tabla
+    // considerando el buscador global y el ordenamiento actual,
+    // pero ya sin los filtros de columna que acabamos de borrar.
+    if (typeof applyFiltersAndSort === 'function') {
+        applyFiltersAndSort();
+    } else if (typeof renderTable === 'function' && typeof originalData !== 'undefined') {
+        // Respaldo por si la función maestra no estuviera disponible
+        renderTable(originalData);
+    }
+
+    console.log("Filtros de columna limpiados. Tabla actualizada vía applyFiltersAndSort.");
 }
 
 </script>
