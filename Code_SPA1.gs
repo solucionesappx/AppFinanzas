@@ -2,17 +2,10 @@ const DATA_SS_ID = '1yusSqOtLMleYo27LP_fW9aGwLYCDmRZWh654Aliag5o';
 const CONFIG_SS_ID = '1s4N_pwkwPHMWXlNqcG9dQXm9_yg2jdKImkZdmghKIbs'; 
 const CONFIG_SHEET_NAME = 'ConfigViewTB';
 
-// Nombres técnicos exactos de tus hojas de datos
-const HOJAS = {
-  TPE: 'TD101_TPE',
-  VALENCIAS: 'TD102_VALENCIAS',
-  NOMENCLATURA: 'TD201_NOMENCLATURA',
-  EXCEPCIONES: 'TD202_EXCEPCIONES',
-  REACCIONES: 'TD301_REACCIONES'
-};
+//DriveApp.getFiles();
 
 /**
- * Función Principal Receptora de Apps Script
+ * Función Principal Receptora de Apps Script - Versión Completa con Diccionario
  */
 function doGet(e) {
   try {
@@ -20,6 +13,7 @@ function doGet(e) {
     const appTienda = e.parameter.appTienda;
     const userTienda = e.parameter.userTienda || 'DEFAULT';
 
+    // Acción para obtener nombres amigables (Selector de tablas)
     if (action === "getTableFriendlyNames") {
       const result = getTableFriendlyNames(appTienda || userTienda);
       return createJsonResponse(result);
@@ -39,7 +33,7 @@ function doGet(e) {
     if (!dataSheet) throw new Error("La tabla '" + tableName + "' no existe.");
     if (!configSheet) throw new Error("La hoja de configuración no existe.");
 
-    // 1. Obtener Configuración de Columnas
+    // --- 1. OBTENER CONFIGURACIÓN DE COLUMNAS ---
     const configRows = configSheet.getDataRange().getValues();
     const configData = configRows.slice(1);
     const configMap = {};
@@ -50,12 +44,12 @@ function doGet(e) {
         const rowAppTienda = String(row[0]).trim();
         const nombreTabla = String(row[1]).trim();
         
-        // Filtro para tablas disponibles (Correcto)
+        // Filtro para tablas disponibles por usuario
         if (rowAppTienda === userTienda && !availableTables.includes(nombreTabla)) {
           availableTables.push(nombreTabla);
         }
 
-        // CORRECCIÓN: Validar que el nombre de la tabla coincida Y que pertenezca al userTienda (App ID)
+        // Validación de coincidencia de tabla y tienda
         if (nombreTabla === tableName && rowAppTienda === userTienda) {
           const idColumna = String(row[2]).trim();
           const upperColId = idColumna.toUpperCase();
@@ -75,7 +69,7 @@ function doGet(e) {
         }
     });
 
-    // 2. Procesar Datos de la Tabla
+    // --- 2. PROCESAR DATOS DE LA TABLA ---
     const fullData = dataSheet.getDataRange().getValues();
     if (fullData.length === 0) throw new Error("La tabla está vacía.");
     
@@ -109,9 +103,35 @@ function doGet(e) {
       return obj;
     });
 
-    // 3. Sincronización Maestra
+    // --- 3. SINCRONIZACIÓN MAESTRA ---
     const masterFields = typeof syncAndGetMasterFields === "function" ? syncAndGetMasterFields(ssData) : []; 
 
+    // --- 4. CARGA DEL DICCIONARIO DINÁMICO (TV002_DICCIONARIO) ---
+    const dictionaryData = [];
+    try {
+      const dictSheet = ssData.getSheetByName("TV002_DICCIONARIO");
+      if (dictSheet) {
+        const dictValues = dictSheet.getDataRange().getValues();
+        const dictRows = dictValues.slice(1);
+
+        dictRows.forEach(row => {
+          const dictAppTienda = String(row[0]).trim();
+          // Filtramos para que el usuario solo reciba su tienda o valores globales
+          if (dictAppTienda === userTienda || dictAppTienda === 'GLOBAL') {
+            dictionaryData.push({
+              Nombre_Tabla: String(row[1]).trim(),
+              Encabezado_Tabla: String(row[2]).trim(),
+              Valores_Encabezado: String(row[3] || "[]").trim()
+            });
+          }
+        });
+      }
+    } catch (dictErr) {
+      console.error("Error cargando diccionario: " + dictErr.toString());
+      // No lanzamos error para no interrumpir el flujo principal de datos
+    }
+
+    // --- 5. RESPUESTA FINAL UNIFICADA ---
     return createJsonResponse({
       success: true,
       data: jsonData,
@@ -120,7 +140,8 @@ function doGet(e) {
       alignMap: finalAlignMap,
       fullConfig: fullConfigForFrontend,
       availableTables: availableTables,
-      masterFields: masterFields 
+      masterFields: masterFields,
+      dictionary: dictionaryData // Inyectado para que el frontend actualice VALUE_DICTIONARY
     });
 
   } catch (err) {
@@ -130,20 +151,74 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const params = e.parameter;
+    let params;
+
+    // 1. DETERMINAR EL ORIGEN DE LOS DATOS
+    // Si el contenido empieza con '{', intentamos JSON. Si no, usamos e.parameter
+    if (e.postData && e.postData.contents && e.postData.contents.charAt(0) === '{') {
+      params = JSON.parse(e.postData.contents);
+    } else {
+      // e.parameter ya contiene los datos parseados si vienen como formulario
+      params = e.parameter;
+    }
+
+    // 2. VERIFICACIÓN DE EMERGENCIA
+    if (!params || Object.keys(params).length === 0) {
+      throw new Error("No se recibieron parámetros en el Backend.");
+    }
+
+    // 3. PROCESAMIENTO DE IMAGEN (Aquí es donde ocurre la magia del Drive)
+    params = detectarYProcesarImagenes(params);
+
+    // 4. EJECUCIÓN DE ACCIONES
     const action = params.action;
     let result;
 
-    if (action === "registerDynamicDataTD") result = handleDynamicDataTD(params, "REGISTER");
-    else if (action === "editDynamicDataTD") result = handleDynamicDataTD(params, "EDIT");
-    else if (action === "deleteDynamicDataTD") result = handleDynamicDataTD(params, "DELETE"); // Nueva acción
-    else throw new Error("Acción desconocida");
+    if (action === "registerDynamicDataTD") {
+      result = handleDynamicDataTD(params, "REGISTER");
+    } else if (action === "editDynamicDataTD") {
+      result = handleDynamicDataTD(params, "EDIT");
+    } else if (action === "deleteDynamicDataTD") {
+      result = handleDynamicDataTD(params, "DELETE");
+    } else {
+      throw new Error("Acción desconocida: " + action);
+    }
 
     syncAndGetMasterFields();
     return result;
+
   } catch (err) {
-    return createJsonResponse({ success: false, message: err.toString() });
+    // Retornamos el error en formato JSON para que el Frontend lo muestre bonito
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      message: "Falla en doPost: " + err.toString() 
+    })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// Esta función debe estar en tu archivo .gs también
+function detectarYProcesarImagenes(datos) {
+  // Creamos una copia para no alterar el original mientras iteramos
+  let nuevosDatos = {};
+  for (let key in datos) {
+    nuevosDatos[key] = datos[key];
+  }
+
+  for (let key in nuevosDatos) {
+    if (key.toUpperCase().includes('IMAGEN')) {
+      let val = nuevosDatos[key];
+      if (typeof val === 'string' && val.indexOf('data:image') === 0) {
+        let nombreArchivo = "IMG_" + new Date().getTime() + ".jpg";
+        let driveUrl = uploadImageToDrive(val, nombreArchivo);
+        
+        if (driveUrl && !driveUrl.startsWith("Error")) {
+          // Reemplazamos el Base64 por la fórmula de imagen
+          nuevosDatos[key] = '=IMAGE("' + driveUrl + '")';
+        }
+      }
+    }
+  }
+  return nuevosDatos;
 }
 
 /**
@@ -153,4 +228,6 @@ function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+
 
