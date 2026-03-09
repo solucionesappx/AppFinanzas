@@ -21,15 +21,16 @@ function getTableFriendlyNames(appTienda) {
     const configMap = {};
     
     rows.forEach(row => {
-      const tienda = row[0]; // AppTienda
-      const nombreTecnico = row[1]; // Nombre_Tabla (ej: TD101_BASIC)
-      const nombreAmigable = row[2]; // Descripción_Tabla (ej: PRINCIPAL)
+      const tienda = String(row[0]).trim();
+      const nombreTecnico = String(row[1]).trim();
+      const nombreAmigable = String(row[2]).trim();
       
       if (!appTienda || tienda === appTienda) {
         configMap[nombreTecnico] = {
-          label: nombreAmigable,
-          c1: row[3], // ConfgTB01 (opcional para usos futuros)
-          c2: row[4]  // ConfgTB02
+          // Si nombreAmigable está vacío, mandamos el técnico con la marca de error
+          label: nombreAmigable ? nombreAmigable : `${nombreTecnico} (Sin nombre)`,
+          c1: row[3] || "",
+          c2: row[4] || ""
         };
       }
     });
@@ -103,6 +104,23 @@ function generateHeadersInventory() {
  * de todas las tablas y normalizando formatos numéricos.
  */
 function handleDynamicDataTD(params, mode) {
+  // --- DETECCIÓN DE IMAGEN ---
+  for (var key in params) {
+    if (key.toUpperCase().includes('IMAGEN')) {
+      var val = params[key];
+      if (typeof val === 'string' && val.indexOf('data:image') === 0) {
+        var nombreArchivo = "IMG_" + new Date().getTime() + ".jpg";
+        var driveUrl = uploadImageToDrive(val, nombreArchivo);
+        
+        if (driveUrl && !driveUrl.startsWith("Error")) {
+          // Guardamos la fórmula para que veas la miniatura en el Excel/Sheets
+          params[key] = '=IMAGE("' + driveUrl + '")';
+        }
+      }
+    }
+  }
+  // --- FIN DETECCIÓN ---
+
   const ssData = SpreadsheetApp.openById(DATA_SS_ID);
   const sheet = ssData.getSheetByName(params.TABLA_DESTINO);
   
@@ -315,36 +333,7 @@ function syncAndGetMasterFields() {
     }
   });
 
-  saveToValoresTable(ssData, masterStructure);
   return masterStructure;
-}
-
-function saveToValoresTable(ss, data) {
-  let sheet = ss.getSheetByName('TV001_VALORES') || ss.insertSheet('TV001_VALORES');
-  
-  // 1. Preparar la matriz completa empezando por los encabezados
-  const output = [['Nombre_Tabla', 'Encabezado_Tabla', 'Valores_Encabezado']];
-  
-  // 2. Si hay datos, transformarlos y agregarlos a la matriz
-  if (data && data.length > 0) {
-    const rows = data.map(item => [
-      item.Nombre_Tabla, 
-      item.Encabezado_Tabla, 
-      JSON.stringify(item.Valores_Encabezado)
-    ]);
-    output.push(...rows);
-  }
-
-  // 3. Limpiar el contenido previo (solo valores, mantiene formatos si los hay)
-  sheet.clearContents();
-
-  // 4. Escribir todo el bloque desde la fila 1, columna 1
-  // Esto garantiza que los encabezados se escriban siempre en la línea 1
-  sheet.getRange(1, 1, output.length, 3).setValues(output);
-  
-  // 5. Opcional: Proteger los encabezados (Negrita y Congelar fila)
-  sheet.getRange(1, 1, 1, 3).setFontWeight("bold");
-  if (sheet.getFrozenRows() === 0) sheet.setFrozenRows(1);
 }
 
 function extractUniqueValues(ss, sheetName, colName) {
@@ -354,4 +343,58 @@ function extractUniqueValues(ss, sheetName, colName) {
   const idx = data[0].indexOf(colName);
   if (idx === -1) return [];
   return [...new Set(data.slice(1).map(r => r[idx]).filter(c => c !== ""))].sort();
+}
+
+function forzarPermisos() {
+  const folder = DriveApp.getFolderById("1NzhsEJy51DQCPxOYDuK2rC8mXAICeOPF");
+  Logger.log("Acceso concedido a: " + folder.getName());
+}
+
+function uploadImageToDrive(base64Data, fileName) {
+  try {
+    var folderId = "1NzhsEJy51DQCPxOYDuK2rC8mXAICeOPF";
+    var folder = DriveApp.getFolderById(folderId);
+    
+    var parts = base64Data.split(',');
+    var contentType = parts[0].split(':')[1].split(';')[0];
+    var decoded = Utilities.base64Decode(parts[1]);
+    var blob = Utilities.newBlob(decoded, contentType, fileName);
+    
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    // Este formato de URL es el que permite que Google Sheets renderice la imagen
+    var directLink = "https://drive.google.com/uc?export=download&id=" + file.getId();
+    
+    return directLink;
+  } catch (e) {
+    console.error("Fallo en Drive: " + e.toString());
+    return "Error: " + e.toString();
+  }
+}
+
+/**
+ * Obtiene el diccionario de valores permitidos para los campos de la App.
+ * Se filtra por App_Tienda para que el usuario solo descargue lo que le compete.
+ */
+function getDictionaryData(appTienda) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("TV002_DICCIONARIO");
+  
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift(); // Quitamos los encabezados del Excel
+  
+  // Mapeamos los datos a objetos JSON
+  const dictionary = data.map(row => {
+    let obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  }).filter(item => {
+    // Filtramos para que solo traiga los del usuario actual o globales
+    return item.App_Tienda === appTienda || item.App_Tienda === 'GLOBAL';
+  });
+
+  return dictionary;
 }
