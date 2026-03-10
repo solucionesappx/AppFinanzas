@@ -206,9 +206,9 @@
                             <div class="relative mb-4">
                                 <i data-lucide="loader-2" class="w-10 h-10 text-blue-400 animate-spin"></i>
                             </div>
-                            <span class="text-blue-400 font-bold text-sm tracking-wider uppercase text-center">Actualizando Base de Datos</span>
+                            <span class="text-blue-400 font-bold text-sm tracking-wider uppercase text-center">Actualizando</span>
                             <p class="text-gray-400 text-[10px] mt-2 text-center leading-relaxed">
-                                Sincronizando registros con Google Sheets<br>Por favor, espere.
+                                Sincronizando.
                             </p>
                         </div>
                     </div>
@@ -406,7 +406,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index.html');
+            window.location.replace('index_SPA1.html');
             return;
         }
         
@@ -494,7 +494,7 @@ function initUI() {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -653,7 +653,7 @@ async function fetchData(tableName) {
         tag.classList.add('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
     }
 
-    toggleGlobalLoader(true, "Sincronizando Datos...");
+    toggleGlobalLoader(true, "Sincronizando Base de Datos...", "Por favor espere...");
 
     const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
     const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
@@ -853,23 +853,26 @@ function activateButtonVisuals(btn) {
     btn.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/40');
 }
     
-    function toggleGlobalLoader(show, message = "Actualizando Base de Datos") {
-        const loader = document.getElementById('global-loader');
-        if (!loader) return;
+function toggleGlobalLoader(show, title = "Actualizando", desc = "Sincronizando") {
+    const loader = document.getElementById('global-loader');
+    if (!loader) return;
 
-        const loaderLabel = loader.querySelector('span');
-        
-        if (show) {
-            if (loaderLabel) loaderLabel.textContent = message;
-            loader.classList.remove('hidden');
-        } else {
-            loader.classList.add('hidden');
-            // Opcional: Resetear el texto tras un pequeño delay para que no se vea el cambio mientras desaparece
-            setTimeout(() => {
-                if (loaderLabel) loaderLabel.textContent = "Actualizando Base de Datos";
-            }, 300);
-        }
+    const loaderTitle = loader.querySelector('span');
+    const loaderDesc = loader.querySelector('p');
+    
+    if (show) {
+        if (loaderTitle) loaderTitle.textContent = title;
+        if (loaderDesc) loaderDesc.innerHTML = desc;
+        loader.classList.remove('hidden');
+    } else {
+        loader.classList.add('hidden');
+        // Resetear tras el delay para que la próxima función no herede textos viejos y tome los valores por defecto (HTML)
+        setTimeout(() => {
+            if (loaderTitle) loaderTitle.textContent = "Actualizando";
+            if (loaderDesc) loaderDesc.innerHTML = "Sincronizando";
+        }, 300);
     }
+}
 
     function highlightText(text, term) {
         if (!term) return text;
@@ -1330,7 +1333,7 @@ function showSystemModal({
 
         try {
             // 1. Encendemos el loader manualmente para controlar todo el proceso
-            toggleGlobalLoader(true, "Eliminando Registro...");
+            toggleGlobalLoader(true, "Eliminando Registro...", "Procesando eliminación del registro seleccionado y actualizando base de datos...");
 
             // 2. Enviamos al backend (Fetch directo en lugar de llamar a executeSubmit si queremos control total)
             const r = await fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payload) });
@@ -1368,15 +1371,24 @@ function showSystemModal({
 
     async function executeSubmit(payload) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        toggleGlobalLoader(true);
-        const loaderLabel = document.querySelector('#global-loader span');
-        
-        if (loaderLabel) {
-            if (payload.action.includes('delete')) loaderLabel.textContent = "Eliminando Registro...";
-            else if (payload.action.includes('edit')) loaderLabel.textContent = "Actualizando Datos...";
-            else if (payload.action.includes('register')) loaderLabel.textContent = "Guardando Nuevo Registro...";
-            else loaderLabel.textContent = "Procesando Solicitud...";
+
+        // 1. Definimos los textos según la acción
+        let title = "Procesando Solicitud...";
+        let desc = "Sincronizando con la base de datos GAS...";
+
+        if (payload.action.includes('delete')) {
+            title = "Eliminando Registro...";
+            desc = "Eliminando el registro seleccionado del servidor...";
+        } else if (payload.action.includes('edit')) {
+            title = "Actualizando Datos...";
+            desc = "Guardando cambios realizados en el registro...";
+        } else if (payload.action.includes('register')) {
+            title = "Guardando Nuevo Registro...";
+            desc = "Creando registro en la base de datos...";
         }
+
+        // 2. Un solo llamado limpio que hace TODO el trabajo
+        toggleGlobalLoader(true, title, desc);
 
         try {
             const r = await fetch(GAS_URL, { 
@@ -1410,7 +1422,7 @@ function showSystemModal({
     }
 
     async function saveRecord() {
-        toggleGlobalLoader(true, 'Procesando datos...');
+        toggleGlobalLoader(true, "Creando Registro Nuevo...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
         const container = document.getElementById('detail-modal-content');
         const inputs = container.querySelectorAll('[data-field]');
@@ -2527,246 +2539,246 @@ function updateModalTitle(technicalName) {
     
 }
 
-function renderColumnConfig() {
-    const container = document.getElementById('columns-list-container');
-    const panel = document.getElementById('column-config-panel');
+    function renderColumnConfig() {
+        const container = document.getElementById('columns-list-container');
+        const panel = document.getElementById('column-config-panel');
 
-    // --- NUEVO: RESPALDO DE SEGURIDAD ---
-    // Si el panel está oculto, significa que el usuario lo está abriendo AHORA.
-    // Guardamos una copia profunda de los filtros actuales.
-    if (panel && panel.classList.contains('hidden')) {
-        originalFiltersBackup = currentHeadersConfig.map(col => ({
-            id: col.id,
-            filterValue: col.filterValue || ""
-        }));
-    }
-
-    // 1. Sincronizar el título del modal
-    if (typeof currentTableName !== 'undefined' && currentTableName) {
-        updateModalTitle(currentTableName);
-    }
-
-    // 2. Inicialización de currentHeadersConfig (Tu lógica intacta)
-    if (currentHeadersConfig.length === 0 && originalData.length > 0) {
-        const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
-        const filteredHeaders = rawHeaders.filter(header => {
-            const cleanKey = header.toUpperCase();
-            return !cleanKey.includes('REGISTRO'); 
-        });
-
-        currentHeadersConfig = filteredHeaders.map((header, index) => {
-            const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
-            return {
-                id: header,
-                label: (tableConfig.displayMap && tableConfig.displayMap[header]) ? tableConfig.displayMap[header] : header,
-                order: index + 1,
-                visible: colConfig ? colConfig.visible : true,
-                filterValue: ""
-            };
-        });
-    }
-
-    // 3. Renderizado del HTML
-    let html = "";
-    currentHeadersConfig.forEach((col, idx) => {
-        const hasFilter = col.filterValue && col.filterValue.trim() !== "";
-        const isVisible = col.visible !== false;
-        
-        html += `
-            <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
-                <div class="flex flex-row gap-1 text-gray-300"> 
-                    <button onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
-                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="moveColumn(${idx}, 1)" ${idx === currentHeadersConfig.length - 1 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
-                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <div class="flex-grow min-w-0">
-                    <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
-                    ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
-                </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
-                        <i data-lucide="${hasFilter ? 'search-x' : 'search'}" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="updateColVis(${idx}, ${!isVisible})" class="w-5 h-5 ${isVisible ? 'bg-green-600/20 border-green-500/50' : 'bg-gray-800 border-gray-700'} border rounded flex items-center justify-center transition-all hover:scale-110">
-                        <i data-lucide="check" class="w-3.5 h-3.5 ${isVisible ? 'text-green-500' : 'text-transparent'} font-black"></i>
-                    </button>
-                </div>
-            </div>`;
-    });
-
-    container.innerHTML = html;
-    if (window.lucide) lucide.createIcons();
-    panel.classList.remove('hidden');
-}
-
-function closeConfigPanel() {
-    // 1. Restaurar filtros desde el respaldo
-    if (originalFiltersBackup.length > 0) {
-        currentHeadersConfig.forEach(col => {
-            const backup = originalFiltersBackup.find(b => b.id === col.id);
-            if (backup) {
-                col.filterValue = backup.filterValue;
-            }
-        });
-    }
-
-    // 2. Ocultar el panel
-    document.getElementById('column-config-panel').classList.add('hidden');
-
-    // 3. Refrescar la tabla para revertir cualquier cambio visual "volátil"
-    // Esto asegura que si el usuario movió columnas o filtró y no guardó, la tabla regrese a su ser.
-    if (typeof applyFiltersAndSort === 'function') {
-        applyFiltersAndSort();
-    }
-}
-
-function moveColumn(idx, dir) {
-    const target = idx + dir;
-    // Validar que el movimiento esté dentro de los límites del array
-    if (target < 0 || target >= currentHeadersConfig.length) return;
-
-    // Intercambio de posiciones (Swap)
-    [currentHeadersConfig[idx], currentHeadersConfig[target]] = 
-    [currentHeadersConfig[target], currentHeadersConfig[idx]];
-    
-    // Actualizamos el índice de propiedad 'order' para mantener coherencia
-    currentHeadersConfig.forEach((col, i) => col.order = i + 1);
-    
-    // Refrescar solo el panel para ver el cambio de posición
-    renderColumnConfig();
-}
-
-async function setColumnFilter(idx) {
-    const col = currentHeadersConfig[idx];
-    
-    const newValue = await showSystemModal({
-        title: `Filtrar: ${col.label}`,
-        text: `Criterio para "${col.label}":`,
-        isPrompt: true,
-        inputValue: col.filterValue || '',
-        type: 'info',
-        showCancel: true
-    });
-
-    if (newValue !== null) {
-    currentHeadersConfig[idx].filterValue = newValue.trim();
-    renderColumnConfig(); // Esto refresca el modal para mostrar el texto "Filtrando: ..."
-}
-}
-
-function updateColVis(idx, val) { 
-    // val es un booleano (true para mostrar, false para ocultar)
-    currentHeadersConfig[idx].visible = val; 
-    renderColumnConfig(); 
-}
-
-async function saveCurrentConfig() {
-    if (!currentTableName) return;
-
-    // 1. Elementos de UI
-    const loader = document.getElementById('global-loader');
-    const configPanel = document.getElementById('column-config-panel');
-    const friendlyName = document.getElementById('config-table-title')?.textContent?.trim() || "Tabla";
-
-    // 2. Resolver mappedConfig (El corazón del problema)
-    // Intentamos obtener la variable global, si no existe, la cargamos del localStorage
-    let activeMappedConfig = (typeof mappedConfig !== 'undefined') 
-        ? mappedConfig 
-        : JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-
-    // Mostrar Loader
-    if (loader) loader.classList.remove('hidden');
-
-    try {
-        // --- A. ACTUALIZACIÓN DE LÓGICA LOCAL ---
-        
-        // Actualizamos el orden global de las columnas
-        tableConfig.columnOrder = currentHeadersConfig.map(col => col.id);
-
-        // Sincronizamos la visibilidad en el mapa de configuración
-        currentHeadersConfig.forEach(col => {
-            if (activeMappedConfig[col.id]) {
-                // Traducimos el booleano del modal al formato 'X' que espera renderTable
-                activeMappedConfig[col.id].visible = col.visible ? 'X' : '';
-            }
-        });
-
-        // 3. Persistencia local obligatoria para que renderTable lea los cambios
-        const configData = JSON.stringify(currentHeadersConfig);
-        localStorage.setItem(`config_${currentTableName}`, configData);
-        localStorage.setItem('TABLE_CONFIG', JSON.stringify(activeMappedConfig));
-
-        // Actualizamos la referencia global si existe para que otros procesos la vean
-        if (typeof mappedConfig !== 'undefined') {
-            mappedConfig = activeMappedConfig;
+        // --- NUEVO: RESPALDO DE SEGURIDAD ---
+        // Si el panel está oculto, significa que el usuario lo está abriendo AHORA.
+        // Guardamos una copia profunda de los filtros actuales.
+        if (panel && panel.classList.contains('hidden')) {
+            originalFiltersBackup = currentHeadersConfig.map(col => ({
+                id: col.id,
+                filterValue: col.filterValue || ""
+            }));
         }
 
-        // --- B. SINCRONIZACIÓN CON EL BACKEND ---
-        const userId = localStorage.getItem(KEYS.USUARIO_ID); 
-        const userName = localStorage.getItem(KEYS.NOMBRE);    
-        const userTienda = localStorage.getItem(KEYS.TIENDA);  
-        const userTiendaID = localStorage.getItem(KEYS.TIENDA_ID);
+        // 1. Sincronizar el título del modal
+        if (typeof currentTableName !== 'undefined' && currentTableName) {
+            updateModalTitle(currentTableName);
+        }
 
-        const url = `${SCRIPT_URL}?action=saveTableConfig` + 
-                    `&userId=${encodeURIComponent(userId)}` + 
-                    `&userName=${encodeURIComponent(userName || 'Sin Nombre')}` +      
-                    `&userTienda=${encodeURIComponent(userTienda || 'General')}` +  
-                    `&userTiendaID=${encodeURIComponent(userTiendaID || 'N/A')}` + 
-                    `&tableName=${encodeURIComponent(currentTableName)}` + 
-                    `&configData=${encodeURIComponent(configData)}`;
-                    
-        const response = await fetch(url);
-        const result = await response.json();
-
-        if (result.success) {
-            if (configPanel) configPanel.classList.add('hidden');
-
-            showSystemModal({ 
-                title: 'Proceso Completado', 
-                text: `Configuración de "${currentTableName}" sincronizada.`, 
-                type: 'success' 
+        // 2. Inicialización de currentHeadersConfig (Tu lógica intacta)
+        if (currentHeadersConfig.length === 0 && originalData.length > 0) {
+            const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
+            const filteredHeaders = rawHeaders.filter(header => {
+                const cleanKey = header.toUpperCase();
+                return !cleanKey.includes('REGISTRO'); 
             });
 
-            // CAMBIO CLAVE: No llamar a renderTable(originalData)
-            // Llamar a la función maestra que considera filtros y orden
-            applyFiltersAndSort(); 
+            currentHeadersConfig = filteredHeaders.map((header, index) => {
+                const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
+                return {
+                    id: header,
+                    label: (tableConfig.displayMap && tableConfig.displayMap[header]) ? tableConfig.displayMap[header] : header,
+                    order: index + 1,
+                    visible: colConfig ? colConfig.visible : true,
+                    filterValue: ""
+                };
+            });
         }
-    } catch (e) { 
-        console.error("Error en saveCurrentConfig:", e);
-        // Fallback: renderizar aunque falle el servidor para que el usuario vea el cambio local
-        if (typeof renderTable === 'function') renderTable(originalData);
-    } finally {
-        if (loader) loader.classList.add('hidden');
-    }
-}
 
-function resetAllColumnFilters() {
-    // 1. Limpiar el estado de los filtros en el array de configuración
-    if (currentHeadersConfig) {
-        currentHeadersConfig.forEach(col => {
-            col.filterValue = "";
+        // 3. Renderizado del HTML
+        let html = "";
+        currentHeadersConfig.forEach((col, idx) => {
+            const hasFilter = col.filterValue && col.filterValue.trim() !== "";
+            const isVisible = col.visible !== false;
+            
+            html += `
+                <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
+                    <div class="flex flex-row gap-1 text-gray-300"> 
+                        <button onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                            <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="moveColumn(${idx}, 1)" ${idx === currentHeadersConfig.length - 1 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
+                        ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
+                            <i data-lucide="${hasFilter ? 'search-x' : 'search'}" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="updateColVis(${idx}, ${!isVisible})" class="w-5 h-5 ${isVisible ? 'bg-green-600/20 border-green-500/50' : 'bg-gray-800 border-gray-700'} border rounded flex items-center justify-center transition-all hover:scale-110">
+                            <i data-lucide="check" class="w-3.5 h-3.5 ${isVisible ? 'text-green-500' : 'text-transparent'} font-black"></i>
+                        </button>
+                    </div>
+                </div>`;
         });
+
+        container.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        panel.classList.remove('hidden');
     }
 
-    // 2. Refrescar la interfaz visual del modal
-    renderColumnConfig();
+    function closeConfigPanel() {
+        // 1. Restaurar filtros desde el respaldo
+        if (originalFiltersBackup.length > 0) {
+            currentHeadersConfig.forEach(col => {
+                const backup = originalFiltersBackup.find(b => b.id === col.id);
+                if (backup) {
+                    col.filterValue = backup.filterValue;
+                }
+            });
+        }
 
-    // 3. RE-APLICAR LA LÓGICA GLOBAL
-    // Llamamos a applyFiltersAndSort para que recalcule la tabla
-    // considerando el buscador global y el ordenamiento actual,
-    // pero ya sin los filtros de columna que acabamos de borrar.
-    if (typeof applyFiltersAndSort === 'function') {
-        applyFiltersAndSort();
-    } else if (typeof renderTable === 'function' && typeof originalData !== 'undefined') {
-        // Respaldo por si la función maestra no estuviera disponible
-        renderTable(originalData);
+        // 2. Ocultar el panel
+        document.getElementById('column-config-panel').classList.add('hidden');
+
+        // 3. Refrescar la tabla para revertir cualquier cambio visual "volátil"
+        // Esto asegura que si el usuario movió columnas o filtró y no guardó, la tabla regrese a su ser.
+        if (typeof applyFiltersAndSort === 'function') {
+            applyFiltersAndSort();
+        }
     }
 
-    console.log("Filtros de columna limpiados. Tabla actualizada vía applyFiltersAndSort.");
-}
+    function moveColumn(idx, dir) {
+        const target = idx + dir;
+        // Validar que el movimiento esté dentro de los límites del array
+        if (target < 0 || target >= currentHeadersConfig.length) return;
+
+        // Intercambio de posiciones (Swap)
+        [currentHeadersConfig[idx], currentHeadersConfig[target]] = 
+        [currentHeadersConfig[target], currentHeadersConfig[idx]];
+        
+        // Actualizamos el índice de propiedad 'order' para mantener coherencia
+        currentHeadersConfig.forEach((col, i) => col.order = i + 1);
+        
+        // Refrescar solo el panel para ver el cambio de posición
+        renderColumnConfig();
+    }
+
+    async function setColumnFilter(idx) {
+        const col = currentHeadersConfig[idx];
+        
+        const newValue = await showSystemModal({
+            title: `Filtrar: ${col.label}`,
+            text: `Criterio para "${col.label}":`,
+            isPrompt: true,
+            inputValue: col.filterValue || '',
+            type: 'info',
+            showCancel: true
+        });
+
+        if (newValue !== null) {
+        currentHeadersConfig[idx].filterValue = newValue.trim();
+        renderColumnConfig(); // Esto refresca el modal para mostrar el texto "Filtrando: ..."
+    }
+    }
+
+    function updateColVis(idx, val) { 
+        // val es un booleano (true para mostrar, false para ocultar)
+        currentHeadersConfig[idx].visible = val; 
+        renderColumnConfig(); 
+    }
+
+    async function saveCurrentConfig() {
+        if (!currentTableName) return;
+
+        // 1. Elementos de UI
+        const loader = document.getElementById('global-loader');
+        const configPanel = document.getElementById('column-config-panel');
+        const friendlyName = document.getElementById('config-table-title')?.textContent?.trim() || "Tabla";
+
+        // 2. Resolver mappedConfig (El corazón del problema)
+        // Intentamos obtener la variable global, si no existe, la cargamos del localStorage
+        let activeMappedConfig = (typeof mappedConfig !== 'undefined') 
+            ? mappedConfig 
+            : JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+
+        // Mostrar Loader
+        if (loader) loader.classList.remove('hidden');
+
+        try {
+            // --- A. ACTUALIZACIÓN DE LÓGICA LOCAL ---
+            
+            // Actualizamos el orden global de las columnas
+            tableConfig.columnOrder = currentHeadersConfig.map(col => col.id);
+
+            // Sincronizamos la visibilidad en el mapa de configuración
+            currentHeadersConfig.forEach(col => {
+                if (activeMappedConfig[col.id]) {
+                    // Traducimos el booleano del modal al formato 'X' que espera renderTable
+                    activeMappedConfig[col.id].visible = col.visible ? 'X' : '';
+                }
+            });
+
+            // 3. Persistencia local obligatoria para que renderTable lea los cambios
+            const configData = JSON.stringify(currentHeadersConfig);
+            localStorage.setItem(`config_${currentTableName}`, configData);
+            localStorage.setItem('TABLE_CONFIG', JSON.stringify(activeMappedConfig));
+
+            // Actualizamos la referencia global si existe para que otros procesos la vean
+            if (typeof mappedConfig !== 'undefined') {
+                mappedConfig = activeMappedConfig;
+            }
+
+            // --- B. SINCRONIZACIÓN CON EL BACKEND ---
+            const userId = localStorage.getItem(KEYS.USUARIO_ID); 
+            const userName = localStorage.getItem(KEYS.NOMBRE);    
+            const userTienda = localStorage.getItem(KEYS.TIENDA);  
+            const userTiendaID = localStorage.getItem(KEYS.TIENDA_ID);
+
+            const url = `${SCRIPT_URL}?action=saveTableConfig` + 
+                        `&userId=${encodeURIComponent(userId)}` + 
+                        `&userName=${encodeURIComponent(userName || 'Sin Nombre')}` +      
+                        `&userTienda=${encodeURIComponent(userTienda || 'General')}` +  
+                        `&userTiendaID=${encodeURIComponent(userTiendaID || 'N/A')}` + 
+                        `&tableName=${encodeURIComponent(currentTableName)}` + 
+                        `&configData=${encodeURIComponent(configData)}`;
+                        
+            const response = await fetch(url);
+            const result = await response.json();
+
+            if (result.success) {
+                if (configPanel) configPanel.classList.add('hidden');
+
+                showSystemModal({ 
+                    title: 'Proceso Completado', 
+                    text: `Configuración de "${currentTableName}" sincronizada.`, 
+                    type: 'success' 
+                });
+
+                // CAMBIO CLAVE: No llamar a renderTable(originalData)
+                // Llamar a la función maestra que considera filtros y orden
+                applyFiltersAndSort(); 
+            }
+        } catch (e) { 
+            console.error("Error en saveCurrentConfig:", e);
+            // Fallback: renderizar aunque falle el servidor para que el usuario vea el cambio local
+            if (typeof renderTable === 'function') renderTable(originalData);
+        } finally {
+            if (loader) loader.classList.add('hidden');
+        }
+    }
+
+    function resetAllColumnFilters() {
+        // 1. Limpiar el estado de los filtros en el array de configuración
+        if (currentHeadersConfig) {
+            currentHeadersConfig.forEach(col => {
+                col.filterValue = "";
+            });
+        }
+
+        // 2. Refrescar la interfaz visual del modal
+        renderColumnConfig();
+
+        // 3. RE-APLICAR LA LÓGICA GLOBAL
+        // Llamamos a applyFiltersAndSort para que recalcule la tabla
+        // considerando el buscador global y el ordenamiento actual,
+        // pero ya sin los filtros de columna que acabamos de borrar.
+        if (typeof applyFiltersAndSort === 'function') {
+            applyFiltersAndSort();
+        } else if (typeof renderTable === 'function' && typeof originalData !== 'undefined') {
+            // Respaldo por si la función maestra no estuviera disponible
+            renderTable(originalData);
+        }
+
+        console.log("Filtros de columna limpiados. Tabla actualizada vía applyFiltersAndSort.");
+    }
 
 </script>
 </body>
