@@ -32,6 +32,7 @@
     .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
     .search-highlight { background-color: rgba(59, 130, 246, 0.4); color: #ffffff; border-radius: 2px; padding: 0 2px; font-weight: bold; }
     .footer-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.75rem; color:var(--txt); cursor:pointer; flex: 1; }
+    .footer-btn:hover { color:#152c94; }
     .footer-btn.active { color:var(--p-soft); font-weight:700; }
     .btn-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; filter: grayscale(1); }
     .custom-date-input::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.8) sepia(100%) saturate(500%) hue-rotate(180deg); opacity: 0.9; transition: opacity 0.2s; }
@@ -253,10 +254,10 @@
         </main>
 
         <footer id="app-footer" class="bottom-0 h-18 border-t flex items-center justify-around px-2 py-1">
-            <button class="footer-btn" data-section="Base"><i data-lucide="house-plus" class="w-6 h-6"></i><span>Base</span></button>
-            <button id="btn-datos" class="footer-btn active" data-section="Datos"><i data-lucide="atom" class="w-6 h-6"></i><span>Datos</span></button>
-            <button id="btn-agregar" class="footer-btn" data-section="Crear"><i data-lucide="flask-conical" class="w-6 h-6"></i><span>Reacciones</span></button>
-            <button class="footer-btn" data-section="Balanceo"><i data-lucide="component" class="w-6 h-6"></i><span>Balanceo</span></button>
+            <button class="footer-btn" data-section="Base"><i data-lucide="house" class="w-6 h-6"></i><span>Inicio</span></button>
+            <button id="btn-datos" class="footer-btn" data-section="Datos"><i data-lucide="database" class="w-6 h-6"></i><span>Datos</span></button>
+            <button id="btn-Resumen" class="footer-btn" data-section="Resumen"><i data-lucide="hand-coins" class="w-6 h-6"></i><span>Resumén</span></button>
+            <button class="footer-btn" data-section="Perfil"><i data-lucide="user" class="w-6 h-6"></i><span>Perfil</span></button>
         </footer>
     </div>
 
@@ -434,25 +435,31 @@ function initUI() {
     const currencyButtons = document.querySelectorAll('#currency-selector .currency-btn');
     
     currencyButtons.forEach(btn => {
-        // Si el texto del botón (quitando espacios) es "VED", lo activamos
         if (btn.textContent.trim() === 'VED') {
-            btn.classList.remove('text-gray-500'); // Tu HTML usa text-gray-500
-            btn.classList.add('bg-blue-600', 'text-white');
+            activateButtonVisuals(btn); // Usamos tu nueva función aquí
         } else {
-            // Aseguramos que los demás estén en estado inactivo
-            btn.classList.add('text-gray-500');
-            btn.classList.remove('bg-blue-600', 'text-white');
+            deactivateButtonVisuals(btn); // Y la de limpieza aquí
         }
     });
 
-    // 4. BOTONES DEL FOOTER (Navegación)
-    document.querySelectorAll('.footer-btn').forEach(b => {
-        b.onclick = () => {
-            const NAV = {'Base':'Base_SPA1.html','Datos':'SPA1.html'};
-            const s = b.getAttribute('data-section');
-            if(NAV[s]) window.location.href = NAV[s];
-        };
-    });
+    // 4. BOTONES DEL FOOTER (Navegación y Estado Activo)
+        document.querySelectorAll('.footer-btn').forEach(b => {
+            const section = b.getAttribute('data-section');
+
+            // Lógica de Navegación
+            b.onclick = () => {
+                const NAV = {'Base': 'Base_SPA1.html', 'Datos': 'SPA1.html', 'Perfil': 'PerfilUser_SPA1.html'};
+                if (NAV[section]) window.location.href = NAV[section];
+            };
+
+            // Lógica de Activación Visual:
+            // Como estamos en la sección de Datos, activamos el botón que coincida
+            if (section === 'Datos') {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
 
     // 5. BOTÓN DE RECARGA FORZADA
     const btnReload = document.getElementById('reload-icon');
@@ -553,10 +560,12 @@ function getFormattedValue(key, value) {
     // 2. Normalización de guiones
     if (stringValue === '-') stringValue = '0';
 
-    // 3. EXCEPCIONES DE TEXTO (Configuración y EO)
-    if (cleanKey.endsWith('CONFIG')) {
-        return stringValue.replace(/([spdf])(\d+)/g, '$1<sup>$2</sup>');
+    // 3. EXCEPCIONES DE TEXTO (Configuración, EO y Identificadores)
+    // Excepción para Números de cuenta, Tarjetas y Referencias
+    if (cleanKey.includes('NUMERO') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
+        return stringValue; 
     }
+
     if (cleanKey.substring(5, 7) === 'EO') return stringValue;
 
     // 4. TRATAMIENTO DE IDs Y USUARIOS
@@ -848,9 +857,17 @@ function renderTable(data) {
 
     // Auxiliares finales
 function activateButtonVisuals(btn) {
-    btn.classList.remove('text-gray-400');
-    // Añadimos fondo azul, texto blanco Y la sombra
-    btn.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/40');
+    // Limpiamos el estado inactivo
+    btn.classList.remove('text-gray-500', 'text-gray-400');
+    // Aplicamos el nuevo look (Gris + Sombra)
+    btn.classList.add('bg-gray-600', 'text-white');
+}
+
+function deactivateButtonVisuals(btn) {
+    // Quitamos el look activo
+    btn.classList.remove('bg-gray-600', 'text-white');
+    // Volvemos al estado gris base del HTML
+    btn.classList.add('text-gray-500');
 }
     
 function toggleGlobalLoader(show, title = "Actualizando", desc = "Sincronizando") {
@@ -2497,24 +2514,21 @@ function updateMetrics() {
     });
 }
 
-function changeCurrency(currency, btn) {
+function changeCurrency(currency, btnElement) {
     currentCurrency = currency;
     
-    // 1. Buscamos el contenedor para limitar el efecto solo a estos botones
+    // 1. Buscamos el contenedor
     const container = document.getElementById('currency-selector');
     if (!container) return;
 
-    // 2. Limpiamos TODAS las clases de estado activo de TODOS los botones del grupo
+    // 2. Limpiamos TODOS los botones usando la función de ayuda
     container.querySelectorAll('.currency-btn').forEach(b => {
-        // Quitamos fondo, color de texto y AMBAS clases de sombra
-        b.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/40');
-        // Agregamos el color gris de inactivo
-        b.classList.add('text-gray-400');
+        deactivateButtonVisuals(b);
     });
     
-    // 3. Aplicamos el estado activo (incluyendo la sombra) SOLO al botón clickeado
-    btn.classList.remove('text-gray-400');
-    btn.classList.add('bg-blue-600', 'text-white');
+    // 3. Activamos el botón clickeado usando la función de ayuda
+    // Esto aplicará automáticamente: bg-gray-600, text-white y las sombras
+    activateButtonVisuals(btnElement);
 
     // 4. Actualizamos los números
     updateMetrics(); 
