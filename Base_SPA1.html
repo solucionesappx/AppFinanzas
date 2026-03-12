@@ -118,7 +118,7 @@
         if(window.lucide)lucide.createIcons();
     }
     async function loadContent(s){
-        const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html','Perfil':'PerfilUser_SPA1.html'};
+        const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html',Resumen: 'Resumen_SPA1.html', Perfil:'PerfilUser_SPA1.html'};
         if(NAV[s]) window.location.href=NAV[s];
     }     
     function showSystemModal({title,text,type='info'}){
