@@ -107,7 +107,7 @@
         applyViewMode(localStorage.getItem(KEYS.VIEW_MODE) || 'mobile');
         document.querySelectorAll('.footer-btn').forEach(b => b.onclick = () => loadContent(b.getAttribute('data-section')));
         document.querySelectorAll('.footer-btn').forEach(btn => {
-        if(btn.getAttribute('data-section') === 'Perfil') { btn.classList.add('active');} else {btn.classList.remove('active');}
+        if(btn.getAttribute('data-section') === 'Base') { btn.classList.add('active');} else {btn.classList.remove('active');}
     });
     }
     function toggleView(){const m=localStorage.getItem(KEYS.VIEW_MODE)==='desktop'?'mobile':'desktop';localStorage.setItem(KEYS.VIEW_MODE,m);applyViewMode(m)}
