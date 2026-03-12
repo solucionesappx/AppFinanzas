@@ -407,7 +407,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index.html');
+            window.location.replace('index_SPA1.html');
             return;
         }
         
@@ -501,7 +501,7 @@ function initUI() {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -647,7 +647,7 @@ async function fetchData(tableName) {
         (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
         TABLE_CACHE.data) {
         
-        console.log("Carga desde Caché");
+        console.log("📦 Carga desde Caché");
         renderTable(TABLE_CACHE.data);
         updateStatusTag(tableName);
         return;
@@ -664,33 +664,108 @@ async function fetchData(tableName) {
 
     toggleGlobalLoader(true, "Sincronizando Base de Datos...", "Por favor espere...");
 
+    // --- EXTRACCIÓN DE SEGURIDAD DESDE LOCALSTORAGE ---
     const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
     const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
-    const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}&userTienda=${encodeURIComponent(userTienda)}&appId=${encodeURIComponent(appId)}`;
+    const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
+    const perfil = localStorage.getItem(KEYS.PERFIL); 
+
+    // DIAGNÓSTICO PRE-ENVÍO: Ver exactamente qué enviaremos
+    const requestDiagnostic = {
+        tableName: tableName,
+        usuarioId: usuarioId,
+        perfil: perfil,
+        userTienda: userTienda,
+        appId: appId
+    };
+    console.log("🚀 Enviando Petición al Servidor:");
+    console.table(requestDiagnostic);
+
+    // Construcción de URL con parámetros estrictos
+    const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
+                `&userTienda=${encodeURIComponent(userTienda)}` +
+                `&appId=${encodeURIComponent(appId)}` +
+                `&usuarioId=${encodeURIComponent(usuarioId)}` + 
+                `&perfil=${encodeURIComponent(perfil)}`;
 
     try {
         const response = await fetch(url);
         const res = await response.json();
 
+        // DIAGNÓSTICO POST-RESPUESTA: Ver qué respondió el servidor
+        console.log(`📥 Respuesta recibida para ${tableName}:`, res);
+
         if (res.success) {
             currentTableName = tableName;
+            
+            // Los datos ya vienen filtrados por el Backend (Seguridad)
             originalData = res.data || [];
+            console.log(`📊 Registros recibidos tras filtro de seguridad: ${originalData.length}`);
+
+            if (tableName === "TD102_CUENTAS") {
+                const usuarioLogueado = localStorage.getItem('Usuario_ID'); 
+                
+                // Mapeo de ALIAS y validación de matriz
+                const matrizCuentasUsuario = originalData.map(row => {
+                    const banco = (row.TD102BANCO || "").trim();
+                    const tipo = (row.TD102TIPO || "").trim();
+                    const moneda = (row.TD102MONEDA || "").trim();
+                    const aliasCalculado = `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim();
+
+                    return {
+                        ...row,
+                        ALIAS: aliasCalculado
+                    };
+                });
+
+                // 1. Extraer solo los ALIAS únicos
+                const listaNuevosAlias = [...new Set(matrizCuentasUsuario.map(c => c.ALIAS))].sort();
+
+                // 2. Comparar con el diccionario (Ya filtrado por el Backend)
+                const dictActual = res.dictionary ? res.dictionary.find(d => 
+                    String(d.Usuario_Tienda_ID).trim() === String(usuarioLogueado).trim() &&
+                    d.Nombre_Tabla === "TD101_MAIN"
+                ) : null;
+
+                let aliasEnServidor = [];
+                if (dictActual) {
+                    try { 
+                        aliasEnServidor = JSON.parse(dictActual.Valores_Encabezado || "[]").sort(); 
+                    } catch(e) { 
+                        console.error("Error al parsear ALIAS del servidor:", e);
+                    }
+                }
+
+                // Logs de validación de sincronización
+                console.log("🔍 Sincronización de ALIAS:");
+                console.log("👉 Generados:", listaNuevosAlias);
+                console.log("👉 En Servidor:", aliasEnServidor);
+                
+                const hayCambios = JSON.stringify(listaNuevosAlias) !== JSON.stringify(aliasEnServidor);
+
+                // 3. Exportación si hay cambios detectados
+                if (listaNuevosAlias.length > 0 && hayCambios) {
+                    console.log("🔄 Detectados cambios en ALIAS. Exportando...");
+                    sincronizarAliasAlDiccionario(listaNuevosAlias);
+                }
+
+                localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(matrizCuentasUsuario));
+            }
+
+            // --- PROCESAMIENTO DE CONFIGURACIÓN Y VISIBILIDAD ---
             const configArray = res.fullConfig || res.config || [];
             rawConfig = configArray; 
 
-            // RESET DE MAPAS PARA EVITAR RESIDUOS
             const mappedConfig = {};
             tableConfig.displayMap = {}; 
-            tableConfig.alignMap = {};   
+            tableConfig.alignMap = {}; 
             
             const tablePrefix = String(tableName).split('_')[0].toUpperCase();
 
-            // 3. PROCESAMIENTO DE CONFIGURACIÓN DE COLUMNAS
             configArray.forEach(item => {
                 const colKey = String(item.ID_Columna).trim();
                 const colKeyUpper = colKey.toUpperCase();
                 const marca = String(item.Visible_Encabezado || "").trim().toUpperCase();
-                
                 const isCalculated = item.Es_Calculado === true || String(item.Es_Calculado).toLowerCase() === "calc";
                 const isXX = marca.includes('XX');
                 const isPK = colKeyUpper === `${tablePrefix}ID`;
@@ -710,27 +785,21 @@ async function fetchData(tableName) {
                 tableConfig.alignMap[colKey] = item.Justificado_Campo || 'left';
             });
 
-            // 4. PROCESAMIENTO DEL DICCIONARIO DINÁMICO (VALUE_DICTIONARY)
+            // 4. Procesamiento del Diccionario Dinámico
             if (res.dictionary) {
                 const dictionaryMap = {};
                 res.dictionary.forEach(item => {
-                    // Llave compuesta: "NOMBRE_TABLA|ID_COLUMNA"
                     const dictKey = `${item.Nombre_Tabla}|${item.Encabezado_Tabla}`.toUpperCase();
                     try {
-                        // Intentamos parsear el JSON de valores ["V1", "V2"...]
                         dictionaryMap[dictKey] = JSON.parse(item.Valores_Encabezado || "[]");
                     } catch (e) {
-                        console.error("Error parseando diccionario para " + dictKey, e);
                         dictionaryMap[dictKey] = [];
                     }
                 });
-                
-                // Guardar en LocalStorage para uso en Modales
                 localStorage.setItem('VALUE_DICTIONARY', JSON.stringify(dictionaryMap));
-                console.log("📖 Diccionario de valores sincronizado");
             }
 
-            // 5. ACTUALIZACIÓN DE CACHÉ Y ESTADOS
+            // 5. Caché Local y Renderizado Final
             TABLE_CACHE = {
                 data: originalData,
                 config: mappedConfig,
@@ -740,12 +809,15 @@ async function fetchData(tableName) {
             
             localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
             localStorage.setItem('LAST_VISITED_TABLE', tableName);
-
+            
             tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
-                                           
+                                                           
             updateStatusTag(tableName);
             renderTable(originalData);
             needsRefresh = false; 
+
+        } else {
+            console.error("❌ Error en respuesta del servidor:", res.message);
         }
 
         if (res.availableTables) {
@@ -753,7 +825,7 @@ async function fetchData(tableName) {
         }
 
     } catch (err) {
-        console.error("Error fetchData:", err);
+        console.error("❌ Error fatal fetchData:", err);
     } finally {
         toggleGlobalLoader(false);
     }
@@ -2495,7 +2567,7 @@ function updateMetrics() {
     });
 
     const metricsMap = {
-        'Saldo': saldoNeto,
+        'Balance': saldoNeto,
         'Debitos': totalDebitos,
         'Abonos': totalCreditos
     };
@@ -2794,8 +2866,33 @@ function updateModalTitle(technicalName) {
         console.log("Filtros de columna limpiados. Tabla actualizada vía applyFiltersAndSort.");
     }
 
+async function sincronizarAliasAlDiccionario(listaAlias) {
+    if (!listaAlias || listaAlias.length === 0) return;
+
+    const payload = {
+        action: "actualizarValorEnDiccionario", // O la acción que procese tu GAS
+        usuarioId: localStorage.getItem('Usuario_ID'), // El ID que identifica al dueño
+        columnaNombre: "Valores_Encabezado",
+        nuevoValor: JSON.stringify(listaAlias), // Formato JSON correcto
+        // Datos de referencia para asegurar que caiga en la fila correcta
+        nombreTabla: "TD101_MAIN", 
+        encabezadoTabla: "TD101CUENTA"
+    };
+
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const res = await response.json();
+        if (res.success) {
+            console.log("🚀 Diccionario actualizado con los nuevos ALIAS");
+        }
+    } catch (err) {
+        console.error("❌ Error sincronizando ALIAS:", err);
+    }
+}
+
 </script>
 </body>
 </html>
-
-
