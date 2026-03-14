@@ -141,8 +141,8 @@
                             <div class="metric-card flex items-center justify-center min-w-[70px] sm:min-w-[90px]">
                                 <i data-lucide="wallet" class="w-7 h-7 text-blue-500 flex-shrink-0"></i>
                                 <div class="flex flex-col">
-                                    <span class="text-xl font-extrabold text-blue-500 leading-none" data-metric="Saldo">0,00</span>
-                                    <span class="text-[10px] uppercase tracking-wider text-gray-400 mt-1">Saldo</span>
+                                    <span class="text-xl font-extrabold text-blue-500 leading-none" data-metric="Balance">0,00</span>
+                                    <span class="text-[10px] uppercase tracking-wider text-gray-400 mt-1">Balance</span>
                                 </div>
                             </div>
 
@@ -465,7 +465,6 @@ function initUI() {
     const btnReload = document.getElementById('reload-icon');
     if(btnReload) {
         btnReload.onclick = () => {
-            console.log("Refresco forzado manual solicitado.");
             needsRefresh = true; 
             fetchData(currentTableName);
         };
@@ -562,7 +561,7 @@ function getFormattedValue(key, value) {
 
     // 3. EXCEPCIONES DE TEXTO (Configuración, EO y Identificadores)
     // Excepción para Números de cuenta, Tarjetas y Referencias
-    if (cleanKey.includes('NUMERO') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
+    if (cleanKey.includes('NUMERO') || cleanKey.includes('CUENTA') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
         return stringValue; 
     }
 
@@ -640,14 +639,16 @@ function getFormattedValue(key, value) {
     // 5. FETCH Y CARGA DE TABLAS
 async function fetchData(tableName) {
     const now = Date.now();
-    
+    const dataViewContainer = document.getElementById('data-view-container');
+    const tablasSinMetricas = ["TD102_CUENTAS", "TY785_ZXC", "OTRA_TABLA_AQUÍ"];
+    const debeOcultar = tablasSinMetricas.includes(tableName);
+
     // 1. Verificación de Caché
     if (!needsRefresh && 
         TABLE_CACHE.tableName === tableName && 
         (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
         TABLE_CACHE.data) {
         
-        console.log("📦 Carga desde Caché");
         renderTable(TABLE_CACHE.data);
         updateStatusTag(tableName);
         return;
@@ -670,7 +671,6 @@ async function fetchData(tableName) {
     const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
     const perfil = localStorage.getItem(KEYS.PERFIL); 
 
-    // DIAGNÓSTICO PRE-ENVÍO: Ver exactamente qué enviaremos
     const requestDiagnostic = {
         tableName: tableName,
         usuarioId: usuarioId,
@@ -678,8 +678,6 @@ async function fetchData(tableName) {
         userTienda: userTienda,
         appId: appId
     };
-    console.log("🚀 Enviando Petición al Servidor:");
-    console.table(requestDiagnostic);
 
     // Construcción de URL con parámetros estrictos
     const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
@@ -692,15 +690,11 @@ async function fetchData(tableName) {
         const response = await fetch(url);
         const res = await response.json();
 
-        // DIAGNÓSTICO POST-RESPUESTA: Ver qué respondió el servidor
-        console.log(`📥 Respuesta recibida para ${tableName}:`, res);
-
         if (res.success) {
             currentTableName = tableName;
             
             // Los datos ya vienen filtrados por el Backend (Seguridad)
             originalData = res.data || [];
-            console.log(`📊 Registros recibidos tras filtro de seguridad: ${originalData.length}`);
 
             if (tableName === "TD102_CUENTAS") {
                 const usuarioLogueado = localStorage.getItem('Usuario_ID'); 
@@ -735,17 +729,11 @@ async function fetchData(tableName) {
                         console.error("Error al parsear ALIAS del servidor:", e);
                     }
                 }
-
-                // Logs de validación de sincronización
-                console.log("🔍 Sincronización de ALIAS:");
-                console.log("👉 Generados:", listaNuevosAlias);
-                console.log("👉 En Servidor:", aliasEnServidor);
-                
+               
                 const hayCambios = JSON.stringify(listaNuevosAlias) !== JSON.stringify(aliasEnServidor);
 
                 // 3. Exportación si hay cambios detectados
                 if (listaNuevosAlias.length > 0 && hayCambios) {
-                    console.log("🔄 Detectados cambios en ALIAS. Exportando...");
                     sincronizarAliasAlDiccionario(listaNuevosAlias);
                 }
 
@@ -809,7 +797,7 @@ async function fetchData(tableName) {
             
             localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
             localStorage.setItem('LAST_VISITED_TABLE', tableName);
-            
+           
             tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
                                                            
             updateStatusTag(tableName);
@@ -818,6 +806,14 @@ async function fetchData(tableName) {
 
         } else {
             console.error("❌ Error en respuesta del servidor:", res.message);
+        }
+
+        if (dataViewContainer) {
+            if (debeOcultar) {
+                dataViewContainer.classList.add('hidden'); // Oculta metricas totalmente para tablas sin metricas
+            } else {
+                dataViewContainer.classList.remove('hidden'); // Muestra metricas para las demás
+            }
         }
 
         if (res.availableTables) {
@@ -1073,10 +1069,6 @@ function applyFiltersAndSort() {
             if (res.success) {
                 localStorage.setItem('TABLE_FRIENDLY_NAMES', JSON.stringify(res.data));
                 
-                // Confirmación en consola de nombres amigables
-                console.log("Nombres amigables actualizados en LocalStorage");
-                console.table(res.data);
-
                 // AUTO-ACTUALIZACIÓN DEL SELECTOR
                 const sel = document.getElementById('table-selector');
                 if (sel) {
@@ -1189,10 +1181,7 @@ function applyFiltersAndSort() {
         if (toggleBtn) {
             // Si estamos en modo edición, usamos el toggle existente
             toggleStatus(toggleBtn, fieldKey);
-        } else {
-            // Si estamos en modo vista, podrías disparar una actualización directa o pasar a modo edición
-            console.log("Acción de bloqueo rápida ejecutada");
-        }
+        } 
     }
 
     function setupNumericAccounting(input) {
@@ -1371,14 +1360,6 @@ function showSystemModal({
         // 4. Lógica de Permisos
         const esAdmin = (perfilUsuario === 'ADMIN');
         const esPropietario = (registroOwner !== "" && registroOwner === usuarioLogueadoId);
-
-        // DEPUREMOS EN CONSOLA (Para que veas por qué fallaba)
-        console.log("--- Validación de Seguridad ---");
-        console.log("ID Logueado:", usuarioLogueadoId);
-        console.log("ID Propietario:", registroOwner);
-        console.log("Perfil:", perfilUsuario);
-        console.log("¿Es Admin?:", esAdmin);
-        console.log("¿Es Propietario?:", esPropietario);
 
         // 5. Verificación de Acceso
         if (!esPropietario && !esAdmin) {
@@ -1711,14 +1692,9 @@ async function cancelActualForm() {
 
         // 3. Lógica de retorno
         if (originalRow) {
-            // Caso: Veníamos de Editar o Duplicar -> Volvemos a la vista de lectura
-            console.log("Restaurando vista de lectura...");
             openDetailModal(originalRow);
         } else {
-            // Caso: Registro Nuevo (showRegisterMode) -> Cerramos y refrescamos tabla
-            console.log("Cancelando registro nuevo. Volviendo a tabla principal...");
             closeDetailModal();
-            // Forzamos un render para asegurar que la interfaz esté limpia
             renderTable(originalData); 
         }
     }
@@ -1854,7 +1830,6 @@ function showEditMode() {
     const title = document.getElementById('detail-modal-title');
     const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
     const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-    console.log(dictionary);
 
     // Normalización del configMap
     const configMap = {};
@@ -1925,8 +1900,8 @@ function showEditMode() {
         const dictKey = `${currentTableName}|${key}`.toUpperCase();
         const dictOptions = dictionary[dictKey];
         const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
-        );
+            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || cleanKey.includes('CUENTA')
+        );       
 
         const item = document.createElement('div');
         item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
@@ -1972,6 +1947,7 @@ function showEditMode() {
                             </div>
                         </div>`;
         }
+
         else if (isDate) {
             // D. FECHA
             let dateISO = '';
@@ -2477,33 +2453,6 @@ function duplicateCurrentRecord() {
     if (window.lucide) lucide.createIcons();
 }
 
-    // no hace nada
-    function restaurarVistaOriginal(datos) {
-        if (!datos) {
-            console.warn("restaurarVistaOriginal: No se recibieron datos para restaurar.");
-            closeDetailModal();
-            return;
-        }
-
-        // 1. Sincronización del LocalStorage
-        // Es vital que DATOS_REGISTRO sea el objeto limpio original para que
-        // el botón 'Editar' o 'Duplicar' tengan una base sólida si se pulsan de nuevo.
-        const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        localStorage.setItem('TABLE_DATA', JSON.stringify({
-            ...currentData,
-            DATOS_REGISTRO: datos
-        }));
-
-        // 2. Delegación de UI
-        // No manipulamos botones aquí. Llamamos a openDetailModal porque:
-        // a) Ejecuta normalizeToolbar() (Limpia bloqueos de edición/duplicado).
-        // b) Oculta Save/Cancel (Estado natural de lectura).
-        // c) Renderiza los datos en formato texto (no inputs).
-        console.log("Restaurando integridad de vista para Doc:", datos[currentTableName.split('_')[0].toUpperCase() + 'ID']);
-        
-        openDetailModal(datos);
-    }
-
     function disableButton(title) {
         const btn = document.querySelector(`button[title="${title}"]`);
         if (btn) {
@@ -2551,9 +2500,9 @@ function updateMetrics() {
         const importe = parseFloat(row[colImporte]) || 0;
         const tipo = String(row[colMovimiento]).toUpperCase(); // "DEBITO" o "CREDITO"
 
-        if (tipo === 'DEBITO') {
+        if (tipo === 'DÉBITO') {
             totalDebitos += importe;
-        } else if (tipo === 'CREDITO') {
+        } else if (tipo === 'CRÉDITO') {
             totalCreditos += importe;
         }
     });
@@ -2561,7 +2510,7 @@ function updateMetrics() {
     const saldoNeto = totalCreditos - totalDebitos;
 
     // 4. Formateo y Renderizado en UI
-    const fmt = new Intl.NumberFormat('de-DE', { 
+    const fmt = new Intl.NumberFormat('es-ES', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
     });
@@ -2577,7 +2526,7 @@ function updateMetrics() {
         if (el) {
             el.textContent = fmt.format(metricsMap[key]);
             
-            if (key === 'Saldo') {
+            if (key === 'Balance') {
                 el.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
                 if (metricsMap[key] === 0) el.classList.add('text-white');
                 else el.classList.add(metricsMap[key] < 0 ? 'text-red-400' : 'text-emerald-400');
@@ -2863,7 +2812,6 @@ function updateModalTitle(technicalName) {
             renderTable(originalData);
         }
 
-        console.log("Filtros de columna limpiados. Tabla actualizada vía applyFiltersAndSort.");
     }
 
 async function sincronizarAliasAlDiccionario(listaAlias) {
@@ -2886,7 +2834,6 @@ async function sincronizarAliasAlDiccionario(listaAlias) {
         });
         const res = await response.json();
         if (res.success) {
-            console.log("🚀 Diccionario actualizado con los nuevos ALIAS");
         }
     } catch (err) {
         console.error("❌ Error sincronizando ALIAS:", err);
@@ -2896,4 +2843,3 @@ async function sincronizarAliasAlDiccionario(listaAlias) {
 </script>
 </body>
 </html>
-
