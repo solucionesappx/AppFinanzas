@@ -398,3 +398,139 @@ function getDictionaryData(appTienda) {
 
   return dictionary;
 }
+
+function contarYListarCuentasPorTienda() {
+  const ssConfig = SpreadsheetApp.openById(CONFIG_SS_ID);
+  const ssData = SpreadsheetApp.openById(DATA_SS_ID);
+  
+  // 1. Obtener TODOS los usuarios de la tienda "SPA1"
+  const sheetUsuarios = ssConfig.getSheetByName("USUARIOS");
+  const dataUsuarios = sheetUsuarios.getDataRange().getValues();
+  const headersUsuarios = dataUsuarios[0];
+  
+  const colUserTiendaRef = headersUsuarios.indexOf("Usuario_Tienda");
+  const colUserTiendaIDRef = headersUsuarios.indexOf("Usuario_Tienda_ID");
+  
+  // CAMBIO CLAVE: .filter() en lugar de .find() para no detenerse en el primero
+  const usuariosSPA1 = dataUsuarios.slice(1).filter(row => row[colUserTiendaRef] === "SPA1");
+  
+  if (usuariosSPA1.length === 0) {
+    Logger.log("❌ Error: No se encontraron usuarios para la tienda 'SPA1' en la tabla USUARIOS.");
+    return;
+  }
+  
+  Logger.log("👥 Usuarios encontrados para SPA1: " + usuariosSPA1.length);
+
+  // 2. Cargar tabla TV002_DICCIONARIO
+  const sheetDict = ssData.getSheetByName("TV002_DICCIONARIO");
+  const dataDict = sheetDict.getDataRange().getValues();
+  const headersDict = dataDict[0];
+  
+  const colDataTiendaNombre = headersDict.indexOf("Usuario_Tienda");
+  const colDataTiendaID = headersDict.indexOf("Usuario_Tienda_ID");
+
+  if (colDataTiendaNombre === -1 || colDataTiendaID === -1) {
+    Logger.log("❌ ERROR: No se encontraron las columnas necesarias en TV002_DICCIONARIO.");
+    return;
+  }
+
+  // 3. Barrido de cada usuario encontrado
+  usuariosSPA1.forEach((usuario) => {
+    const idTiendaBuscado = String(usuario[colUserTiendaIDRef]).trim();
+    const nombreTiendaBuscado = "SPA1";
+
+    Logger.log("--------------------------------------------------");
+    Logger.log("🔍 Procesando Usuario_ID: " + idTiendaBuscado);
+
+    // Filtrar en el diccionario para ESTE Usuario_ID específico
+    const registrosEncontrados = dataDict.slice(1).filter(row => {
+      const cumpleNombre = String(row[colDataTiendaNombre]).trim() === nombreTiendaBuscado;
+      const cumpleID = String(row[colDataTiendaID]).trim() === idTiendaBuscado;
+      return cumpleNombre && cumpleID;
+    });
+
+    // 4. Reporte por Usuario
+    if (registrosEncontrados.length > 0) {
+      Logger.log("✅ Coincidencias para " + idTiendaBuscado + ": " + registrosEncontrados.length);
+      
+      registrosEncontrados.forEach((fila, index) => {
+        let detalleFila = {};
+        headersDict.forEach((header, i) => {
+          detalleFila[header] = fila[i];
+        });
+        Logger.log("   -> [" + (index + 1) + "]: " + JSON.stringify(detalleFila));
+      });
+    } else {
+      Logger.log("⚠️ Sin registros en TV002_DICCIONARIO para el ID: " + idTiendaBuscado);
+    }
+  });
+} 
+
+function ejecutarActualizacionDiccionario(params) {
+  const ssData = SpreadsheetApp.openById(DATA_SS_ID);
+  const sheetDict = ssData.getSheetByName("TV002_DICCIONARIO");
+  const dataDict = sheetDict.getDataRange().getValues();
+  const headersDict = dataDict[0];
+
+  // 1. Mapeo de índices según tu estructura
+  const colTiendaNombre = headersDict.indexOf("Usuario_Tienda");
+  const colTabla = headersDict.indexOf("Nombre_Tabla");
+  const colCampo = headersDict.indexOf("Encabezado_Tabla");
+  const colValores = headersDict.indexOf("Valores_Encabezado");
+  const colTiendaID = headersDict.indexOf("Usuario_Tienda_ID");
+
+  // 2. Búsqueda de fila existente
+  let filaEncontrada = -1;
+  const idBuscado = String(params.usuarioId).trim();
+  const tablaBuscada = String(params.nombreTabla).trim();
+  const campoBuscado = String(params.encabezadoTabla).trim();
+
+  for (let i = 1; i < dataDict.length; i++) {
+    if (String(dataDict[i][colTiendaID]).trim() === idBuscado && 
+        String(dataDict[i][colTabla]).trim() === tablaBuscada && 
+        String(dataDict[i][colCampo]).trim() === campoBuscado) {
+      filaEncontrada = i + 1;
+      break;
+    }
+  }
+
+  // 3. Preparar los datos (Asegurar que todos los campos tengan valor)
+  const tiendaNombre = params.userTienda || "SPA1"; // Viene del frontend o default
+  const valoresJson = params.nuevoValor; // Ya viene como JSON string del frontend
+
+  if (filaEncontrada !== -1) {
+    // ACTUALIZAR REGISTRO EXISTENTE
+    const rango = sheetDict.getRange(filaEncontrada, 1, 1, headersDict.length);
+    const valoresFila = [];
+    valoresFila[colTiendaNombre] = tiendaNombre;
+    valoresFila[colTabla] = tablaBuscada;
+    valoresFila[colCampo] = campoBuscado;
+    valoresFila[colValores] = valoresJson;
+    valoresFila[colTiendaID] = idBuscado;
+    
+    // Aplicamos los valores uno por uno en sus columnas correspondientes
+    sheetDict.getRange(filaEncontrada, colTiendaNombre + 1).setValue(tiendaNombre);
+    sheetDict.getRange(filaEncontrada, colTabla + 1).setValue(tablaBuscada);
+    sheetDict.getRange(filaEncontrada, colCampo + 1).setValue(campoBuscado);
+    sheetDict.getRange(filaEncontrada, colValores + 1).setValue(valoresJson);
+    sheetDict.getRange(filaEncontrada, colTiendaID + 1).setValue(idBuscado);
+
+    console.log("✅ Registro actualizado en TV002_DICCIONARIO");
+  } else {
+    // CREAR NUEVO REGISTRO (Append)
+    const nuevaFila = [];
+    nuevaFila[colTiendaNombre] = tiendaNombre;
+    nuevaFila[colTabla] = tablaBuscada;
+    nuevaFila[colCampo] = campoBuscado;
+    nuevaFila[colValores] = valoresJson;
+    nuevaFila[colTiendaID] = idBuscado;
+    
+    sheetDict.appendRow(nuevaFila);
+    console.log("✨ Nuevo registro creado en TV002_DICCIONARIO");
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ 
+    success: true, 
+    message: filaEncontrada !== -1 ? "Actualizado" : "Creado" 
+  })).setMimeType(ContentService.MimeType.JSON);
+}
