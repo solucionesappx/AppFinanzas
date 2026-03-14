@@ -47,20 +47,24 @@
         <main id="main-content">
             <div id="Dashboard-Content" class="space-y-4 w-full md:max-w-[80%] mx-auto pb-8">
                 
-                <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-8 rounded-2xl border border-blue-500/30 shadow-lg shadow-blue-900/20">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-blue-400 text-xs font-bold uppercase tracking-wider">Balance Total Disponible</span>
-                        <i data-lucide="wallet" class="w-6 h-6 text-blue-400"></i>
-                    </div>
-                    <div class="flex items-baseline gap-2">
-                        <h2 id="dash-main-balance" class="text-5xl font-black text-white">$ 0.00</h2>
-                        <span class="text-gray-400 text-sm font-bold">USD</span>
-                    </div>
-                    <p class="text-gray-500 text-[10px] mt-6 italic">* Datos sincronizados en tiempo real con la nube.</p>
+            <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-8 rounded-2xl border border-blue-500/30 shadow-lg shadow-blue-900/20">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-blue-400 text-xs font-bold uppercase tracking-wider">Balance Total Disponible</span>
+                    <i data-lucide="wallet" class="w-6 h-6 text-blue-400"></i>
+                </div>
+                
+                <div class="flex items-baseline gap-2 mb-4">
+                    <h2 id="dash-main-balance" class="text-4xl font-black text-white">0.00</h2>
+                    <span class="text-gray-400 text-sm font-bold" id="dash-main-coin">USD</span>
                 </div>
 
+                <div id="global-currency-selector" class="flex gap-2 mt-4 hidden">
+                    </div>
+
+                <p class="text-gray-500 text-[10px] mt-6 italic">* Datos sincronizados en tiempo real.</p>
+            </div>
+
                 <div class="flex flex-col gap-4">
-                    
                     <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 hover:border-emerald-500/40 transition-all group">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center gap-3">
@@ -69,7 +73,10 @@
                                 </div>
                                 <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Ingresos Mensuales</span>
                             </div>
-                            <div class="text-2xl font-bold text-emerald-400" id="dash-ingresos">$ 0.00</div>
+                            <div class="flex items-baseline gap-2">
+                                <div class="text-2xl font-bold text-emerald-400" id="dash-ingresos">0.00</div>
+                                <span id="dash-ingresos-coin" class="text-[10px] font-bold text-emerald-500/50 uppercase">USD</span>
+                            </div>
                         </div>
                     </div>
 
@@ -81,7 +88,10 @@
                                 </div>
                                 <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Egresos Mensuales</span>
                             </div>
-                            <div class="text-2xl font-bold text-red-400" id="dash-egresos">$ 0.00</div>
+                            <div class="flex items-baseline gap-2">
+                                <div class="text-2xl font-bold text-red-400" id="dash-egresos">0.00</div>
+                                <span id="dash-egresos-coin" class="text-[10px] font-bold text-red-500/50 uppercase">USD</span>
+                            </div>
                         </div>
                     </div>
 
@@ -112,10 +122,8 @@
                         </div>
                     </div>
 
-                    <div id="cuentas-detalle-container" class="hidden space-y-2 pl-4 border-l-2 border-purple-500/20 ml-6">
-                        </div>
-
-                </div> 
+                    <div id="cuentas-detalle-container" class="hidden space-y-2 pl-4 border-l-2 border-purple-500/20 ml-6"></div>
+                </div>
 
                 <button onclick="loadContent('Datos')" class="w-full bg-blue-800 py-4 mt-4 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-white">
                     <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
@@ -165,7 +173,7 @@
         if(window.lucide)lucide.createIcons();
     }
     async function loadContent(s){
-        const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html','Perfil':'PerfilUser_SPA1.html'};
+        const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html',Resumen: 'Resumen_SPA1.html', Perfil:'PerfilUser_SPA1.html'};
         if(NAV[s]) window.location.href=NAV[s];   
     }      
     function showSystemModal({title,text,type='info'}){
@@ -187,13 +195,8 @@
         if (theme === 'light') {document.documentElement.classList.add('light-mode');} 
         else {document.documentElement.classList.remove('light-mode');}
     }
-    function logout(){localStorage.clear();window.location.href='index.html'}
-    
-console.log("Valores de Perfil:");
-Object.entries(KEYS).forEach(([key, storageKey]) => {
-console.log(`${key}: ${localStorage.getItem(storageKey)}`);
-}); 
-    
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}
+       
 </script>
 
 <script>
@@ -371,32 +374,33 @@ async function fetchDashboardData() {
     toggleGlobalLoader(true, "Sincronizando Resumen...", "Obteniendo saldos y cuentas");
     
     const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
-    // Usamos la acción unificada que creamos en el backend
-    const url = `${GAS_URL}?action=getDashboardSummary&userTienda=${encodeURIComponent(userTienda)}`;
+    const usuarioId = localStorage.getItem('Usuario_ID');
+    const perfil = localStorage.getItem(KEYS.PERFIL);
+
+    const url = `${GAS_URL}?action=getDashboardSummary` +
+                `&userTienda=${encodeURIComponent(userTienda)}` +
+                `&usuarioId=${encodeURIComponent(usuarioId)}` +
+                `&perfil=${encodeURIComponent(perfil)}`;
 
     try {
         const response = await fetch(url);
         const res = await response.json();
 
         if (res.success) {
-            // Guardamos los datos brutos en nuestro estado global
-            // Nota: Cambié dashboardData por dashboardState para consistencia con tu lógica de filtrado
             window.dashboardState = {
                 operaciones: res.operaciones || [],
                 cuentas: res.cuentas || []
             };
 
-            // Actualizamos la lista de cuentas para el renderizado de sub-tarjetas
             dashboardData.cuentas = res.cuentas || [];
 
-            // Calculamos métricas iniciales (de todas las cuentas)
             updateDashboardMetrics(null);
             
-            // Actualizamos el contador de la 4ta tarjeta
-            document.getElementById('dash-cant-cuentas').textContent = dashboardData.cuentas.length;
+            const countEl = document.getElementById('dash-cant-cuentas');
+            if (countEl) countEl.textContent = dashboardData.cuentas.length;
         }
     } catch (err) {
-        console.error("Error en Dashboard Fetch:", err);
+        console.error("❌ Error fetchDashboardData:", err);
     } finally {
         toggleGlobalLoader(false);
     }
@@ -421,130 +425,171 @@ function toggleCuentasDetalle() {
 function renderSubCuentas() {
     const container = document.getElementById('cuentas-detalle-container');
     if (!container) return;
-    
-    container.innerHTML = ''; // Limpiar panel
+    container.innerHTML = ''; 
 
-    if (!dashboardData.cuentas || dashboardData.cuentas.length === 0) {
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-6 opacity-50">
-                <i data-lucide="layers" class="w-6 h-6 mb-2 text-gray-500"></i>
-                <p class="text-gray-500 text-[10px] uppercase tracking-[0.2em]">Sin cuentas registradas</p>
-            </div>
-        `;
-        if (window.lucide) lucide.createIcons();
-        return;
-    }
-
-    // --- OPCIÓN: TODOS LOS REGISTROS (VISTA GLOBAL) ---
     const esGlobal = (cuentaSeleccionada === null || cuentaSeleccionada === "TODAS");
+    
     const btnGlobal = `
-        <div onclick="updateDashboardMetrics(null)" 
+        <div onclick="updateDashboardMetrics('TODAS')" 
              class="group cursor-pointer transition-all duration-300 p-3 rounded-xl border flex justify-between items-center mb-4
-             ${esGlobal ? 'bg-emerald-500/10 border-emerald-500/40 shadow-lg shadow-emerald-900/20' : 'bg-gray-800/30 border-gray-700/50 hover:border-gray-600'}">
+             ${esGlobal ? 'bg-emerald-500/10 border-emerald-500/40' : 'bg-gray-800/30 border-gray-700/50 hover:border-gray-600'}">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center ${esGlobal ? 'bg-emerald-500/20' : 'bg-gray-700/50 group-hover:bg-gray-700'}">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center ${esGlobal ? 'bg-emerald-500/20' : 'bg-gray-700/50'}">
                     <i data-lucide="layout-grid" class="w-4 h-4 ${esGlobal ? 'text-emerald-400' : 'text-gray-500'}"></i>
                 </div>
                 <div class="flex flex-col">
-                    <span class="${esGlobal ? 'text-emerald-400 font-bold' : 'text-gray-300'} text-xs tracking-tight">VISTA GLOBAL</span>
-                    <span class="text-[9px] text-gray-500 uppercase tracking-tighter">Consolidado de todas las cuentas</span>
+                    <span class="${esGlobal ? 'text-emerald-400 font-bold' : 'text-gray-300'} text-xs uppercase">Vista Global</span>
                 </div>
             </div>
             ${esGlobal ? '<div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>' : ''}
-        </div>
-        <div class="px-2 mb-3">
-            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[0.15em]">Seleccionar Cuenta Específica</p>
-        </div>
-    `;
+        </div>`;
+    
     container.insertAdjacentHTML('beforeend', btnGlobal);
 
-    // --- LISTADO DE SELECTORES DE CUENTA ---
-    dashboardData.cuentas.forEach((cuenta, index) => {
-        const nombreCta = (cuenta.NOMBRE || cuenta.CUENTA || 'Sin nombre').trim();
-        const estaSeleccionada = (cuentaSeleccionada === nombreCta);
-        
+    // Listado de cuentas (Igual al tuyo)
+    window.dashboardState.cuentas.forEach((cuenta, index) => {
+        const estaSeleccionada = (String(cuentaSeleccionada) === String(cuenta.ID));
         const html = `
-            <div onclick="updateDashboardMetrics('${nombreCta}')" 
-                 class="group cursor-pointer transition-all duration-300 p-3 rounded-xl border flex justify-between items-center mb-2 animate-fade-in
-                 ${estaSeleccionada ? 'bg-purple-600/20 border-purple-500/50 shadow-lg shadow-purple-900/20' : 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/70 hover:border-gray-600'}"
-                 style="animation-delay: ${index * 30}ms">
-                
+            <div onclick="updateDashboardMetrics('${cuenta.ID}')" 
+                 class="group cursor-pointer transition-all duration-300 p-3 rounded-xl border flex justify-between items-center mb-2
+                 ${estaSeleccionada ? 'bg-purple-600/20 border-purple-500/50 shadow-lg' : 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/70'}">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                        ${estaSeleccionada ? 'bg-purple-500/30' : 'bg-gray-900/50 group-hover:bg-gray-900'}">
-                        <i data-lucide="wallet" class="w-4 h-4 ${estaSeleccionada ? 'text-purple-400' : 'text-gray-600 group-hover:text-gray-400'}"></i>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center ${estaSeleccionada ? 'bg-purple-500/30' : 'bg-gray-900/50'}">
+                        <i data-lucide="wallet" class="w-4 h-4 ${estaSeleccionada ? 'text-purple-400' : 'text-gray-600'}"></i>
                     </div>
-                    
-                    <div class="flex flex-col">
-                        <span class="${estaSeleccionada ? 'text-white font-bold' : 'text-gray-300'} text-sm tracking-tight">
-                            ${nombreCta}
-                        </span>
-                        <span class="text-[9px] text-gray-500 font-mono">
-                            ${cuenta.ID || 'S/ID'}
-                        </span>
+                    <div class="flex flex-col text-left">
+                        <span class="${estaSeleccionada ? 'text-white font-bold' : 'text-gray-300'} text-[11px] uppercase">${cuenta.ALIAS}</span>
+                        <span class="text-[9px] text-gray-500 font-mono">${cuenta.NUMERO}</span>
                     </div>
                 </div>
-
-                <div class="flex items-center">
-                    ${estaSeleccionada ? 
-                        '<i data-lucide="check-circle-2" class="w-5 h-5 text-purple-400"></i>' : 
-                        '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-700 group-hover:text-gray-500 group-hover:translate-x-1 transition-all"></i>'
-                    }
-                </div>
-            </div>
-        `;
+                ${estaSeleccionada ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-purple-400"></i>' : '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-700"></i>'}
+            </div>`;
         container.insertAdjacentHTML('beforeend', html);
     });
 
     if (window.lucide) lucide.createIcons();
 }
 
-/**
- * Filtra y actualiza las tarjetas del dashboard
- * @param {string|null} cuenta - El nombre o ID de la cuenta a filtrar
- */
 function updateDashboardMetrics(cuenta = null) {
-    cuentaSeleccionada = cuenta;
+    // 1. Normalización de la selección
+    cuentaSeleccionada = (cuenta === "TODAS" || cuenta === null) ? null : cuenta;
     
     if (!window.dashboardState || !window.dashboardState.operaciones) return;
 
-    // 1. Filtrar primero por cuenta (si aplica)
-    let opsBase = (cuenta === null || cuenta === "TODAS") 
-        ? window.dashboardState.operaciones 
-        : window.dashboardState.operaciones.filter(op => String(op.CUENTA).trim() === String(cuenta).trim());
+    // Inicializar el filtro de moneda global si no existe
+    if (!window.monedaGlobalFiltro) window.monedaGlobalFiltro = "USD";
 
+    const ops = window.dashboardState.operaciones;
+    const cuentas = window.dashboardState.cuentas;
+    let simboloMoneda = "";
+
+    // 2. Lógica de Moneda y Control del Selector Visual
+    const selectorCont = document.getElementById('global-currency-selector');
+    
+    if (cuentaSeleccionada) {
+        // VISTA DE CUENTA ESPECÍFICA
+        if (selectorCont) selectorCont.classList.add('hidden');
+        const infoCta = cuentas.find(c => String(c.ID).trim() === String(cuentaSeleccionada).trim());
+        simboloMoneda = infoCta ? infoCta.MONEDA : "USD";
+    } else {
+        // VISTA GLOBAL
+        if (selectorCont) {
+            selectorCont.classList.remove('hidden');
+            renderGlobalCurrencyButtons(); // Dibuja los botones USD, VED, USDT
+        }
+        simboloMoneda = window.monedaGlobalFiltro;
+    }
+
+    // 3. Filtrado de Operaciones (Aquí es donde evitamos mezclar monedas)
+    let filtered = [];
+    if (cuentaSeleccionada) {
+        // Filtrar solo por el ID de la cuenta
+        filtered = ops.filter(op => String(op.CUENTA).trim() === String(cuentaSeleccionada).trim());
+    } else {
+        // VISTA GLOBAL: Filtrar solo operaciones de cuentas que coincidan con la moneda elegida
+        filtered = ops.filter(op => {
+            const infoCta = cuentas.find(c => String(c.ID).trim() === String(op.CUENTA).trim());
+            return infoCta && infoCta.MONEDA === simboloMoneda;
+        });
+    }
+
+    // 4. Sumatoria y Conteo (Tu lógica original intacta)
     let ingresos = 0;
     let egresos = 0;
     let contadorOperaciones = 0;
 
-    opsBase.forEach(op => {
-        const monto = parseFloat(String(op.MONTO || 0).replace(',', '.'));
-        const movimiento = String(op.MOVIMIENTO || '').toUpperCase().trim();
-        const typeReg = String(op.TYPEREG || '').toLowerCase().trim();
+    filtered.forEach(row => {
+        const monto = parseFloat(row.IMPORTE) || 0;
+        const tipo = String(row.MOVIMIENTO || '').toUpperCase().trim();
+        const typeReg = String(row.TYPEREG || '').toLowerCase().trim();
 
-        // REGLA: CRÉDITO = Ingreso, DÉBITO = Egreso
-        if (movimiento === 'CRÉDITO') {
+        if (tipo === 'CRÉDITO' || tipo === 'CREDITO') {
             ingresos += monto;
-        } else if (movimiento === 'DÉBITO') {
+        } else if (tipo === 'DÉBITO' || tipo === 'DEBITO') {
             egresos += monto;
         }
 
-        // REGLA: Cantidad de operaciones solo donde TYPEREG == "registrados"
-        if (typeReg === 'registrados') {
+        if (typeReg.includes('registrado')) {
             contadorOperaciones++;
         }
     });
 
     const balance = ingresos - egresos;
 
-    // Actualizar UI con formato
+    // 5. Renderizado de Etiquetas de Moneda
+    const coinLabels = ['dash-main-coin', 'dash-ingresos-coin', 'dash-egresos-coin'];
+    coinLabels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = simboloMoneda;
+    });
+
+    // 6. Renderizado de Valores Numéricos
     animateValue('dash-main-balance', balance, true);
     animateValue('dash-ingresos', ingresos, true);
     animateValue('dash-egresos', egresos, true);
     animateValue('dash-operaciones', contadorOperaciones, false);
 
-    // Refrescar lista de cuentas para marcar la seleccionada
-    if (cuentasDesplegadas) renderSubCuentas();
+    // 7. Color dinámico del balance
+    const mainBalanceEl = document.getElementById('dash-main-balance');
+    if (mainBalanceEl) {
+        mainBalanceEl.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
+        if (balance === 0) {
+            mainBalanceEl.classList.add('text-white');
+        } else {
+            mainBalanceEl.classList.add(balance < 0 ? 'text-red-400' : 'text-emerald-400');
+        }
+    }
+
+    // 8. Actualizar lista de cuentas para reflejar la selección actual
+    if (typeof cuentasDesplegadas !== 'undefined' && cuentasDesplegadas) {
+        renderSubCuentas();
+    }
+}
+
+function renderGlobalCurrencyButtons() {
+    const container = document.getElementById('global-currency-selector');
+    if (!container) return;
+
+    // Las monedas que definiste
+    const monedas = ["USD", "VED", "USDT"];
+    
+    container.innerHTML = monedas.map(m => `
+        <button onclick="window.monedaGlobalFiltro='${m}'; updateDashboardMetrics('TODAS')"
+                class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-black transition-all border
+                ${(window.monedaGlobalFiltro || 'USD') === m 
+                    ? 'bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-900/40' 
+                    : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:border-blue-500/30'}">
+            ${m}
+        </button>
+    `).join('');
+}
+
+// Función auxiliar para resetear si no hay datos
+function resetDashboardUI() {
+    ['dash-main-balance', 'dash-ingresos', 'dash-egresos', 'dash-operaciones'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = id.includes('operaciones') ? '0' : '0,00';
+    });
 }
 
 /**
@@ -554,15 +599,51 @@ function animateValue(id, value, isCurrency) {
     const element = document.getElementById(id);
     if (!element) return;
     
-    // Si es moneda, forzamos el formato 'MONTO' que aplica Intl.NumberFormat es-ES con 2 decimales
-    // Si no es moneda (ej. Total Operaciones), usamos un formato genérico o directo
+    const numValue = parseFloat(value) || 0;
+    
+    // Si isCurrency es true, aplicamos tu formato de MONTO (2 decimales, etc.)
+    // Si es false, simplemente mostramos el número entero
     const formatted = isCurrency 
-        ? `$ ${getFormattedValue('MONTO', value)}` 
-        : getFormattedValue('CANTIDAD', value); 
+        ? getFormattedValue('MONTO', numValue) 
+        : Math.floor(numValue).toString(); 
     
     element.textContent = formatted;
 }
 
+function crearElementoSubCuenta(cta) {
+    const div = document.createElement('div');
+    const isSelected = String(cuentaSeleccionada || 'TODAS') === String(cta.ID);
+    
+    // Estilos dinámicos según selección
+    div.className = `flex flex-col p-3 rounded-xl border transition-all duration-300 cursor-pointer ${
+        isSelected 
+        ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
+        : 'bg-slate-900/40 border-slate-700 hover:border-slate-500 hover:bg-slate-800/60'
+    }`;
+
+    // Al hacer clic, enviamos el ID de la cuenta para filtrar TD101_MAIN
+    div.onclick = () => {
+        updateDashboardMetrics(cta.ID);
+    };
+
+    // Construcción del contenido (NOMBRE y detalles)
+    div.innerHTML = `
+        <div class="flex justify-between items-start mb-1">
+            <span class="text-xs font-bold uppercase tracking-wider ${isSelected ? 'text-blue-400' : 'text-slate-500'}">
+                ${cta.TIPO || 'CUENTA'}
+            </span>
+            ${isSelected ? '<div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></div>' : ''}
+        </div>
+        <div class="text-sm font-semibold text-slate-100 truncate">
+            ${cta.NOMBRE || cta.ALIAS || 'Sin nombre'}
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1 font-mono">
+            ID: ${cta.ID}
+        </div>
+    `;
+
+    return div;
+}
 </script>
 </body>
 </html>
