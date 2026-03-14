@@ -13,14 +13,95 @@ function doGet(e) {
     const appTienda = e.parameter.appTienda;
     const userTienda = e.parameter.userTienda || 'DEFAULT';
 
-    // Acción para obtener nombres amigables (Selector de tablas)
+    const usuarioId = String(e.parameter.usuarioId || "").trim();
+    const perfil = String(e.parameter.perfil || "").trim();
+    const isAdmin = (perfil.toLowerCase() === "admin");
+
     if (action === "getTableFriendlyNames") {
       const result = getTableFriendlyNames(appTienda || userTienda);
       return createJsonResponse(result);
     }
 
+    if (action === "getDashboardSummary") {
+      const ssData = SpreadsheetApp.openById(DATA_SS_ID);
+      const timeZone = ssData.getSpreadsheetTimeZone();
+      
+      // --- TD101_MAIN (OPERACIONES) ---
+      const sheet101 = ssData.getSheetByName("TD101_MAIN");
+      const data101 = sheet101 ? sheet101.getDataRange().getValues() : [];
+      let resumenOps = [];
+
+      if (data101.length > 1) {
+        const headers101 = data101[0];
+        
+        // Localización de índices (Inclusión para saltar prefijos)
+        const idxFecha    = headers101.findIndex(h => h.toUpperCase().includes("FECHA"));
+        const idxMonto    = headers101.findIndex(h => h.toUpperCase().includes("IMPORTE"));
+        const idxMov      = headers101.findIndex(h => h.toUpperCase().includes("MOVIMIENTO"));
+        const idxType     = headers101.findIndex(h => h.toUpperCase().includes("TYPEREG"));
+        const idxCuenta   = headers101.findIndex(h => h.toUpperCase().includes("CUENTA"));
+        const idxOwner101 = headers101.findIndex(h => h.toUpperCase().includes("IDOWNER"));
+        
+        resumenOps = data101.slice(1)
+          .filter(row => isAdmin || String(row[idxOwner101]).trim() === String(usuarioId).trim())
+          .map(row => {
+            // Formateo de fecha para el contrato de datos
+            let fechaVal = row[idxFecha];
+            let fechaStr = (fechaVal instanceof Date) 
+              ? Utilities.formatDate(fechaVal, timeZone, "dd/MM/yyyy") 
+              : String(fechaVal);
+
+            return {
+              FECHA: fechaStr,
+              IMPORTE: row[idxMonto], // Viaja como 1250.50 (formato nativo del backend)
+              MOVIMIENTO: row[idxMov],
+              TYPEREG: row[idxType],
+              CUENTA: String(row[idxCuenta]).trim()
+            };
+          });
+      }
+
+      // --- TD102_CUENTAS (MAESTRO) ---
+      const sheet102 = ssData.getSheetByName("TD102_CUENTAS");
+      const data102 = sheet102 ? sheet102.getDataRange().getValues() : [];
+      let resumenCuentas = [];
+
+      if (data102.length > 1) {
+        const headers102 = data102[0];
+        
+        // Localización (endsWith para ID de tabla)
+        const idxIdCta    = headers102.findIndex(h => h.toUpperCase().endsWith("ID")); 
+        const idxBanco    = headers102.findIndex(h => h.toUpperCase().includes("BANCO"));
+        const idxTipo     = headers102.findIndex(h => h.toUpperCase().includes("TIPO"));
+        const idxMoneda   = headers102.findIndex(h => h.toUpperCase().includes("MONEDA"));
+        const idxNumCta   = headers102.findIndex(h => h.toUpperCase().includes("NUMERO"));
+        const idxOwner102 = headers102.findIndex(h => h.toUpperCase().includes("IDOWNER"));
+
+        resumenCuentas = data102.slice(1)
+          .filter(row => isAdmin || String(row[idxOwner102]).trim() === String(usuarioId).trim())
+          .map(row => {
+            const banco  = String(row[idxBanco] || '').trim();
+            const tipo   = String(row[idxTipo] || '').trim();
+            const moneda = String(row[idxMoneda] || '').trim();
+            
+            return {
+              ID: String(row[idxIdCta]).trim(),
+              NUMERO: String(row[idxNumCta]).trim(),
+              ALIAS: `${banco} ${tipo} ${moneda}`.trim(),
+              MONEDA: moneda
+            };
+          });
+      }
+
+      return createJsonResponse({
+        success: true,
+        operaciones: resumenOps,
+        cuentas: resumenCuentas
+      });
+    }
+
     const tableName = e.parameter.tableName || e.parameter.sheet;
-    if (!tableName) throw new Error("Parámetro 'tableName' omitido.");
+    if (!tableName) throw new Error("Parámetro 'tableName' o 'action' omitido.");
 
     const ignoreVisibility = e.parameter.ignoreVisibility === 'true'; 
 
@@ -33,7 +114,6 @@ function doGet(e) {
     if (!dataSheet) throw new Error("La tabla '" + tableName + "' no existe.");
     if (!configSheet) throw new Error("La hoja de configuración no existe.");
 
-    // --- 1. OBTENER CONFIGURACIÓN DE COLUMNAS ---
     const configRows = configSheet.getDataRange().getValues();
     const configData = configRows.slice(1);
     const configMap = {};
@@ -43,19 +123,14 @@ function doGet(e) {
     configData.forEach(row => {
         const rowAppTienda = String(row[0]).trim();
         const nombreTabla = String(row[1]).trim();
-        
-        // Filtro para tablas disponibles por usuario
         if (rowAppTienda === userTienda && !availableTables.includes(nombreTabla)) {
           availableTables.push(nombreTabla);
         }
-
-        // Validación de coincidencia de tabla y tienda
         if (nombreTabla === tableName && rowAppTienda === userTienda) {
           const idColumna = String(row[2]).trim();
           const upperColId = idColumna.toUpperCase();
           const tablePrefix = tableName.split('_')[0].toUpperCase();
           const esID = (upperColId === `${tablePrefix}ID`);
-
           const configObj = {
             ID_Columna: idColumna,
             Nombre_Encabezado: String(row[3] || idColumna).trim(),
@@ -69,12 +144,18 @@ function doGet(e) {
         }
     });
 
-    // --- 2. PROCESAR DATOS DE LA TABLA ---
     const fullData = dataSheet.getDataRange().getValues();
     if (fullData.length === 0) throw new Error("La tabla está vacía.");
     
     const originalHeaders = fullData[0];
     const tablePrefix = tableName.split('_')[0].toUpperCase();
+    const colOwnerIdx = originalHeaders.indexOf(`${tablePrefix}IDOWNER`);
+
+    let rowsToProcess = fullData.slice(1);
+    if (!isAdmin && colOwnerIdx !== -1) {
+      rowsToProcess = rowsToProcess.filter(row => String(row[colOwnerIdx]).trim() === usuarioId);
+    }
+
     const finalHeaders = [];
     const finalDisplayMap = {};
     const finalAlignMap = {};
@@ -88,8 +169,9 @@ function doGet(e) {
       const isPK = upperH === `${tablePrefix}ID`;
       const isAuditField = upperH.endsWith("REGISTROUSER") || upperH.endsWith("REGISTRODATA");
       const isTypeReg = upperH.endsWith("TYPEREG");
+      const isOwnerField = upperH === `${tablePrefix}IDOWNER`;
       
-      if (ignoreVisibility || (config && config.Visible_Encabezado !== "") || isPK || isAuditField || isTypeReg) {
+      if (ignoreVisibility || (config && config.Visible_Encabezado !== "") || isPK || isAuditField || isTypeReg || isOwnerField) {
         finalHeaders.push(cleanH);
         finalDisplayMap[cleanH] = (config && config.Nombre_Encabezado) ? config.Nombre_Encabezado : cleanH;
         finalAlignMap[cleanH] = (config && config.Justificado_Campo) ? config.Justificado_Campo : 'left';
@@ -97,41 +179,44 @@ function doGet(e) {
       }
     });
 
-    const jsonData = fullData.slice(1).map(row => {
+    const jsonData = rowsToProcess.map(row => {
       const obj = {};
       colIndexesToFetch.forEach((colIdx, i) => { obj[finalHeaders[i]] = row[colIdx]; });
       return obj;
     });
 
-    // --- 3. SINCRONIZACIÓN MAESTRA ---
     const masterFields = typeof syncAndGetMasterFields === "function" ? syncAndGetMasterFields(ssData) : []; 
 
-    // --- 4. CARGA DEL DICCIONARIO DINÁMICO (TV002_DICCIONARIO) ---
     const dictionaryData = [];
     try {
       const dictSheet = ssData.getSheetByName("TV002_DICCIONARIO");
       if (dictSheet) {
         const dictValues = dictSheet.getDataRange().getValues();
+        const dictHeaders = dictValues[0];
+        const colDictOwnerIdx = dictHeaders.indexOf("Usuario_Tienda_ID");
         const dictRows = dictValues.slice(1);
 
         dictRows.forEach(row => {
           const dictAppTienda = String(row[0]).trim();
-          // Filtramos para que el usuario solo reciba su tienda o valores globales
-          if (dictAppTienda === userTienda || dictAppTienda === 'GLOBAL') {
+          const dictOwnerId = String(row[colDictOwnerIdx]).trim();
+          const matchesTienda = (dictAppTienda === userTienda || dictAppTienda === "ALL");
+          const ownerIdUpper = dictOwnerId.toUpperCase();
+          const matchesOwner = (isAdmin || dictOwnerId === usuarioId || ownerIdUpper === "ALL");
+
+          if (matchesTienda && matchesOwner) {
             dictionaryData.push({
               Nombre_Tabla: String(row[1]).trim(),
               Encabezado_Tabla: String(row[2]).trim(),
-              Valores_Encabezado: String(row[3] || "[]").trim()
+              Valores_Encabezado: String(row[3] || "[]").trim(),
+              Usuario_Tienda_ID: dictOwnerId
             });
           }
         });
       }
     } catch (dictErr) {
       console.error("Error cargando diccionario: " + dictErr.toString());
-      // No lanzamos error para no interrumpir el flujo principal de datos
     }
 
-    // --- 5. RESPUESTA FINAL UNIFICADA ---
     return createJsonResponse({
       success: true,
       data: jsonData,
@@ -141,7 +226,7 @@ function doGet(e) {
       fullConfig: fullConfigForFrontend,
       availableTables: availableTables,
       masterFields: masterFields,
-      dictionary: dictionaryData // Inyectado para que el frontend actualice VALUE_DICTIONARY
+      dictionary: dictionaryData 
     });
 
   } catch (err) {
@@ -180,6 +265,9 @@ function doPost(e) {
       result = handleDynamicDataTD(params, "EDIT");
     } else if (action === "deleteDynamicDataTD") {
       result = handleDynamicDataTD(params, "DELETE");
+    } else if (action === "actualizarValorEnDiccionario") {
+      // Llamada a la nueva función de actualización
+      result = ejecutarActualizacionDiccionario(params);
     } else {
       throw new Error("Acción desconocida: " + action);
     }
