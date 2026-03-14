@@ -2,7 +2,7 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>ZXC - SPA1
+    <title>Datos - SPA1
     </title>
     <script src="https://cdn.tailwindcss.com"></script><script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -640,7 +640,7 @@ function getFormattedValue(key, value) {
 async function fetchData(tableName) {
     const now = Date.now();
     const dataViewContainer = document.getElementById('data-view-container');
-    const tablasSinMetricas = ["TD102_CUENTAS", "TY785_ZXC", "OTRA_TABLA_AQUÍ"];
+    const tablasSinMetricas = ["TD102_CUENTAS", "TD999_BORRADOS"];
     const debeOcultar = tablasSinMetricas.includes(tableName);
 
     // 1. Verificación de Caché
