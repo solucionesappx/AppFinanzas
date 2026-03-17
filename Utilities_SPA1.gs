@@ -170,13 +170,20 @@ function handleDynamicDataTD(params, mode) {
     if (cleanH === campoClave && mode === "REGISTER") {
       rowValues[index] = newGeneratedId;
     } 
-    // B. Auditoría
+    // B. Auditoría y SEGURIDAD (Forzado de IDOWNER)
+    else if (upperH.endsWith("IDOWNER")) {
+      // Solo asignamos dueño al crear. 
+      // Si es EDIT, conservamos el valor que ya traía la fila.
+      if (mode === "REGISTER") {
+        rowValues[index] = params.currentUser || ""; 
+      }
+    }
     else if (upperH.endsWith("REGISTROUSER")) {
-      rowValues[index] = params[cleanH] || params.currentUser || "UserSys";
+      rowValues[index] = params.currentUser || "UserSys";
     } 
     else if (upperH.endsWith("REGISTRODATA")) {
       rowValues[index] = timestamp;
-    } 
+    }
     // C. Datos del Frontend vs Fórmulas
     else if (params[cleanH] !== undefined) {
       let val = params[cleanH];
@@ -398,7 +405,7 @@ function getDictionaryData(appTienda) {
 
   return dictionary;
 }
-
+// NO USAR 
 function contarYListarCuentasPorTienda() {
   const ssConfig = SpreadsheetApp.openById(CONFIG_SS_ID);
   const ssData = SpreadsheetApp.openById(DATA_SS_ID);
@@ -533,4 +540,56 @@ function ejecutarActualizacionDiccionario(params) {
     success: true, 
     message: filaEncontrada !== -1 ? "Actualizado" : "Creado" 
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Borra en cascada el registro maestro de TRANSFERENCIA y sus asientos hijos.
+ */
+function handleDeleteTransferCascade(params) {
+  const ssData = SpreadsheetApp.openById(DATA_SS_ID);
+  const sheet = ssData.getSheetByName(params.TABLA_DESTINO);
+  
+  if (!sheet) return createJsonResponse({ success: false, message: 'Tabla no encontrada.' });
+
+  const tablePrefix = params.TABLA_DESTINO.split('_')[0].toUpperCase();
+  const idColName = tablePrefix + "ID";
+  const refColName = tablePrefix + "REF";
+  const masterId = params[idColName]; // El ID de la fila TRANSFERENCIA
+  const refPattern = params.REF_CASCADE; // Ejemplo: "TRANSFERENCIA #105"
+
+  if (!masterId || !refPattern) {
+    return createJsonResponse({ success: false, message: 'Faltan datos para el borrado en cascada.' });
+  }
+
+  const range = sheet.getDataRange();
+  const data = range.getValues();
+  const headers = data[0];
+  
+  const idColIndex = headers.indexOf(idColName);
+  const refColIndex = headers.indexOf(refColName);
+
+  if (idColIndex === -1 || refColIndex === -1) {
+    return createJsonResponse({ success: false, message: 'Columnas ID o REF no encontradas.' });
+  }
+
+  let rowsDeleted = 0;
+
+  // Recorremos de abajo hacia arriba para no alterar los índices al eliminar
+  for (let i = data.length - 1; i >= 1; i--) {
+    const currentRow = data[i];
+    const rowId = String(currentRow[idColIndex]);
+    const rowRef = String(currentRow[refColIndex]);
+
+    // REGLA: Borrar si el ID coincide (Maestro) O si la REF coincide (Hijos)
+    if (rowId === String(masterId) || rowRef === String(refPattern)) {
+      // Si usas historial, llamamos a tu función existente:
+      moveRowToHistory(ssData, sheet, i + 1, headers, params);
+      rowsDeleted++;
+    }
+  }
+
+  return createJsonResponse({ 
+    success: true, 
+    message: 'Cascada completada. ' + rowsDeleted + ' registros procesados.' 
+  });
 }
