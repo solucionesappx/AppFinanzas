@@ -195,7 +195,7 @@
         if (theme === 'light') {document.documentElement.classList.add('light-mode');} 
         else {document.documentElement.classList.remove('light-mode');}
     }
-    function logout(){localStorage.clear();window.location.href='index.html'}
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}
        
 </script>
 
@@ -471,92 +471,105 @@ function renderSubCuentas() {
 }
 
 function updateDashboardMetrics(cuenta = null) {
+    // 1. Normalización de la selección
+    cuentaSeleccionada = (cuenta === "TODAS" || cuenta === null) ? null : cuenta;
+    
     if (!window.dashboardState || !window.dashboardState.operaciones) return;
+
+    // Inicializar el filtro de moneda global si no existe
+    if (!window.monedaGlobalFiltro) window.monedaGlobalFiltro = "VED";
 
     const ops = window.dashboardState.operaciones;
     const cuentas = window.dashboardState.cuentas;
+    let simboloMoneda = "";
+
+    // 2. Lógica de Moneda y Control del Selector Visual
+    const selectorCont = document.getElementById('global-currency-selector');
     
-    // 1. Normalización de selección
-    cuentaSeleccionada = (cuenta === "TODAS" || cuenta === null) ? null : cuenta;
-    if (!window.monedaGlobalFiltro) window.monedaGlobalFiltro = "VED";
-
-    // 2. CREAR MAPA DE MONEDAS USANDO EL ALIAS COMO LLAVE
-    // Según tus datos, 'op.CUENTA' trae el ALIAS de la cuenta, no el ID.
-    const monedaPorAlias = {};
-    cuentas.forEach(c => {
-        const aliasKey = String(c.ALIAS || '').trim().toUpperCase();
-        monedaPorAlias[aliasKey] = String(c.MONEDA || 'VED').toUpperCase().trim();
-    });
-
-    // 3. DETERMINAR MONEDA OBJETIVO
-    let monedaObjetivo = "";
     if (cuentaSeleccionada) {
-        // Buscamos la cuenta por ID (que es lo que suele enviar el selector de subcuentas)
+        // VISTA DE CUENTA ESPECÍFICA
+        if (selectorCont) selectorCont.classList.add('hidden');
         const infoCta = cuentas.find(c => String(c.ID).trim() === String(cuentaSeleccionada).trim());
-        monedaObjetivo = infoCta ? infoCta.MONEDA : "VED";
-        document.getElementById('global-currency-selector')?.classList.add('hidden');
+        simboloMoneda = infoCta ? infoCta.MONEDA : "VED";
     } else {
-        monedaObjetivo = window.monedaGlobalFiltro.toUpperCase().trim();
-        document.getElementById('global-currency-selector')?.classList.remove('hidden');
+        // VISTA GLOBAL
+        if (selectorCont) {
+            selectorCont.classList.remove('hidden');
+            renderGlobalCurrencyButtons(); // <--- Aquí es donde se refrescan los botones
+        }
+        simboloMoneda = window.monedaGlobalFiltro;
     }
 
-    // 4. PROCESAMIENTO DE DATOS
+    // 3. Filtrado de Operaciones (Ajustado para IDs y Alias)
+    let filtered = [];
+    if (cuentaSeleccionada) {
+        // Filtrar solo por el ID de la cuenta (buscamos en op.CUENTA que ahora es el ID)
+        filtered = ops.filter(op => String(op.CUENTA).trim() === String(cuentaSeleccionada).trim());
+    } else {
+        // VISTA GLOBAL: Buscamos la moneda de la cuenta relacionada
+        filtered = ops.filter(op => {
+            // Buscamos la info de la cuenta ya sea por el ID (op.CUENTA) o por el ALIAS (op.ALIAS_CUENTA)
+            const infoCta = cuentas.find(c => 
+                String(c.ID).trim() === String(op.CUENTA).trim() || 
+                (op.ALIAS_CUENTA && String(c.ALIAS).trim().toUpperCase() === String(op.ALIAS_CUENTA).trim().toUpperCase())
+            );
+            return infoCta && infoCta.MONEDA === simboloMoneda;
+        });
+    }
+
+    // 4. Sumatoria y Conteo
     let ingresos = 0;
     let egresos = 0;
     let contadorOperaciones = 0;
 
-    ops.forEach(op => {
-        const aliasEnOp = String(op.CUENTA || '').trim().toUpperCase();
-        const monedaDeEstaOp = monedaPorAlias[aliasEnOp];
-        
-        // Obtenemos el ID de la cuenta basado en el alias para poder filtrar por 'cuentaSeleccionada'
-        const infoCtaRelacionada = cuentas.find(c => String(c.ALIAS).trim().toUpperCase() === aliasEnOp);
-        const idCuentaEnOp = infoCtaRelacionada ? String(infoCtaRelacionada.ID).trim() : null;
+    filtered.forEach(row => {
+        const status = String(row.TYPEREG || '').toLowerCase();
+        if (status.includes('bloqueado')) return; // Seguridad extra
 
-        // FILTRO LOGICO
-        const cumpleCuenta = cuentaSeleccionada && idCuentaEnOp === String(cuentaSeleccionada).trim();
-        const cumpleMoneda = !cuentaSeleccionada && monedaDeEstaOp === monedaObjetivo;
+        const monto = parseFloat(row.IMPORTE) || 0;
+        const mov = String(row.MOVIMIENTO || '').toUpperCase().trim();
 
-        if (cumpleCuenta || cumpleMoneda) {
-            const status = String(op.TYPEREG || '').toLowerCase();
-            if (status.includes('bloqueado')) return;
+        // Soportamos todos los términos de movimiento
+        if (['INGRESO', 'CRÉDITO', 'CREDITO'].includes(mov)) {
+            ingresos += monto;
+        } else if (['EGRESO', 'DÉBITO', 'DEBITO'].includes(mov)) {
+            egresos += monto;
+        }
 
-            const monto = parseFloat(op.IMPORTE) || 0;
-            const mov = String(op.MOVIMIENTO || '').toUpperCase().trim();
-
-            if (mov === 'CRÉDITO' || mov === 'CREDITO') {
-                ingresos += monto;
-            } else if (mov === 'DÉBITO' || mov === 'DEBITO') {
-                egresos += monto;
-            }
-
-            if (status.includes('registrado')) {
-                contadorOperaciones++;
-            }
+        if (status.includes('registrado')) {
+            contadorOperaciones++;
         }
     });
 
-    // 5. RENDERIZADO (Se mantiene igual)
     const balance = ingresos - egresos;
-    
+
+    // 5. Renderizado de Etiquetas de Moneda
     ['dash-main-coin', 'dash-ingresos-coin', 'dash-egresos-coin'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = monedaObjetivo;
+        if (el) el.textContent = simboloMoneda;
     });
 
+    // 6. Renderizado de Valores Numéricos
     animateValue('dash-main-balance', balance, true);
     animateValue('dash-ingresos', ingresos, true);
     animateValue('dash-egresos', egresos, true);
     animateValue('dash-operaciones', contadorOperaciones, false);
 
+    // 7. Color dinámico del balance
     const mainBalanceEl = document.getElementById('dash-main-balance');
     if (mainBalanceEl) {
         mainBalanceEl.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
-        if (Math.abs(balance) < 0.01) mainBalanceEl.classList.add('text-white');
-        else mainBalanceEl.classList.add(balance < 0 ? 'text-red-400' : 'text-emerald-400');
+        if (Math.abs(balance) < 0.01) {
+            mainBalanceEl.classList.add('text-white');
+        } else {
+            mainBalanceEl.classList.add(balance < 0 ? 'text-red-400' : 'text-emerald-400');
+        }
     }
 
-    if (typeof renderSubCuentas === 'function') renderSubCuentas();
+    // 8. Actualizar lista de subcuentas
+    if (typeof renderSubCuentas === 'function') {
+        renderSubCuentas();
+    }
 }
 
 function renderGlobalCurrencyButtons() {
@@ -570,7 +583,7 @@ function renderGlobalCurrencyButtons() {
         <button onclick="window.monedaGlobalFiltro='${m}'; updateDashboardMetrics('TODAS')"
                 class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-black transition-all border
                 ${(window.monedaGlobalFiltro || 'USD') === m 
-                    ? 'bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-900/40' 
+                    ? 'bg-gray-500 text-white border-gray-800 shadow-md shadow-blue-900/40' 
                     : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:border-blue-500/30'}">
             ${m}
         </button>
