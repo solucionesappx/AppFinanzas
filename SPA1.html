@@ -407,7 +407,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index.html');
+            window.location.replace('index_SPA1.html');
             return;
         }
         
@@ -417,82 +417,82 @@
         setupSearch();
     });
 
-function initUI() {
-    // 1. CARGA DE NOMBRES Y SALUDO
-    loadTableFriendlyNames();
-    const nom = localStorage.getItem(KEYS.NOMBRE);
-    if(nom) {
-        const h1 = document.querySelector('h1');
-        if(h1) h1.textContent = `¡Hola, ${nom.trim().split(/\s+/)[0]}!`;
-    }
-
-    // 2. AJUSTES DE DISEÑO INICIAL
-    adjustLayoutForOrientation();
-
-    // 3. ACTIVACIÓN VISUAL DE LA MONEDA POR DEFECTO (VED)
-    currentCurrency = 'VED';
-    // Buscamos todos los botones dentro del selector
-    const currencyButtons = document.querySelectorAll('#currency-selector .currency-btn');
-    
-    currencyButtons.forEach(btn => {
-        if (btn.textContent.trim() === 'VED') {
-            activateButtonVisuals(btn); // Usamos tu nueva función aquí
-        } else {
-            deactivateButtonVisuals(btn); // Y la de limpieza aquí
+    function initUI() {
+        // 1. CARGA DE NOMBRES Y SALUDO
+        loadTableFriendlyNames();
+        const nom = localStorage.getItem(KEYS.NOMBRE);
+        if(nom) {
+            const h1 = document.querySelector('h1');
+            if(h1) h1.textContent = `¡Hola, ${nom.trim().split(/\s+/)[0]}!`;
         }
-    });
 
-    // 4. BOTONES DEL FOOTER (Navegación y Estado Activo)
-        document.querySelectorAll('.footer-btn').forEach(b => {
-            const section = b.getAttribute('data-section');
+        // 2. AJUSTES DE DISEÑO INICIAL
+        adjustLayoutForOrientation();
 
-            // Lógica de Navegación
-            b.onclick = () => {
-                const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html',Resumen: 'Resumen_SPA1.html', Perfil:'PerfilUser_SPA1.html'};
-                if (NAV[section]) window.location.href = NAV[section];
-            };
-
-            // Lógica de Activación Visual:
-            // Como estamos en la sección de Datos, activamos el botón que coincida
-            if (section === 'Datos') {
-                b.classList.add('active');
+        // 3. ACTIVACIÓN VISUAL DE LA MONEDA POR DEFECTO (VED)
+        currentCurrency = 'VED';
+        // Buscamos todos los botones dentro del selector
+        const currencyButtons = document.querySelectorAll('#currency-selector .currency-btn');
+        
+        currencyButtons.forEach(btn => {
+            if (btn.textContent.trim() === 'VED') {
+                activateButtonVisuals(btn); // Usamos tu nueva función aquí
             } else {
-                b.classList.remove('active');
+                deactivateButtonVisuals(btn); // Y la de limpieza aquí
             }
         });
 
-    // 5. BOTÓN DE RECARGA FORZADA
-    const btnReload = document.getElementById('reload-icon');
-    if(btnReload) {
-        btnReload.onclick = () => {
-            needsRefresh = true; 
-            fetchData(currentTableName);
-        };
-    }
+        // 4. BOTONES DEL FOOTER (Navegación y Estado Activo)
+            document.querySelectorAll('.footer-btn').forEach(b => {
+                const section = b.getAttribute('data-section');
 
-    // 6. BOTONES DE ACCIÓN (NUEVO / TRANSFERENCIA)
-    const btnNew = document.getElementById('btn-main-add-record');
-    const btnTransfer = document.getElementById('btn-main-transfer-record');
-    
-    if (btnNew) {
-        btnNew.removeAttribute('onclick'); 
-        btnNew.onclick = (e) => {
-            e.preventDefault();
-            showRegisterMode();
-        };
-    }
+                // Lógica de Navegación
+                b.onclick = () => {
+                    const NAV={'Base':'Base_SPA1.html','Datos': 'SPA1.html',Resumen: 'Resumen_SPA1.html', Perfil:'PerfilUser_SPA1.html'};
+                    if (NAV[section]) window.location.href = NAV[section];
+                };
 
-    if (btnTransfer) {
-        btnTransfer.removeAttribute('onclick'); 
-        btnTransfer.onclick = (e) => {
-            e.preventDefault();
-            TransferAccountRecord();
-        };
-    }
+                // Lógica de Activación Visual:
+                // Como estamos en la sección de Datos, activamos el botón que coincida
+                if (section === 'Datos') {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
 
-    // 7. RENDERIZADO DE ICONOS LUCIDE
-    if (window.lucide) lucide.createIcons();
-}
+        // 5. BOTÓN DE RECARGA FORZADA
+        const btnReload = document.getElementById('reload-icon');
+        if(btnReload) {
+            btnReload.onclick = () => {
+                needsRefresh = true; 
+                fetchData(currentTableName);
+            };
+        }
+
+        // 6. BOTONES DE ACCIÓN (NUEVO / TRANSFERENCIA)
+        const btnNew = document.getElementById('btn-main-add-record');
+        const btnTransfer = document.getElementById('btn-main-transfer-record');
+        
+        if (btnNew) {
+            btnNew.removeAttribute('onclick'); 
+            btnNew.onclick = (e) => {
+                e.preventDefault();
+                showRegisterMode();
+            };
+        }
+
+        if (btnTransfer) {
+            btnTransfer.removeAttribute('onclick'); 
+            btnTransfer.onclick = (e) => {
+                e.preventDefault();
+                TransferAccountRecord();
+            };
+        }
+
+        // 7. RENDERIZADO DE ICONOS LUCIDE
+        if (window.lucide) lucide.createIcons();
+    }
 
     function initDataApp() {
         const tiendaIdDisplay = document.getElementById('header-tienda-id');
@@ -500,7 +500,7 @@ function initUI() {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -549,67 +549,67 @@ function initUI() {
         return `${datePart} ${timePart}`;
     }
 
-function getFormattedValue(key, value) {
-    // 1. Manejo de nulos o vacíos
-    if (value === null || value === undefined || value === '') return '';        
-    
-    const cleanKey = String(key).toUpperCase();
-    let stringValue = String(value).trim();
-
-    // 2. Normalización de guiones
-    if (stringValue === '-') stringValue = '0';
-
-    // 3. EXCEPCIONES DE TEXTO (Configuración, EO y Identificadores)
-    // Excepción para Números de cuenta, Tarjetas y Referencias
-    if (cleanKey.includes('NUMERO') || cleanKey.includes('CUENTA') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
-        return stringValue; 
-    }
-
-    if (cleanKey.substring(5, 7) === 'EO') return stringValue;
-
-    // 4. TRATAMIENTO DE IDs Y USUARIOS
-    if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTROUSER')) return stringValue;
-
-    // 5. FECHAS Y HORAS (Restaurado a tu lógica original)
-    if (cleanKey.includes('REGISTRODATA')) return formatDateTime(value);
-    if (cleanKey.includes('FECHA')) return formatDate(value);
-    
-    // 6. TRATAMIENTO NUMÉRICO (Corrección quirúrgica aquí)
-    // Antes de pasar por parseFloat, verificamos si es un código alfanumérico (letras + números)
-    const esAlfanumerico = /[a-zA-Z]/.test(stringValue) && /\d/.test(stringValue);
-    
-    if (esAlfanumerico) return stringValue; // Si es ZX4000X, sale aquí intacto.
-
-    const numValue = parseFloat(stringValue.replace(',', '.'));
-
-    if (!isNaN(numValue) && isFinite(numValue)) {
-        const formatOptions = { useGrouping: true, style: 'decimal' };
+    function getFormattedValue(key, value) {
+        // 1. Manejo de nulos o vacíos
+        if (value === null || value === undefined || value === '') return '';        
         
-        if (cleanKey.endsWith('MONTOML2') || cleanKey.includes('TASAREF')) {
-            return new Intl.NumberFormat('es-ES', { 
-                ...formatOptions, 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 5 
-            }).format(numValue);
+        const cleanKey = String(key).toUpperCase();
+        let stringValue = String(value).trim();
+
+        // 2. Normalización de guiones
+        if (stringValue === '-') stringValue = '0';
+
+        // 3. EXCEPCIONES DE TEXTO (Configuración, EO y Identificadores)
+        // Excepción para Números de cuenta, Tarjetas y Referencias
+        if (cleanKey.includes('NUMERO') || cleanKey.includes('CUENTA') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
+            return stringValue; 
         }
 
-        if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+        if (cleanKey.substring(5, 7) === 'EO') return stringValue;
+
+        // 4. TRATAMIENTO DE IDs Y USUARIOS
+        if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTROUSER') || cleanKey.includes('IDDOC') ) return stringValue;
+
+        // 5. FECHAS Y HORAS (Restaurado a tu lógica original)
+        if (cleanKey.includes('REGISTRODATA')) return formatDateTime(value);
+        if (cleanKey.includes('FECHA')) return formatDate(value);
+        
+        // 6. TRATAMIENTO NUMÉRICO (Corrección quirúrgica aquí)
+        // Antes de pasar por parseFloat, verificamos si es un código alfanumérico (letras + números)
+        const esAlfanumerico = /[a-zA-Z]/.test(stringValue) && /\d/.test(stringValue);
+        
+        if (esAlfanumerico) return stringValue; // Si es ZX4000X, sale aquí intacto.
+
+        const numValue = parseFloat(stringValue.replace(',', '.'));
+
+        if (!isNaN(numValue) && isFinite(numValue)) {
+            const formatOptions = { useGrouping: true, style: 'decimal' };
+            
+            if (cleanKey.endsWith('MONTOML2') || cleanKey.includes('TASAREF')) {
+                return new Intl.NumberFormat('es-ES', { 
+                    ...formatOptions, 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 5 
+                }).format(numValue);
+            }
+
+            if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                return new Intl.NumberFormat('es-ES', { 
+                    ...formatOptions, 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                }).format(numValue);
+            }
+
             return new Intl.NumberFormat('es-ES', { 
                 ...formatOptions, 
-                minimumFractionDigits: 2, 
+                minimumFractionDigits: (numValue === 0 ? 2 : 0), 
                 maximumFractionDigits: 2 
             }).format(numValue);
         }
 
-        return new Intl.NumberFormat('es-ES', { 
-            ...formatOptions, 
-            minimumFractionDigits: (numValue === 0 ? 2 : 0), 
-            maximumFractionDigits: 2 
-        }).format(numValue);
+        return value;
     }
-
-    return value;
-}
 
     function setupSearch() {
         const input = document.getElementById('search-input');
@@ -637,327 +637,327 @@ function getFormattedValue(key, value) {
     }
 
     // 5. FETCH Y CARGA DE TABLAS
-async function fetchData(tableName) {
-    const now = Date.now();
-    const dataViewContainer = document.getElementById('data-view-container');
-    const tablasSinMetricas = ["TD102_CUENTAS", "TD999_BORRADOS"];
-    const debeOcultar = tablasSinMetricas.includes(tableName);
+    async function fetchData(tableName) {
+        const now = Date.now();
+        const dataViewContainer = document.getElementById('data-view-container');
+        const tablasSinMetricas = ["TD102_CUENTAS", "TD999_BORRADOS"];
+        const debeOcultar = tablasSinMetricas.includes(tableName);
 
-    // 1. Verificación de Caché
-    if (!needsRefresh && 
-        TABLE_CACHE.tableName === tableName && 
-        (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
-        TABLE_CACHE.data) {
-        
-        renderTable(TABLE_CACHE.data);
-        updateStatusTag(tableName);
-        return;
-    }
-
-    // 2. Preparación de UI
-    const tag = document.getElementById('table-status-tag');
-    if (tag) {
-        tag.textContent = 'Actualizando...'; 
-        tag.classList.add('animate-pulse');
-        tag.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
-        tag.classList.add('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
-    }
-
-    toggleGlobalLoader(true, "Sincronizando Base de Datos...", "Por favor espere...");
-
-    // --- EXTRACCIÓN DE SEGURIDAD DESDE LOCALSTORAGE ---
-    const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
-    const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
-    const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
-    const perfil = localStorage.getItem(KEYS.PERFIL); 
-
-    const requestDiagnostic = {
-        tableName: tableName,
-        usuarioId: usuarioId,
-        perfil: perfil,
-        userTienda: userTienda,
-        appId: appId
-    };
-
-    // Construcción de URL con parámetros estrictos
-    const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
-                `&userTienda=${encodeURIComponent(userTienda)}` +
-                `&appId=${encodeURIComponent(appId)}` +
-                `&usuarioId=${encodeURIComponent(usuarioId)}` + 
-                `&perfil=${encodeURIComponent(perfil)}`;
-
-    try {
-        const response = await fetch(url);
-        const res = await response.json();
-
-        if (res.success) {
-            currentTableName = tableName;
+        // 1. Verificación de Caché
+        if (!needsRefresh && 
+            TABLE_CACHE.tableName === tableName && 
+            (now - TABLE_CACHE.timestamp) < CACHE_DURATION && 
+            TABLE_CACHE.data) {
             
-            // Los datos ya vienen filtrados por el Backend (Seguridad)
-            originalData = res.data || [];
-
-            if (tableName === "TD102_CUENTAS") {
-                const usuarioLogueado = localStorage.getItem('Usuario_ID'); 
-                
-                // Mapeo de ALIAS y validación de matriz
-                const matrizCuentasUsuario = originalData.map(row => {
-                    const banco = (row.TD102BANCO || "").trim();
-                    const tipo = (row.TD102TIPO || "").trim();
-                    const moneda = (row.TD102MONEDA || "").trim();
-                    const aliasCalculado = `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim();
-
-                    return {
-                        ...row,
-                        ALIAS: aliasCalculado
-                    };
-                });
-
-                // 1. Extraer solo los ALIAS únicos
-                const listaNuevosAlias = [...new Set(matrizCuentasUsuario.map(c => c.ALIAS))].sort();
-
-                // 2. Comparar con el diccionario (Ya filtrado por el Backend)
-                const dictActual = res.dictionary ? res.dictionary.find(d => 
-                    String(d.Usuario_Tienda_ID).trim() === String(usuarioLogueado).trim() &&
-                    d.Nombre_Tabla === "TD101_MAIN"
-                ) : null;
-
-                let aliasEnServidor = [];
-                if (dictActual) {
-                    try { 
-                        aliasEnServidor = JSON.parse(dictActual.Valores_Encabezado || "[]").sort(); 
-                    } catch(e) { 
-                        console.error("Error al parsear ALIAS del servidor:", e);
-                    }
-                }
-               
-                const hayCambios = JSON.stringify(listaNuevosAlias) !== JSON.stringify(aliasEnServidor);
-
-                // 3. Exportación si hay cambios detectados
-                if (listaNuevosAlias.length > 0 && hayCambios) {
-                    sincronizarAliasAlDiccionario(listaNuevosAlias);
-                }
-
-                localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(matrizCuentasUsuario));
-            }
-
-            // --- PROCESAMIENTO DE CONFIGURACIÓN Y VISIBILIDAD ---
-            const configArray = res.fullConfig || res.config || [];
-            rawConfig = configArray; 
-
-            const mappedConfig = {};
-            tableConfig.displayMap = {}; 
-            tableConfig.alignMap = {}; 
-            
-            const tablePrefix = String(tableName).split('_')[0].toUpperCase();
-
-            configArray.forEach(item => {
-                const colKey = String(item.ID_Columna).trim();
-                const colKeyUpper = colKey.toUpperCase();
-                const marca = String(item.Visible_Encabezado || "").trim().toUpperCase();
-                const isCalculated = item.Es_Calculado === true || String(item.Es_Calculado).toLowerCase() === "calc";
-                const isXX = marca.includes('XX');
-                const isPK = colKeyUpper === `${tablePrefix}ID`;
-                const isSystem = colKeyUpper.includes('REGISTRO') || colKeyUpper.includes('NOMBREC');
-
-                mappedConfig[colKey] = {
-                    label: item.Nombre_Encabezado || colKey,
-                    visible: item.Visible_Encabezado,
-                    align: item.Justificado_Campo || 'left',
-                    editable: !isCalculated && !isXX && !isPK && !isSystem, 
-                    Es_Obligatorio: item.Es_Obligatorio === true || String(item.Es_Obligatorio).toLowerCase() === "true",
-                    Es_Calculado: isCalculated,
-                    type: (colKeyUpper.includes('IDNOMBRE')) ? 'select' : (colKeyUpper.includes('FECHA')) ? 'date' : 'text'
-                };
-
-                tableConfig.displayMap[colKey] = item.Nombre_Encabezado || colKey;
-                tableConfig.alignMap[colKey] = item.Justificado_Campo || 'left';
-            });
-
-            // 4. Procesamiento del Diccionario Dinámico
-            if (res.dictionary) {
-                const dictionaryMap = {};
-                res.dictionary.forEach(item => {
-                    const dictKey = `${item.Nombre_Tabla}|${item.Encabezado_Tabla}`.toUpperCase();
-                    try {
-                        dictionaryMap[dictKey] = JSON.parse(item.Valores_Encabezado || "[]");
-                    } catch (e) {
-                        dictionaryMap[dictKey] = [];
-                    }
-                });
-                localStorage.setItem('VALUE_DICTIONARY', JSON.stringify(dictionaryMap));
-            }
-
-            // 5. Caché Local y Renderizado Final
-            TABLE_CACHE = {
-                data: originalData,
-                config: mappedConfig,
-                timestamp: Date.now(),
-                tableName: tableName
-            };
-            
-            localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
-            localStorage.setItem('LAST_VISITED_TABLE', tableName);
-           
-            tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
-                                                           
+            renderTable(TABLE_CACHE.data);
             updateStatusTag(tableName);
-            renderTable(originalData);
-            needsRefresh = false; 
-
-        } else {
-            console.error("❌ Error en respuesta del servidor:", res.message);
+            return;
         }
 
-        if (dataViewContainer) {
-            if (debeOcultar) {
-                dataViewContainer.classList.add('hidden'); // Oculta metricas totalmente para tablas sin metricas
-            } else {
-                dataViewContainer.classList.remove('hidden'); // Muestra metricas para las demás
-            }
+        // 2. Preparación de UI
+        const tag = document.getElementById('table-status-tag');
+        if (tag) {
+            tag.textContent = 'Actualizando...'; 
+            tag.classList.add('animate-pulse');
+            tag.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+            tag.classList.add('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
         }
 
-        if (res.availableTables) {
-            updateTableSelector(res.availableTables); 
-        }
+        toggleGlobalLoader(true, "Sincronizando Base de Datos...", "Por favor espere...");
 
-    } catch (err) {
-        console.error("❌ Error fatal fetchData:", err);
-    } finally {
-        toggleGlobalLoader(false);
-    }
-}
+        // --- EXTRACCIÓN DE SEGURIDAD DESDE LOCALSTORAGE ---
+        const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
+        const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
+        const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
+        const perfil = localStorage.getItem(KEYS.PERFIL); 
 
-function renderTable(data) {
-    const container = document.getElementById('data-table-container');
-    if (!container) return;
-    
-    container.innerHTML = `<table id="main-table"><thead><tr id="table-header"></tr></thead><tbody id="table-body"></tbody></table>`;
-    
-    const tableHeader = document.getElementById('table-header');
-    const tableBody = document.getElementById('table-body');
-    const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-
-    // Numeración
-    const thId = document.createElement('th');
-    thId.className = 'sticky-id-cell';
-    thId.innerHTML = '<span>#</span>';
-    tableHeader.appendChild(thId);
-
-    // 1. ENCABEZADOS
-    tableConfig.columnOrder.forEach(h => {
-        const cleanH = h.toUpperCase();
-        const cfg = configMap[h] || {};
-        if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return; 
-        if (cleanH.endsWith('TYPEREG')) return;
-
-        const colFilterObj = currentHeadersConfig.find(c => c.id === h);
-        const hasActiveFilter = colFilterObj && colFilterObj.filterValue && colFilterObj.filterValue.trim() !== "";
-        let filterIndicator = hasActiveFilter ? `<span class="relative inline-flex items-center justify-center h-4 w-4 ml-1 flex-shrink-0"><span class="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75"></span><span class="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-red-600 text-[9px] font-bold text-white cursor-help shadow-sm leading-none">f</span></span>` : '';
-
-        const th = document.createElement('th');
-        th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group"; 
-        const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
-
-        th.innerHTML = `
-            <div class="grid grid-cols-[1fr_auto] items-center gap-2 w-full leading-tight">
-                <div class="flex items-center min-w-0">
-                    <span class="font-semibold uppercase tracking-wider text-[13px] text-blue-500 font-bold group-hover:whitespace-normal">
-                        ${tableConfig.displayMap[h] || h}
-                    </span>
-                    ${filterIndicator}
-                </div>
-                <div class="flex items-center justify-end w-5 h-5 flex-shrink-0">
-                    <i data-lucide="${iconName}" class="w-4 h-4 ${sortConfig.key === h ? 'text-blue-400 opacity-100' : 'opacity-80 group-hover:opacity-50'} transition-all"></i>
-                </div>
-            </div>`;
-            
-        th.onclick = () => handleSort(h);
-        tableHeader.appendChild(th);
-    });
-
-    // 2. FILAS
-    data.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        tr.className = 'cursor-pointer hover:bg-blue-500/10 transition-colors group border-b border-gray-700/50';
-        
-        tr.ondblclick = () => {
-            const tableDataStorage = { TABLA_ORIGEN: currentTableName, IS_NEW: false, DATOS_REGISTRO: row };
-            localStorage.setItem('TABLE_DATA', JSON.stringify(tableDataStorage));
-            if (typeof openDetailModal === 'function') openDetailModal(row);
+        const requestDiagnostic = {
+            tableName: tableName,
+            usuarioId: usuarioId,
+            perfil: perfil,
+            userTienda: userTienda,
+            appId: appId
         };
 
-        const tdIdx = document.createElement('td');
-        tdIdx.className = 'sticky-id-cell text-center text-[13px] text-blue-500 font-medium';
-        tdIdx.textContent = idx + 1;
-        tr.appendChild(tdIdx);
+        // Construcción de URL con parámetros estrictos
+        const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
+                    `&userTienda=${encodeURIComponent(userTienda)}` +
+                    `&appId=${encodeURIComponent(appId)}` +
+                    `&usuarioId=${encodeURIComponent(usuarioId)}` + 
+                    `&perfil=${encodeURIComponent(perfil)}`;
 
-        tableConfig.columnOrder.forEach(h => {
-            const cfg = configMap[h] || {};
-            const cleanH = h.toUpperCase();
-            if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return;
-            if (cleanH.endsWith('TYPEREG')) return;
+        try {
+            const response = await fetch(url);
+            const res = await response.json();
 
-            const td = document.createElement('td');
-            td.className = 'px-3 py-1 text-[12px] text-gray-300 font-bold';
-            td.style.textAlign = tableConfig.alignMap[h] || 'left';
+            if (res.success) {
+                currentTableName = tableName;
+                
+                // Los datos ya vienen filtrados por el Backend (Seguridad)
+                originalData = res.data || [];
+
+                if (tableName === "TD102_CUENTAS") {
+                    const usuarioLogueado = localStorage.getItem('Usuario_ID'); 
+                    
+                    // Mapeo de ALIAS y validación de matriz
+                    const matrizCuentasUsuario = originalData.map(row => {
+                        const banco = (row.TD102BANCO || "").trim();
+                        const tipo = (row.TD102TIPO || "").trim();
+                        const moneda = (row.TD102MONEDA || "").trim();
+                        const aliasCalculado = `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim();
+
+                        return {
+                            ...row,
+                            ALIAS: aliasCalculado
+                        };
+                    });
+
+                    // 1. Extraer solo los ALIAS únicos
+                    const listaNuevosAlias = [...new Set(matrizCuentasUsuario.map(c => c.ALIAS))].sort();
+
+                    // 2. Comparar con el diccionario (Ya filtrado por el Backend)
+                    const dictActual = res.dictionary ? res.dictionary.find(d => 
+                        String(d.Usuario_Tienda_ID).trim() === String(usuarioLogueado).trim() &&
+                        d.Nombre_Tabla === "TD101_MAIN"
+                    ) : null;
+
+                    let aliasEnServidor = [];
+                    if (dictActual) {
+                        try { 
+                            aliasEnServidor = JSON.parse(dictActual.Valores_Encabezado || "[]").sort(); 
+                        } catch(e) { 
+                            console.error("Error al parsear ALIAS del servidor:", e);
+                        }
+                    }
+                
+                    const hayCambios = JSON.stringify(listaNuevosAlias) !== JSON.stringify(aliasEnServidor);
+
+                    // 3. Exportación si hay cambios detectados
+                    if (listaNuevosAlias.length > 0 && hayCambios) {
+                        sincronizarAliasAlDiccionario(listaNuevosAlias);
+                    }
+
+                    localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(matrizCuentasUsuario));
+                }
+
+                // --- PROCESAMIENTO DE CONFIGURACIÓN Y VISIBILIDAD ---
+                const configArray = res.fullConfig || res.config || [];
+                rawConfig = configArray; 
+
+                const mappedConfig = {};
+                tableConfig.displayMap = {}; 
+                tableConfig.alignMap = {}; 
+                
+                const tablePrefix = String(tableName).split('_')[0].toUpperCase();
+
+                configArray.forEach(item => {
+                    const colKey = String(item.ID_Columna).trim();
+                    const colKeyUpper = colKey.toUpperCase();
+                    const marca = String(item.Visible_Encabezado || "").trim().toUpperCase();
+                    const isCalculated = item.Es_Calculado === true || String(item.Es_Calculado).toLowerCase() === "calc";
+                    const isXX = marca.includes('XX');
+                    const isPK = colKeyUpper === `${tablePrefix}ID`;
+                    const isSystem = colKeyUpper.includes('REGISTRO') || colKeyUpper.includes('NOMBREC');
+
+                    mappedConfig[colKey] = {
+                        label: item.Nombre_Encabezado || colKey,
+                        visible: item.Visible_Encabezado,
+                        align: item.Justificado_Campo || 'left',
+                        editable: !isCalculated && !isXX && !isPK && !isSystem, 
+                        Es_Obligatorio: item.Es_Obligatorio === true || String(item.Es_Obligatorio).toLowerCase() === "true",
+                        Es_Calculado: isCalculated,
+                        type: (colKeyUpper.includes('IDNOMBRE')) ? 'select' : (colKeyUpper.includes('FECHA')) ? 'date' : 'text'
+                    };
+
+                    tableConfig.displayMap[colKey] = item.Nombre_Encabezado || colKey;
+                    tableConfig.alignMap[colKey] = item.Justificado_Campo || 'left';
+                });
+
+                // 4. Procesamiento del Diccionario Dinámico
+                if (res.dictionary) {
+                    const dictionaryMap = {};
+                    res.dictionary.forEach(item => {
+                        const dictKey = `${item.Nombre_Tabla}|${item.Encabezado_Tabla}`.toUpperCase();
+                        try {
+                            dictionaryMap[dictKey] = JSON.parse(item.Valores_Encabezado || "[]");
+                        } catch (e) {
+                            dictionaryMap[dictKey] = [];
+                        }
+                    });
+                    localStorage.setItem('VALUE_DICTIONARY', JSON.stringify(dictionaryMap));
+                }
+
+                // 5. Caché Local y Renderizado Final
+                TABLE_CACHE = {
+                    data: originalData,
+                    config: mappedConfig,
+                    timestamp: Date.now(),
+                    tableName: tableName
+                };
+                
+                localStorage.setItem('TABLE_CONFIG', JSON.stringify(mappedConfig));
+                localStorage.setItem('LAST_VISITED_TABLE', tableName);
             
-            // Lógica de Formato
-            let val = getFormattedValue(h, row[h]);
+                tableConfig.columnOrder = res.columnOrder || (originalData.length > 0 ? Object.keys(originalData[0]) : []);
+                                                            
+                updateStatusTag(tableName);
+                renderTable(originalData);
+                needsRefresh = false; 
 
-            // Forzar dd/mm/yyyy si es campo fecha
-            if (cleanH.includes('FECHA') || cleanH.includes('DATE')) {
-                const d = new Date(row[h]);
-                if (!isNaN(d.getTime())) {
-                    val = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+            } else {
+                console.error("❌ Error en respuesta del servidor:", res.message);
+            }
+
+            if (dataViewContainer) {
+                if (debeOcultar) {
+                    dataViewContainer.classList.add('hidden'); // Oculta metricas totalmente para tablas sin metricas
+                } else {
+                    dataViewContainer.classList.remove('hidden'); // Muestra metricas para las demás
                 }
             }
 
-            td.innerHTML = highlightText(val, currentSearchTerm);
-            tr.appendChild(td);
-        });
-        
-        tableBody.appendChild(tr);
-    });
+            if (res.availableTables) {
+                updateTableSelector(res.availableTables); 
+            }
 
-    if (typeof updateMetrics === 'function') updateMetrics(); 
-    if (window.lucide) lucide.createIcons();
-}
-
-    // Auxiliares finales
-function activateButtonVisuals(btn) {
-    // Limpiamos el estado inactivo
-    btn.classList.remove('text-gray-500', 'text-gray-400');
-    // Aplicamos el nuevo look (Gris + Sombra)
-    btn.classList.add('bg-gray-600', 'text-white');
-}
-
-function deactivateButtonVisuals(btn) {
-    // Quitamos el look activo
-    btn.classList.remove('bg-gray-600', 'text-white');
-    // Volvemos al estado gris base del HTML
-    btn.classList.add('text-gray-500');
-}
-    
-function toggleGlobalLoader(show, title = "Actualizando", desc = "Sincronizando") {
-    const loader = document.getElementById('global-loader');
-    if (!loader) return;
-
-    const loaderTitle = loader.querySelector('span');
-    const loaderDesc = loader.querySelector('p');
-    
-    if (show) {
-        if (loaderTitle) loaderTitle.textContent = title;
-        if (loaderDesc) loaderDesc.innerHTML = desc;
-        loader.classList.remove('hidden');
-    } else {
-        loader.classList.add('hidden');
-        // Resetear tras el delay para que la próxima función no herede textos viejos y tome los valores por defecto (HTML)
-        setTimeout(() => {
-            if (loaderTitle) loaderTitle.textContent = "Actualizando";
-            if (loaderDesc) loaderDesc.innerHTML = "Sincronizando";
-        }, 300);
+        } catch (err) {
+            console.error("❌ Error fatal fetchData:", err);
+        } finally {
+            toggleGlobalLoader(false);
+        }
     }
-}
+
+    function renderTable(data) {
+        const container = document.getElementById('data-table-container');
+        if (!container) return;
+        
+        container.innerHTML = `<table id="main-table"><thead><tr id="table-header"></tr></thead><tbody id="table-body"></tbody></table>`;
+        
+        const tableHeader = document.getElementById('table-header');
+        const tableBody = document.getElementById('table-body');
+        const configMap = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+
+        // Numeración
+        const thId = document.createElement('th');
+        thId.className = 'sticky-id-cell';
+        thId.innerHTML = '<span>#</span>';
+        tableHeader.appendChild(thId);
+
+        // 1. ENCABEZADOS
+        tableConfig.columnOrder.forEach(h => {
+            const cleanH = h.toUpperCase();
+            const cfg = configMap[h] || {};
+            if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return; 
+            if (cleanH.endsWith('TYPEREG')) return;
+
+            const colFilterObj = currentHeadersConfig.find(c => c.id === h);
+            const hasActiveFilter = colFilterObj && colFilterObj.filterValue && colFilterObj.filterValue.trim() !== "";
+            let filterIndicator = hasActiveFilter ? `<span class="relative inline-flex items-center justify-center h-4 w-4 ml-1 flex-shrink-0"><span class="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75"></span><span class="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-red-600 text-[9px] font-bold text-white cursor-help shadow-sm leading-none">f</span></span>` : '';
+
+            const th = document.createElement('th');
+            th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group"; 
+            const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
+
+            th.innerHTML = `
+                <div class="grid grid-cols-[1fr_auto] items-center gap-2 w-full leading-tight">
+                    <div class="flex items-center min-w-0">
+                        <span class="font-semibold uppercase tracking-wider text-[13px] text-blue-500 font-bold group-hover:whitespace-normal">
+                            ${tableConfig.displayMap[h] || h}
+                        </span>
+                        ${filterIndicator}
+                    </div>
+                    <div class="flex items-center justify-end w-5 h-5 flex-shrink-0">
+                        <i data-lucide="${iconName}" class="w-4 h-4 ${sortConfig.key === h ? 'text-blue-400 opacity-100' : 'opacity-80 group-hover:opacity-50'} transition-all"></i>
+                    </div>
+                </div>`;
+                
+            th.onclick = () => handleSort(h);
+            tableHeader.appendChild(th);
+        });
+
+        // 2. FILAS
+        data.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'cursor-pointer hover:bg-blue-500/10 transition-colors group border-b border-gray-700/50';
+            
+            tr.ondblclick = () => {
+                const tableDataStorage = { TABLA_ORIGEN: currentTableName, IS_NEW: false, DATOS_REGISTRO: row };
+                localStorage.setItem('TABLE_DATA', JSON.stringify(tableDataStorage));
+                if (typeof openDetailModal === 'function') openDetailModal(row);
+            };
+
+            const tdIdx = document.createElement('td');
+            tdIdx.className = 'sticky-id-cell text-center text-[13px] text-blue-500 font-medium';
+            tdIdx.textContent = idx + 1;
+            tr.appendChild(tdIdx);
+
+            tableConfig.columnOrder.forEach(h => {
+                const cfg = configMap[h] || {};
+                const cleanH = h.toUpperCase();
+                if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return;
+                if (cleanH.endsWith('TYPEREG')) return;
+
+                const td = document.createElement('td');
+                td.className = 'px-3 py-1 text-[12px] text-gray-300 font-bold';
+                td.style.textAlign = tableConfig.alignMap[h] || 'left';
+                
+                // Lógica de Formato
+                let val = getFormattedValue(h, row[h]);
+
+                // Forzar dd/mm/yyyy si es campo fecha
+                if (cleanH.includes('FECHA') || cleanH.includes('DATE')) {
+                    const d = new Date(row[h]);
+                    if (!isNaN(d.getTime())) {
+                        val = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                    }
+                }
+
+                td.innerHTML = highlightText(val, currentSearchTerm);
+                tr.appendChild(td);
+            });
+            
+            tableBody.appendChild(tr);
+        });
+
+        if (typeof updateMetrics === 'function') updateMetrics(); 
+        if (window.lucide) lucide.createIcons();
+    }
+
+        // Auxiliares finales
+    function activateButtonVisuals(btn) {
+        // Limpiamos el estado inactivo
+        btn.classList.remove('text-gray-500', 'text-gray-400');
+        // Aplicamos el nuevo look (Gris + Sombra)
+        btn.classList.add('bg-gray-600', 'text-white');
+    }
+
+    function deactivateButtonVisuals(btn) {
+        // Quitamos el look activo
+        btn.classList.remove('bg-gray-600', 'text-white');
+        // Volvemos al estado gris base del HTML
+        btn.classList.add('text-gray-500');
+    }
+        
+    function toggleGlobalLoader(show, title = "Actualizando", desc = "Sincronizando") {
+        const loader = document.getElementById('global-loader');
+        if (!loader) return;
+
+        const loaderTitle = loader.querySelector('span');
+        const loaderDesc = loader.querySelector('p');
+        
+        if (show) {
+            if (loaderTitle) loaderTitle.textContent = title;
+            if (loaderDesc) loaderDesc.innerHTML = desc;
+            loader.classList.remove('hidden');
+        } else {
+            loader.classList.add('hidden');
+            // Resetear tras el delay para que la próxima función no herede textos viejos y tome los valores por defecto (HTML)
+            setTimeout(() => {
+                if (loaderTitle) loaderTitle.textContent = "Actualizando";
+                if (loaderDesc) loaderDesc.innerHTML = "Sincronizando";
+            }, 300);
+        }
+    }
 
     function highlightText(text, term) {
         if (!term) return text;
@@ -971,78 +971,78 @@ function toggleGlobalLoader(show, title = "Actualizando", desc = "Sincronizando"
         applyFiltersAndSort();
     }
 
-function applyFiltersAndSort() {
-    // 1. Clonamos los datos originales
-    let data = [...originalData];
-    
-    // 2. LÓGICA DE FILTRADO GLOBAL (Buscador superior)
-    if (currentSearchTerm) {
-        const term = currentSearchTerm.toLowerCase();
-        data = data.filter(row => 
-            Object.entries(row).some(([key, v]) => {
-                const cleanKey = key.toUpperCase();
-                const isExcluded = cleanKey.includes('ID_INTERNO') || 
-                                   cleanKey.includes('NOTAS') || 
-                                   cleanKey.endsWith('ID');
-                
-                if (isExcluded || v == null) return false;
+    function applyFiltersAndSort() {
+        // 1. Clonamos los datos originales
+        let data = [...originalData];
+        
+        // 2. LÓGICA DE FILTRADO GLOBAL (Buscador superior)
+        if (currentSearchTerm) {
+            const term = currentSearchTerm.toLowerCase();
+            data = data.filter(row => 
+                Object.entries(row).some(([key, v]) => {
+                    const cleanKey = key.toUpperCase();
+                    const isExcluded = cleanKey.includes('ID_INTERNO') || 
+                                    cleanKey.includes('NOTAS') || 
+                                    cleanKey.endsWith('ID');
+                    
+                    if (isExcluded || v == null) return false;
 
-                const displayValue = String(getFormattedValue(key, v)).toLowerCase();
-                const rawValue = String(v).toLowerCase();
-                return displayValue.includes(term) || rawValue.includes(term);
-            })
-        );
-    }
+                    const displayValue = String(getFormattedValue(key, v)).toLowerCase();
+                    const rawValue = String(v).toLowerCase();
+                    return displayValue.includes(term) || rawValue.includes(term);
+                })
+            );
+        }
 
-    // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
-    // Solo filtramos si hay algún valor escrito en currentHeadersConfig
-    const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
+        // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
+        // Solo filtramos si hay algún valor escrito en currentHeadersConfig
+        const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
 
-    if (activeColFilters.length > 0) {
-        data = data.filter(row => {
-            // "every" asegura que la fila cumpla TODOS los filtros de columna activos (Lógica AND)
-            return activeColFilters.every(filterObj => {
-                const cellValue = row[filterObj.id];
-                if (cellValue == null) return false;
+        if (activeColFilters.length > 0) {
+            data = data.filter(row => {
+                // "every" asegura que la fila cumpla TODOS los filtros de columna activos (Lógica AND)
+                return activeColFilters.every(filterObj => {
+                    const cellValue = row[filterObj.id];
+                    if (cellValue == null) return false;
 
-                const searchTarget = String(cellValue).toLowerCase();
-                const filterTerm = filterObj.filterValue.toLowerCase();
-                
-                return searchTarget.includes(filterTerm);
+                    const searchTarget = String(cellValue).toLowerCase();
+                    const filterTerm = filterObj.filterValue.toLowerCase();
+                    
+                    return searchTarget.includes(filterTerm);
+                });
             });
-        });
+        }
+
+        // 3. LÓGICA DE ORDENAMIENTO (Sort)
+        if (sortConfig.key) {
+            data.sort((a, b) => {
+                let vA = a[sortConfig.key] ?? '';
+                let vB = b[sortConfig.key] ?? '';
+                
+                if (typeof vA === 'number' && typeof vB === 'number') {
+                    return sortConfig.direction === 'asc' ? vA - vB : vB - vA;
+                }
+
+                vA = String(vA).toLowerCase();
+                vB = String(vB).toLowerCase();
+
+                return sortConfig.direction === 'asc' 
+                    ? vA.localeCompare(vB) 
+                    : vB.localeCompare(vA);
+            });
+        }
+
+        // --- ACTUALIZACIÓN DE ESTADO Y UI ---
+        window.currentTableData = data; 
+        renderTable(data);
+
+        // Iluminar el botón de configuración si hay filtros de columna activos
+        const configBtn = document.getElementById('config-columns-btn'); // Ajusta al ID real de tu botón
+        if (configBtn) {
+            configBtn.classList.toggle('text-blue-400', activeColFilters.length > 0);
+            configBtn.classList.toggle('animate-pulse', activeColFilters.length > 0);
+        }
     }
-
-    // 3. LÓGICA DE ORDENAMIENTO (Sort)
-    if (sortConfig.key) {
-        data.sort((a, b) => {
-            let vA = a[sortConfig.key] ?? '';
-            let vB = b[sortConfig.key] ?? '';
-            
-            if (typeof vA === 'number' && typeof vB === 'number') {
-                return sortConfig.direction === 'asc' ? vA - vB : vB - vA;
-            }
-
-            vA = String(vA).toLowerCase();
-            vB = String(vB).toLowerCase();
-
-            return sortConfig.direction === 'asc' 
-                ? vA.localeCompare(vB) 
-                : vB.localeCompare(vA);
-        });
-    }
-
-    // --- ACTUALIZACIÓN DE ESTADO Y UI ---
-    window.currentTableData = data; 
-    renderTable(data);
-
-    // Iluminar el botón de configuración si hay filtros de columna activos
-    const configBtn = document.getElementById('config-columns-btn'); // Ajusta al ID real de tu botón
-    if (configBtn) {
-        configBtn.classList.toggle('text-blue-400', activeColFilters.length > 0);
-        configBtn.classList.toggle('animate-pulse', activeColFilters.length > 0);
-    }
-}
 
     function updateStatusTag(n) {
         const tag = document.getElementById('table-status-tag');
@@ -1230,237 +1230,199 @@ function applyFiltersAndSort() {
         input.value = getFormattedValue(key, rawValue);
     }
 
-function setupHeadersConfig(tableName, result) {
-    const savedConfig = JSON.parse(localStorage.getItem(`config_${tableName}`) || 'null');
-    
-    // Usamos el displayMap de la respuesta para obtener el Friendly Name
-    currentHeadersConfig = result.columnOrder.map((id, idx) => {
-        const saved = savedConfig ? savedConfig.find(x => x.id === id) : null;
+    function setupHeadersConfig(tableName, result) {
+        const savedConfig = JSON.parse(localStorage.getItem(`config_${tableName}`) || 'null');
         
-        // Prioridad: 1. Nombre guardado, 2. Mapa amigable, 3. ID técnico
-        const friendlyName = saved ? saved.label : (result.displayMap[id] || id);
-
-        return {
-            id: id,
-            label: friendlyName, 
-            order: saved ? saved.order : idx + 1,
-            visible: saved ? saved.visible : true,
-            filterValue: saved ? (saved.filterValue || "") : ""
-        };
-    }).sort((a, b) => a.order - b.order);
-}
-
-function showSystemModal({
-    title,
-    text,
-    type = 'info',
-    showCancel = false,
-    isPrompt = false,
-    placeholder = 'Valor...',
-    inputType = 'text',
-    inputValue = '' // Nuevo parámetro para recibir el filtro actual
-}) {
-    return new Promise(res => {
-        const m = document.getElementById('system-modal'),
-            ti = document.getElementById('sys-modal-title'),
-            te = document.getElementById('sys-modal-text'),
-            ic = document.getElementById('sys-modal-icon'),
-            ac = document.getElementById('sys-modal-actions'),
-            iCont = document.getElementById('sys-modal-input-container'),
-            input = document.getElementById('sys-modal-input');
-
-        ti.textContent = title;
-        te.innerHTML = text;
-
-        // Iconografía y Colores
-        const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
-        const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
-        ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
-        
-        ac.innerHTML = '';
-
-        // Manejo del Input (Modo Prompt)
-        if (isPrompt) {
-            iCont.classList.remove('hidden');
-            iCont.className = "relative mt-4 mb-6 flex items-center"; 
+        // Usamos el displayMap de la respuesta para obtener el Friendly Name
+        currentHeadersConfig = result.columnOrder.map((id, idx) => {
+            const saved = savedConfig ? savedConfig.find(x => x.id === id) : null;
             
-            input.value = inputValue; 
-            input.type = inputType; 
-            input.placeholder = placeholder;
-            // Estilo del input según tu diseño
-            input.className = "w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-4 pr-10 text-sm text-white outline-none focus:border-blue-500";
+            // Prioridad: 1. Nombre guardado, 2. Mapa amigable, 3. ID técnico
+            const friendlyName = saved ? saved.label : (result.displayMap[id] || id);
 
-            // Limpiar botones previos (como el ojo de password o X antiguas)
-            const oldExtras = iCont.querySelectorAll('.absolute');
-            oldExtras.forEach(el => el.remove());
+            return {
+                id: id,
+                label: friendlyName, 
+                order: saved ? saved.order : idx + 1,
+                visible: saved ? saved.visible : true,
+                filterValue: saved ? (saved.filterValue || "") : ""
+            };
+        }).sort((a, b) => a.order - b.order);
+    }
 
-            // Botón de limpieza rápida (X)
-            const clearBtn = document.createElement('button');
-            clearBtn.type = "button";
-            clearBtn.className = "absolute right-3 text-gray-500 hover:text-red-500 transition-colors";
-            clearBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
-            clearBtn.onclick = () => { input.value = ''; input.focus(); };
-            iCont.appendChild(clearBtn);
+    function showSystemModal({
+        title,
+        text,
+        type = 'info',
+        showCancel = false,
+        isPrompt = false,
+        placeholder = 'Valor...',
+        inputType = 'text',
+        inputValue = '' // Nuevo parámetro para recibir el filtro actual
+    }) {
+        return new Promise(res => {
+            const m = document.getElementById('system-modal'),
+                ti = document.getElementById('sys-modal-title'),
+                te = document.getElementById('sys-modal-text'),
+                ic = document.getElementById('sys-modal-icon'),
+                ac = document.getElementById('sys-modal-actions'),
+                iCont = document.getElementById('sys-modal-input-container'),
+                input = document.getElementById('sys-modal-input');
 
-            setTimeout(() => input.focus(), 150);
-        } else {
-            iCont.classList.add('hidden');
-        }
+            ti.textContent = title;
+            te.innerHTML = text;
 
-        const close = (val) => {
-            m.classList.add('hidden');
-            res(val);
-        };
+            // Iconografía y Colores
+            const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
+            const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
+            ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
+            
+            ac.innerHTML = '';
 
-        // Botón Cancelar
-        if (showCancel || isPrompt) {
-            const bc = document.createElement('button');
-            bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
-            bc.textContent = 'Cancelar';
-            bc.onclick = () => close(null);
-            ac.appendChild(bc);
-        }
+            // Manejo del Input (Modo Prompt)
+            if (isPrompt) {
+                iCont.classList.remove('hidden');
+                iCont.className = "relative mt-4 mb-6 flex items-center"; 
+                
+                input.value = inputValue; 
+                input.type = inputType; 
+                input.placeholder = placeholder;
+                // Estilo del input según tu diseño
+                input.className = "w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-4 pr-10 text-sm text-white outline-none focus:border-blue-500";
 
-        // Botón Aceptar
-        const bp = document.createElement('button');
-        bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
-        bp.textContent = 'Aceptar';
-        bp.onclick = () => close(isPrompt ? input.value : true);
-        ac.appendChild(bp);
+                // Limpiar botones previos (como el ojo de password o X antiguas)
+                const oldExtras = iCont.querySelectorAll('.absolute');
+                oldExtras.forEach(el => el.remove());
 
-        input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); bp.click(); } };
+                // Botón de limpieza rápida (X)
+                const clearBtn = document.createElement('button');
+                clearBtn.type = "button";
+                clearBtn.className = "absolute right-3 text-gray-500 hover:text-red-500 transition-colors";
+                clearBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+                clearBtn.onclick = () => { input.value = ''; input.focus(); };
+                iCont.appendChild(clearBtn);
 
-        m.classList.remove('hidden');
-        if (window.lucide) lucide.createIcons();
-    });
-}
+                setTimeout(() => input.focus(), 150);
+            } else {
+                iCont.classList.add('hidden');
+            }
 
-    async function deleteRecord() {
-        // 1. Extraer datos del Usuario Logueado (Usando tus nombres de localStorage)
-        const usuarioLogueadoId = String(localStorage.getItem('Usuario_ID') || "").trim();
-        const perfilUsuario = String(localStorage.getItem('Usuario_Perfil') || "").trim().toUpperCase();
-        const idxCorrecto = String(localStorage.getItem('Usuario_Idx') || "").trim();
-
-        // 2. Extraer datos del Registro a eliminar
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const row = tableData.DATOS_REGISTRO; // Los datos reales están aquí
-        const tableOrigin = tableData.TABLA_ORIGEN || "";
-        
-        if (!row || !tableOrigin) {
-            console.error("Error: No hay datos de registro cargados.");
-            return;
-        }
-
-        const prefix = tableOrigin.split('_')[0].toUpperCase(); // Ej: "TD101"
-        
-        // 3. Identificar al Propietario del registro
-        // Nota: Usamos String() para evitar que la comparación falle si uno es número y el otro texto
-        const registroOwner = String(row[`${prefix}RegistroUser`] || "").trim();
-        
-        // 4. Lógica de Permisos
-        const esAdmin = (perfilUsuario === 'ADMIN');
-        const esPropietario = (registroOwner !== "" && registroOwner === usuarioLogueadoId);
-
-        // 5. Verificación de Acceso
-        if (!esPropietario && !esAdmin) {
-            await showSystemModal({ 
-                title: 'Acceso Denegado', 
-                text: `Solo el propietario (${registroOwner}) o un Administrador pueden eliminar este registro.`, 
-                type: 'warning' 
-            });
-            return;
-        }
-
-        // 6. Confirmación con PIN (Idx)
-        const pinIngresado = await showSystemModal({
-            title: 'Confirmar Eliminación',
-            text: 'Este registro se moverá al historial de borrados. Ingrese su Idx de Seguridad:',
-            type: 'danger', 
-            isPrompt: true,
-            inputType: 'password',
-            placeholder: 'PIN de seguridad...'
-        });
-
-        if (pinIngresado === null) return; // Canceló el modal
-
-        if (String(pinIngresado).trim() !== idxCorrecto) {
-            await showSystemModal({ 
-                title: 'Error de Seguridad', 
-                text: 'El Idx de Seguridad es incorrecto. Operación cancelada.', 
-                type: 'warning' 
-            });
-            return;
-        }
-
-        // 7. Payload para el Backend
-        const payload = {
-                action: "deleteDynamicDataTD",
-                TABLA_DESTINO: tableOrigin,
-                CAMPO_CLAVE: `${prefix}ID`,
-                ID_VALUE: row[`${prefix}ID`],
-                usuario_id: usuarioLogueadoId
+            const close = (val) => {
+                m.classList.add('hidden');
+                res(val);
             };
 
-        try {
-            // 1. Encendemos el loader manualmente para controlar todo el proceso
-            toggleGlobalLoader(true, "Eliminando Registro...", "Procesando eliminación del registro seleccionado y actualizando base de datos...");
-
-            // 2. Enviamos al backend (Fetch directo en lugar de llamar a executeSubmit si queremos control total)
-            const r = await fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payload) });
-            const res = await r.json();
-
-            if (res.success) {
-                // 3. ¡IMPORTANTE! El registro ya se borró en el servidor, 
-                // pero NO quitamos el loader aún. Cambiamos el mensaje:
-                const loaderLabel = document.querySelector('#global-loader span');
-                if (loaderLabel) loaderLabel.textContent = "Sincronizando Tabla...";
-
-                // 4. FORZAMOS el refresco invalidando la caché
-                needsRefresh = true; 
-                await fetchData(currentTableName); 
-
-                // 5. Una vez terminado el proceso, fetchData ya habrá puesto needsRefresh = false
-                // pero lo ponemos aquí también por seguridad extrema.
-                document.getElementById('detail-modal').classList.add('hidden');
-                needsRefresh = false;
-
-                // 6. Finalmente, quitamos el loader y mostramos el éxito
-                toggleGlobalLoader(false);
-                await showSystemModal({ title: 'Proceso Completado', text: 'Registro eliminado correctamente.', type: 'info' });
-                
-            } else {
-                toggleGlobalLoader(false);
-                await showSystemModal({ title: 'Error', text: res.message, type: 'warning' });
+            // Botón Cancelar
+            if (showCancel || isPrompt) {
+                const bc = document.createElement('button');
+                bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
+                bc.textContent = 'Cancelar';
+                bc.onclick = () => close(null);
+                ac.appendChild(bc);
             }
-        } catch (error) {
+
+            // Botón Aceptar
+            const bp = document.createElement('button');
+            bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
+            bp.textContent = 'Aceptar';
+            bp.onclick = () => close(isPrompt ? input.value : true);
+            ac.appendChild(bp);
+
+            input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); bp.click(); } };
+
+            m.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        });
+    }
+
+    async function deleteRecord() {
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const record = tableData.DATOS_REGISTRO;
+        if (!record) return;
+
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        const movTipo = String(record[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
+        const referencia = String(record[tablePrefix + 'REF'] || '').toUpperCase();
+        const recordId = record[tablePrefix + 'ID'];
+
+        // 1. VALIDACIÓN: Impedir borrar hijos directamente
+        if (movTipo !== 'TRANSFERENCIA' && referencia.includes('TRANSFERENCIA #')) {
+            await showSystemModal({
+                title: 'Acción Bloqueada',
+                text: `Este registro es un asiento vinculado a la <b>${referencia}</b>.<br><br>Para eliminarlo, debe localizar y eliminar el registro original de tipo TRANSFERENCIA.`,
+                type: 'warning'
+            });
+            return;
+        }
+
+        // 2. CONFIRMACIÓN
+        const esPadre = movTipo === 'TRANSFERENCIA';
+        const confirm = await showSystemModal({
+            title: '¿Confirmar eliminación?',
+            text: esPadre 
+                ? 'Esta es una <b>TRANSFERENCIA</b>. Al eliminarla, se borrarán automáticamente los asientos de Débito y Crédito asociados.'
+                : '¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.',
+            type: 'danger',
+            confirmText: 'Eliminar'
+        });
+
+        if (!confirm) return;
+
+        // 3. PROCESAMIENTO
+        toggleGlobalLoader(true, "Eliminando...", "Sincronizando con el servidor GAS.");
+
+        const finalPayload = {
+            action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
+            TABLA_DESTINO: currentTableName,
+            [tablePrefix + 'ID']: recordId,
+            // Si es padre, enviamos la referencia que comparten los hijos
+            REF_CASCADE: esPadre ? `TRANSFERENCIA #${recordId}` : '',
+            currentUser: localStorage.getItem('Usuario_ID') || ''
+        };
+
+        const success = await executeSubmit(finalPayload);
+
+        if (success) {
+            needsRefresh = true;
+            await fetchData(currentTableName);
+            document.getElementById('detail-modal')?.classList.add('hidden');
             toggleGlobalLoader(false);
-            console.error("Error:", error);
-            await showSystemModal({ title: 'Error Crítico', text: 'No se pudo conectar con el servidor.', type: 'danger' });
+            await showSystemModal({ title: 'Éxito', text: 'Registros eliminados correctamente.', type: 'info' });
         }
     }
 
+    /**
+     * Envía datos al servidor GAS y gestiona la respuesta global
+     * @param {Object} payload - Datos a enviar al servidor
+     * @returns {Object|Boolean} - Devuelve el objeto creado/editado si tiene éxito, false si falla.
+     */
     async function executeSubmit(payload) {
+        // 1. Efecto visual inicial
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // 1. Definimos los textos según la acción
+        // 2. Definición dinámica de textos según la acción para el Loader
         let title = "Procesando Solicitud...";
         let desc = "Sincronizando con la base de datos GAS...";
 
-        if (payload.action.includes('delete')) {
+        const action = String(payload.action || '').toLowerCase();
+
+        if (action.includes('delete')) {
             title = "Eliminando Registro...";
             desc = "Eliminando el registro seleccionado del servidor...";
-        } else if (payload.action.includes('edit')) {
+        } else if (action.includes('edit')) {
             title = "Actualizando Datos...";
             desc = "Guardando cambios realizados en el registro...";
-        } else if (payload.action.includes('register')) {
+        } else if (action.includes('register')) {
             title = "Guardando Nuevo Registro...";
             desc = "Creando registro en la base de datos...";
         }
 
-        // 2. Un solo llamado limpio que hace TODO el trabajo
+        // 3. Activación del Loader Global
         toggleGlobalLoader(true, title, desc);
 
         try {
+            // 4. Petición al servidor (GAS)
+            // Usamos URLSearchParams para asegurar que el backend reciba los datos correctamente
             const r = await fetch(GAS_URL, { 
                 method: 'POST', 
                 body: new URLSearchParams(payload) 
@@ -1468,31 +1430,45 @@ function showSystemModal({
             
             const res = await r.json();
 
+            // 5. Gestión de la Respuesta
             if (res.success) {
-                // Sincronización inmediata del registro en TABLE_DATA
+                // Sincronización inmediata del registro en el estado local (localStorage)
                 if (res.data) {
                     const currentData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
                     currentData.DATOS_REGISTRO = res.data; 
                     localStorage.setItem('TABLE_DATA', JSON.stringify(currentData));
                 }
-                // NO quitamos el loader ni mostramos modal aquí. 
-                // Devolvemos el control a quien llamó la función (ej: saveRecord).
-                return true; 
+
+                // IMPORTANTE: Retornamos la data para que funciones como saveRecord 
+                // puedan usar el ID generado (ej. para transferencias)
+                return res.data || true; 
+
             } else {
+                // Error controlado por el servidor (ej. validaciones de base de datos)
                 toggleGlobalLoader(false);
-                await showSystemModal({ title: 'Atención', text: res.message, type: 'warning' });
+                await showSystemModal({ 
+                    title: 'Atención', 
+                    text: res.message || 'El servidor denegó la operación.', 
+                    type: 'warning' 
+                });
                 return false;
             }
+
         } catch (err) {
+            // Error técnico (ej. pérdida de conexión, error de script)
             toggleGlobalLoader(false);
-            console.error("Error técnico:", err);
-            await showSystemModal({ title: 'Error de Aplicación', text: err.message, type: 'danger' });
+            console.error("Error técnico en executeSubmit:", err);
+            await showSystemModal({ 
+                title: 'Error de Aplicación', 
+                text: `No se pudo conectar con el servidor: ${err.message}`, 
+                type: 'danger' 
+            });
             return false;
         }
     }
 
     async function saveRecord() {
-        toggleGlobalLoader(true, "Creando Registro Nuevo...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
+        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
         const container = document.getElementById('detail-modal-content');
         const inputs = container.querySelectorAll('[data-field]');
@@ -1503,24 +1479,20 @@ function showSystemModal({
         let missingFields = [];
         let payload = {};
 
-        // 1. Limpieza de errores visuales
+        // 1. LIMPIEZA DE ERRORES VISUALES
         inputs.forEach(i => {
             i.classList.remove('border-red-500', 'bg-red-500/10');
             i.classList.add('border-transparent'); 
         });
 
-        // 2. EXTRACCIÓN Y FORMATEO
+        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
         inputs.forEach(input => {
             const key = input.dataset.field;
             const cleanKey = key.toUpperCase();
             const cfg = configMap[cleanKey] || {};
-            
-            // Identificamos si es un campo de fecha
             const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
             
             let value;
-
-            // Extracción base
             if (input.hasAttribute('data-raw')) {
                 value = input.getAttribute('data-raw');
             } else if (input.type === 'checkbox') {
@@ -1529,14 +1501,10 @@ function showSystemModal({
                 value = input.value.trim();
             }
 
-            // --- LÓGICA DE FORMATEO DE FECHAS ---
+            // Formateo de fecha para Sheets (dd/mm/yyyy)
             if (isDate && value) {
-                // El input type="date" devuelve "yyyy-mm-dd". 
-                // Lo convertimos a "dd/mm/yyyy" para que Sheets lo entienda mejor.
                 const parts = value.split('-');
-                if (parts.length === 3) {
-                    value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                }
+                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
 
             // Validación de obligatorios
@@ -1548,7 +1516,7 @@ function showSystemModal({
             payload[key] = value;
         });
 
-        // 3. Bloqueo si faltan campos
+        // 3. VALIDACIONES DE NEGOCIO (BLOQUEO)
         if (missingFields.length > 0) {
             toggleGlobalLoader(false);
             const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
@@ -1556,54 +1524,145 @@ function showSystemModal({
             return; 
         }
 
-        // 4. Preparación de envío (Modo, ID y Usuario)
-        const badgeText = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
-        const isNewOrDuplicate = badgeText.includes('BORRADOR') || badgeText.includes('DUPLICADO');
-        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
+        const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
         const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+
+        // Validación Transferencia: Cuentas no pueden ser iguales
+        if (badgeMode.includes('TR')) {
+            const valEmisora = payload[`${tablePrefix}CUENTA`];
+            const valReceptora = payload[`${tablePrefix}CUENTA2`];
+            if (valEmisora && valReceptora && valEmisora === valReceptora) {
+                toggleGlobalLoader(false);
+                container.querySelectorAll(`[data-field="${tablePrefix}CUENTA"], [data-field="${tablePrefix}CUENTA2"]`)
+                    .forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
+                await showSystemModal({ title: 'Error en Transferencia', text: 'La cuenta origen y destino deben ser diferentes.', type: 'error' });
+                return;
+            }
+        }
+
+        // 4. PREPARACIÓN DE PAYLOAD FINAL
+        const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
+        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
         const idFieldName = `${tablePrefix}ID`;
         const userId = localStorage.getItem('Usuario_ID') || ""; 
 
         if (isNewOrDuplicate) {
             delete payload[idFieldName];
+            
+            // INYECCIÓN CRÍTICA PARA NUEVOS REGISTROS
+            // Esto asegura que el registro nazca con dueño y sea visible luego
+            payload[`${tablePrefix}IDOWNER`] = userId; 
         }
 
         const finalPayload = {
             ...payload,
             action: gasAction,
             TABLA_DESTINO: currentTableName,
-            currentUser: userId
+            currentUser: userId // Este se usa para la auditoría (REGISTROUSER)
         };
 
-        // 5. ENVÍO Y SINCRONIZACIÓN
-        const success = await executeSubmit(finalPayload); 
+        // 5. ENVÍO Y GENERACIÓN DE ASIENTOS DERIVADOS
+        // IMPORTANTE: executeSubmit debe retornar res.data para que esto funcione
+        const createdRecord = await executeSubmit(finalPayload); 
 
-        if (success) {
-            const loaderLabel = document.querySelector('#global-loader span');
-            if (loaderLabel) loaderLabel.textContent = "Sincronizando con Servidor...";
+        if (createdRecord) {
+            // Si es una Transferencia, generamos el Débito y Crédito usando el ID del maestro
+            if (badgeMode.includes('TR')) {
+                const loaderLabel = document.querySelector('#global-loader span');
+                if (loaderLabel) loaderLabel.textContent = "Generando asientos contables vinculados...";
+                
+                // Pasamos el objeto createdRecord que ya contiene el ID asignado por el servidor
+                await generateTransferAsientos(createdRecord);
+            }
 
+            // Sincronización final y cierre
             needsRefresh = true; 
             await fetchData(currentTableName); 
 
-            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-            const registroProcesado = updatedStorage.DATOS_REGISTRO;
-
-            // Cierre de modal y loader
             document.getElementById('detail-modal')?.classList.add('hidden');
             toggleGlobalLoader(false);
             
             await showSystemModal({ 
                 title: 'Solicitud completada', 
-                text: 'Registro procesado correctamente.', 
+                text: 'Operación procesada y sincronizada correctamente.', 
                 type: 'info' 
             });
 
-            // Reapertura en modo vista
-            if (registroProcesado) {
-                openDetailModal(registroProcesado);
+            // Reapertura opcional para ver el registro final
+            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+            if (updatedStorage.DATOS_REGISTRO) {
+                openDetailModal(updatedStorage.DATOS_REGISTRO);
             }
         }
     }
+
+    /**
+     * Función Auxiliar para crear los dos movimientos de la transferencia
+     */
+async function generateTransferAsientos(trMaster) {
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const trID = trMaster[`${tablePrefix}ID`]; // El ID real del servidor
+    const userId = localStorage.getItem('Usuario_ID') || "";
+    
+    const colCuenta = `${tablePrefix}CUENTA`;
+    const colAlias = `${tablePrefix}ALIASCUENTA`;
+    const colCuenta2 = `${tablePrefix}CUENTA2`;
+    const colMov = `${tablePrefix}MOVIMIENTO`;
+    const colRef = `${tablePrefix}REF`;
+
+    // 1. Clonamos el objeto base y limpiamos lo que no corresponde a los hijos
+    const baseData = { ...trMaster };
+    delete baseData[`${tablePrefix}ID`];
+    delete baseData[colCuenta2];
+
+    // --- LÓGICA DE TRADUCCIÓN (Copiada de saveRecord) ---
+    const buscarID = (alias) => {
+        if (alias && window.dashboardState?.cuentas) {
+            const encontrada = window.dashboardState.cuentas.find(c => c.ALIAS === alias);
+            return encontrada ? encontrada.ID : "";
+        }
+        return "";
+    };
+
+    // 2. Payload DÉBITO (Salida - Cuenta Emisora)
+    // Nos aseguramos de enviar su ID correcto basado en su ALIASCUENTA
+    const aliasEmisor = trMaster[colAlias];
+    const payloadDebito = {
+        ...baseData,
+        [colAlias]: aliasEmisor,
+        [colCuenta]: buscarID(aliasEmisor), 
+        [colMov]: 'DÉBITO',
+        [colRef]: `TRANSFERENCIA #${trID}`,
+        action: 'registerDynamicDataTD',
+        TABLA_DESTINO: currentTableName,
+        currentUser: userId
+    };
+
+    // 3. Payload CRÉDITO (Entrada - Cuenta Receptora)
+    // Aquí invertimos: ALIASCUENTA ahora es lo que venía en CUENTA2
+    const aliasReceptor = trMaster[colCuenta2];
+    const payloadCredito = {
+        ...baseData,
+        [colAlias]: aliasReceptor,
+        [colCuenta]: buscarID(aliasReceptor), // Inyectamos el ID de la receptora
+        [colMov]: 'CRÉDITO',
+        [colRef]: `TRANSFERENCIA #${trID}`,
+        action: 'registerDynamicDataTD',
+        TABLA_DESTINO: currentTableName,
+        currentUser: userId
+    };
+
+    try {
+        // Enviamos ambos registros ya procesados con sus IDs correspondientes
+        await Promise.all([
+            fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payloadDebito) }),
+            fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payloadCredito) })
+        ]);
+        console.log(`✅ Asientos contables vinculados a TR #${trID} generados con éxito.`);
+    } catch (e) {
+        console.error("❌ Error crítico en generación de asientos:", e);
+    }
+}
 
     function normalizeToolbar() {
         const ids = ['btn-modal-save', 'btn-modal-cancel', 'btn-modal-return'];
@@ -1657,7 +1716,7 @@ function showSystemModal({
         if (window.lucide) lucide.createIcons();
     }
 
-async function cancelActualForm() {
+    async function cancelActualForm() {
         const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
         const originalRow = storageData.DATOS_REGISTRO; // null si es registro nuevo
         
@@ -1734,11 +1793,19 @@ async function cancelActualForm() {
         const title = document.getElementById('detail-modal-title');
         const tablePrefix = currentTableName.split('_')[0].toUpperCase();
 
+        // --- DETECCIÓN DE LÓGICA DE TRANSFERENCIA ---
+        const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
+        const valorRef = String(row[tablePrefix + 'REF'] || '').toUpperCase();
+        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRef.includes('TRANSFERENCIA #');
+
         // 5. Renderizado del Título Dinámico
         content.innerHTML = '';
         const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
         const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
         
+        const statusClass = isTransferRelated ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:bg-white/10 rounded-full transition-all";
+        const statusTitle = isTransferRelated ? "Las transferencias no pueden bloquearse" : "Cambiar Estatus";
+
         title.innerHTML = `
             <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
                 <div class="min-w-10 flex justify-start">
@@ -1752,38 +1819,41 @@ async function cancelActualForm() {
                         : 'bg-green-500/20 text-green-400 border-green-500/30'
                     }">${rawStatus}</span>
                 </div>
-                <div id="status-icon-container" class="flex justify-end">
+                <div id="status-icon-container" class="flex justify-end ${statusClass}" title="${statusTitle}">
                     <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
                 </div>
             </div>`;
 
-    // 6. Renderizado de Campos de Datos
+        if (!isTransferRelated) {
+            const statusBtn = document.getElementById('status-icon-container');
+            if (statusBtn) statusBtn.onclick = () => toggleStatus(row);
+        }
+
+        // 6. Renderizado de Campos de Datos
         Object.keys(row).forEach(key => {
             const cleanKey = key.toUpperCase();
-            const tablePrefix = currentTableName.split('_')[0].toUpperCase();
             const idFieldName = tablePrefix + 'ID';
+            const refFieldName = tablePrefix + 'REF';
             
-            // 1. Omitimos status (typereg) y el ID (que suele ir en el título)
-            if (cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
+            if (cleanKey.includes('TYPEREG') || cleanKey === idFieldName);
             
-            // 2. Lógica de Visibilidad Forzada
             const cfg = configMap[cleanKey] || {};
-            const visibility = String(cfg.visible || '').toLowerCase();
+            const visibility = String(cfg.visible || '').toLowerCase().trim();
             const isForced = cleanKey.includes('REGISTRO') || cleanKey.includes('MOVIMIENTO');
 
-            // Si no es 'x', ni 'xx', Y no es un campo forzado, omitimos.
             if (visibility !== 'x' && visibility !== 'xx' && !isForced) return;
 
             const isDescription = cleanKey.includes('DESCRIPCION');
             const isNormalCase = cleanKey.includes('CONFIG');
+            
+            // --- BLOQUEO VISUAL IGUAL A EDIT MODE ---
+            const isLockedRef = cleanKey === refFieldName && valorRef.includes('TRANSFERENCIA');
 
             const item = document.createElement('div');
-            // Mantenemos tu estructura de grid alineada a la izquierda
             item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
             
             let valueHTML = '';
 
-            // 3. Renderizado de Contenido
             if (isDescription) {
                 valueHTML = `
                     <textarea 
@@ -1792,11 +1862,17 @@ async function cancelActualForm() {
                         class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
                         style="height: 60px; text-align: left !important; display: block !important;"
                     >${row[key] || ''}</textarea>`;
+            } else if (isLockedRef) {
+                // DISEÑO ESPECIAL UNIFICADO CON SHOWEDITMODE
+                valueHTML = `
+                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between bg-orange-500/5 rounded border border-orange-500/10">
+                        <span class="text-sm font-bold uppercase tracking-tight text-orange-400/80 truncate">
+                            ${getFormattedValue(key, row[key])}
+                        </span>
+                        <i data-lucide="lock-keyhole" class="w-3.5 h-3.5 text-orange-500/50 ml-2"></i>
+                    </div>`;
             } else {
-                // Si es un campo forzado o 'xx', podrías darle un color sutilmente distinto 
-                // o mantenerlo blanco para lectura clara en el modal de detalle.
                 const textColor = isForced ? 'text-blue-400' : 'text-white';
-                
                 valueHTML = `
                     <span class="${textColor} font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
                         style="text-align: left !important;">
@@ -1822,164 +1898,202 @@ async function cancelActualForm() {
         }
     }
 
-function showEditMode() {
-    normalizeToolbar(); // Limpiamos la barra de herramientas
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-
-    // Normalización del configMap
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.add('hidden');
-
-    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const row = storageData.DATOS_REGISTRO;
-    if (!row) return;
-
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const idFieldName = tablePrefix + 'ID';
-    content.innerHTML = '';
-
-    // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
-    const hiddenId = document.createElement('input');
-    hiddenId.type = 'hidden';
-    hiddenId.dataset.field = idFieldName;
-    hiddenId.value = row[idFieldName] || '';
-    content.appendChild(hiddenId);
-
-    // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
-    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
-
-    title.innerHTML = `
-        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-            <div class="min-w-10 flex justify-start">
-                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
-            </div>
-            <div class="flex justify-center min-w-0">
-                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
-            </div>
-            <div id="status-icon-container" class="flex justify-end">
-                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-            </div>
-        </div>`;
-
-    // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
-    Object.keys(row).forEach(key => {
-        const cleanKey = key.toUpperCase();
+    function showEditMode() {
+        normalizeToolbar(); // Limpiamos la barra de herramientas
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
         
-        // Exclusión de campos técnicos
-        if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-        
-        const cfg = configMap[cleanKey] || {};
-        const visValue = String(cfg.visible || '').toLowerCase().trim();
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
 
-        // REGLA: Si está vacío, no se renderiza.
-        if (visValue === "") return;
+        // Normalización del configMap
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-        // REGLA DE EDICIÓN: Solo si es exactamente 'x' y no es calculado.
-        const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
-        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.add('hidden');
 
-        const istoggle = cleanKey.includes('TYPEREG');
-        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        
-        // Lógica de Diccionario: TABLA|CAMPO
-        const dictKey = `${currentTableName}|${key}`.toUpperCase();
-        const dictOptions = dictionary[dictKey];
-        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || cleanKey.includes('CUENTA')
-        );       
+        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const row = storageData.DATOS_REGISTRO;
+        if (!row) return;
 
-        const item = document.createElement('div');
-        item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-        
-        let valueElement = '';
-        const val = row[key] || '';
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        const idFieldName = tablePrefix + 'ID';
+        const refFieldName = tablePrefix + 'REF';
+        content.innerHTML = '';
 
-        // --- LÓGICA DE RENDERIZADO ---
-        if (!isEditable) {
-            // A. CAMPOS BLOQUEADOS
-            const rawValue = row[key] !== null ? row[key] : '';
-            valueElement = `
-                <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between">
-                    <span class="text-sm text-gray-500 font-bold uppercase tracking-tight opacity-90">
-                        ${getFormattedValue(key, rawValue)}
-                    </span>
-                    <input type="hidden" data-field="${key}" value="${rawValue}">
-                    <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                </div>`;
-        } 
-        else if (istoggle) {
-            // B. TOGGLE
-            const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
-            valueElement = `<div class="flex items-center gap-3"><button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}"><i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i></button><span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span><input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}"></div>`;
-        } 
-        else if (isSelect) {
-                    // C. SELECT (DICCIONARIO) - INTEGRADO CON VARIABLES CSS DE TEMA
-                    const optionsHtml = dictOptions.map(opt => {
-                        const isSelected = String(opt).trim().toUpperCase() === String(val).trim().toUpperCase();
-                        return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
-                    }).join('');
+        // --- 0. LÓGICA DE DETECCIÓN DE TRANSFERENCIA ---
+        const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
+        const valorRefActual = String(row[refFieldName] || '').toUpperCase();
+        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRefActual.includes('TRANSFERENCIA #');
 
-                    valueElement = `
-                        <div class="relative w-full group">
-                            <select data-field="${key}" 
-                                style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                                class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                                <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                                ${optionsHtml}
-                            </select>
-                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                                <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                            </div>
-                        </div>`;
-        }
+        // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
+        const hiddenId = document.createElement('input');
+        hiddenId.type = 'hidden';
+        hiddenId.dataset.field = idFieldName;
+        hiddenId.value = row[idFieldName] || '';
+        content.appendChild(hiddenId);
 
-        else if (isDate) {
-            // D. FECHA
-            let dateISO = '';
-            if (val) {
-                dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
-            }
-            valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-        } 
-        else if (isNumeric) {
-            // E. NUMÉRICO
-            valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
-        } 
-        else if (isDescription) {
-            // F. TEXTAREA
-            valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${val}</textarea>`;
-        } 
-        else {
-            // G. TEXTO SIMPLE
-            valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-        }
+        // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
+        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
 
-        item.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${valueElement}`;
+        // Si es transferencia, el contenedor del icono se vuelve visualmente inactivo
+        const statusIconClass = isTransferRelated ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 rounded-full transition-all';
+
+        title.innerHTML = `
+            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+                <div class="min-w-10 flex justify-start">
+                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                    <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
+                </div>
+                <div class="flex justify-center min-w-0">
+                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
+                </div>
+                <div id="status-icon-container" class="flex justify-end ${statusIconClass}" title="${isTransferRelated ? 'No se puede bloquear una transferencia' : 'Cambiar Estatus'}">
+                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+                </div>
+            </div>`;
+
+        // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
+        Object.keys(row).forEach(key => {
+            const cleanKey = key.toUpperCase();
             
-        content.appendChild(item);
-    });
+            // Exclusión de campos técnicos
+            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+            
+            const cfg = configMap[cleanKey] || {};
+            const visValue = String(cfg.visible || '').toLowerCase().trim();
 
-    if (window.lucide) lucide.createIcons();
-}
+            // REGLA: Si está vacío, no se renderiza.
+            if (visValue === "") return;
+
+            // REGLA DE EDICIÓN: Solo si es exactamente 'x' y no es calculado.
+            let isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+            
+            // --- BLOQUEO ESPECÍFICO TD101REF SI ES TRANSFERENCIA ---
+            const isLockedTransferRef = cleanKey === refFieldName && valorRefActual.includes('TRANSFERENCIA');
+            if (isLockedTransferRef) isEditable = false;
+
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            const istoggle = cleanKey.includes('TYPEREG');
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            
+            const dictKey = `${currentTableName}|${key}`.toUpperCase();
+            const dictOptions = dictionary[dictKey];
+            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || cleanKey.endsWith('ALIASCUENTA')
+            );       
+            const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
+
+            const item = document.createElement('div');
+            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+            
+            let valueElement = '';
+            const val = row[key] || '';
+
+            // --- LÓGICA DE RENDERIZADO ---
+            if (!isEditable) {
+                // A. CAMPOS BLOQUEADOS (Incluye el REF de transferencia ahora)
+                const rawValue = row[key] !== null ? row[key] : '';
+                const isSpecialLock = isLockedTransferRef;
+                
+                valueElement = `
+                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between ${isSpecialLock ? 'bg-orange-500/5 rounded' : ''}">
+                        <span class="text-sm font-bold uppercase tracking-tight ${isSpecialLock ? 'text-orange-400/80' : 'text-gray-500 opacity-90'}">
+                            ${getFormattedValue(key, rawValue)}
+                        </span>
+                        <input type="hidden" data-field="${key}" value="${rawValue}">
+                        <i data-lucide="${isSpecialLock ? 'lock-keyhole' : (cfg.Es_Calculado ? 'calculator' : 'lock')}" 
+                        class="w-3.5 h-3.5 ${isSpecialLock ? 'text-orange-500/50' : 'text-gray-700'}"></i>
+                    </div>`;
+            } 
+            else if (istoggle) {
+                // B. TOGGLE (Bloqueado si es transferencia)
+                const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
+                const toggleDisabled = isTransferRelated ? 'pointer-events-none opacity-30' : '';
+                
+                valueElement = `
+                    <div class="flex items-center gap-3 ${toggleDisabled}">
+                        <button type="button" 
+                            ${isTransferRelated ? '' : `onclick="toggleStatus(this, '${key}')"`} 
+                            class="focus:outline-none transition-transform active:scale-90" 
+                            id="btn-toggle-${key}">
+                            <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
+                        </button>
+                        <span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">
+                            ${isBlocked ? 'Bloqueado' : 'Registrado'}
+                        </span>
+                        <input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}">
+                    </div>`;
+            } 
+            else if (isIdCuenta) {
+                // Renderizamos como input hidden para mantener el ID actual del registro
+                valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
+                // Opcional: puedes hacer que el item completo no se vea
+                item.className = 'hidden'; 
+            } 
+            else if (isSelect) {
+                // C. SELECT (DICCIONARIO) - Tu lógica original intacta
+                const valActual = String(val || '').trim();
+                const existeEnOpciones = dictOptions.some(opt => String(opt).trim() === valActual);
+                const optionsHtml = dictOptions.map(opt => {
+                    const isSelected = String(opt).trim() === valActual;
+                    return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+                }).join('');
+
+                valueElement = `
+                    <div class="relative w-full group">
+                        <select data-field="${key}" 
+                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                            ${!existeEnOpciones ? `<option value="${valActual}" selected style="background-color: var(--bg); color: var(--txt);">${valActual || '-- SELECCIONE --'}</option>` : ''}
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                        </div>
+                    </div>`;
+            }
+            else if (isDate) {
+                // D. FECHA
+                let dateISO = '';
+                if (val) {
+                    dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
+                }
+                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            } 
+            else if (isNumeric) {
+                // E. NUMÉRICO
+                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
+            } 
+            else if (isDescription) {
+                // F. TEXTAREA
+                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${val}</textarea>`;
+            } 
+            else {
+                // G. TEXTO SIMPLE
+                valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            }
+
+            item.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${valueElement}`;
+                
+            content.appendChild(item);
+        });
+
+        if (window.lucide) lucide.createIcons();
+    }
 
 function showRegisterMode() {
     // 1. LIMPIEZA DE DATOS Y RESET DE MODO
@@ -2022,6 +2136,10 @@ function showRegisterMode() {
         configMap[k.toUpperCase()] = configMapRaw[k];
     });
     
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
+    const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
+
     content.innerHTML = '';
 
     // 3. TÍTULO
@@ -2044,23 +2162,40 @@ function showRegisterMode() {
         const visValue = String(cfg.visible || '').toLowerCase().trim();
         if (visValue === "") return;
 
-        // --- REGLA DE EXCLUSIÓN TÉCNICA ---
-        if (cleanKey.endsWith('ID') || cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+        // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
+        // Si es el ID de la tabla o el ID de la Cuenta, los creamos ocultos y vacíos
+        if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.dataset.field = key; 
+            hiddenInput.value = ''; // Crítico: Vacío para que mande el Alias en saveRecord
+            content.appendChild(hiddenInput);
+            return; 
+        }
 
-        // --- REGLA DE EDICIÓN ---
+        // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
+        if (cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+
         const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
         const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
 
-        // --- LÓGICA DE OBLIGATORIEDAD ---
         const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
         const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
 
-        // --- DETECCIÓN DE SELECT (DICCIONARIO) ---
+        // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
         const currentTableClean = String(currentTableName).trim().toUpperCase();
         const dictKey = `${currentTableClean}|${cleanKey}`;
-        const dictOptions = dictionary[dictKey];
+        let dictOptions = dictionary[dictKey] || [];
+        
+        const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+        
+        // Soporte dinámico para Alias de Cuentas si el diccionario no lo trae
+        if (isAliasField && dictOptions.length === 0) {
+            dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+        }
+
         const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
+            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
         );
 
         const isDescription = cleanKey.includes('DESCRIPCION');
@@ -2072,9 +2207,7 @@ function showRegisterMode() {
         
         let inputHTML = '';
 
-        // --- LÓGICA DE RENDERIZADO ---
         if (!isEditable) {
-            // A. CAMPOS BLOQUEADOS
             inputHTML = `
                 <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
                     <span>---</span>
@@ -2083,7 +2216,6 @@ function showRegisterMode() {
                 </div>`;
 
         } else if (isSelect) {
-            // B. SELECT (DICCIONARIO)
             const optionsHtml = dictOptions.map(opt => 
                 `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
             ).join('');
@@ -2102,20 +2234,16 @@ function showRegisterMode() {
                 </div>`;
 
         } else if (isDescription) {
-            // C. TEXTAREA
             inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
 
         } else if (isDate) {
-            // D. FECHA
             const hoy = new Date().toISOString().split('T')[0];
             inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
 
         } else if (isNumeric) {
-            // E. NUMÉRICO
             inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
 
         } else {
-            // F. TEXTO SIMPLE
             inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
         }
 
@@ -2136,318 +2264,320 @@ function showRegisterMode() {
     }, 200);
 }
 
-    function TransferAccountRecord() {
-        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-        
-        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-            TABLA_ORIGEN: tableOrigin,
-            DATOS_REGISTRO: null 
-        }));
-
-        // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); // Limpiamos primero
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
-        
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); // oculto botón
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        // Aseguramos que el modal sea visible
-        document.getElementById('detail-modal')?.classList.remove('hidden');
-
-        const btnCancel = document.getElementById('btn-modal-cancel');
-        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
-
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        
-        // Normalización de configMap para búsqueda segura
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => {
-            configMap[k.toUpperCase()] = configMapRaw[k];
-        });
-        
-        content.innerHTML = '';
-
-        // 3. TÍTULO
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <div class="flex items-center gap-2">
-                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        BORRADOR TR
-                    </span>
-                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-                </div>
-            </div>`;
-
-        // 4. RENDERIZADO DINÁMICO DE CAMPOS               
-        // Usamos las llaves del configMap para construir el formulario de registro nuevo
-        Object.keys(configMap).forEach(key => {
-            const cfg = configMap[key]; 
-            const cleanKey = key.toUpperCase();
-            
-            const visibility = String(cfg.visible).toLowerCase();
-            
-            // Si no tiene 'x' ni 'xx', no se muestra en absoluto
-            if (visibility !== 'x' && visibility !== 'xx') return;
-            
-            // Exclusiones técnicas
-            if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
-            if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO')) return;
-
-            // --- LÓGICA DE ESTADO ---
-            const isMovementField = cleanKey.includes('MOVIMIENTO');
-            const isReadOnly = visibility === 'xx' || cfg.editable === false;
-            
-            const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
-            const asterisco = isRequired && !isReadOnly ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            // Identificación de tipos para el renderizado
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-            const rowItem = document.createElement('div');
-            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-start hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            // Caso Especial: Es el campo de MOVIMIENTO en una Transferencia
-            if (isMovementField) {
-                const defaultValue = "TRANSFERENCIA";
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 py-0">
-                        <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">
-                            ${defaultValue}
-                        </span>
-                        <input type="hidden" data-field="${key}" value="${defaultValue}">
-                    </div>`;
-            } 
-            // Caso General: Campo Visible pero NO Editable (xx)
-            else if (isReadOnly) {
-                // Si es un registro nuevo, el valor suele ser vacío o 0, 
-                // pero lo mostramos como texto estático.
-                const val = isNumeric ? "0,00" : "";
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 py-0">
-                        <span class="text-sm text-gray-500 font-bold uppercase opacity-70">
-                            ${val}
-                        </span>
-                        <input type="hidden" data-field="${key}" value="${val}">
-                    </div>`;
-            }
-            // Caso General: Campo Editable (x)
-            else {
-                if (isDescription) {
-                    inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
-                } else if (isDate) {
-                    const today = new Date().toISOString().split('T')[0];
-                    inputHTML = `<input type="date" data-field="${key}" value="${today}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-                } else if (isNumeric) {
-                    inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-                } else {
-                    inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-                }
-            }
-
-            rowItem.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
-        });
-
-        // 5. RENDERIZACIÓN DE ICONOS Y FOCO
-        if (window.lucide) lucide.createIcons();
-        
-        setTimeout(() => {
-            const firstInput = content.querySelector('input, textarea');
-            if (firstInput) firstInput.focus();
-        }, 200);
-    }
-       
-function duplicateCurrentRecord() {
-    const rawData = localStorage.getItem('TABLE_DATA');
-    const dataObj = JSON.parse(rawData || '{}');
-    const registroOriginal = dataObj.DATOS_REGISTRO;
-    
-    if (!registroOriginal) {
-        console.error("No se encontró el registro base para duplicar.");
-        return;
-    }
-
-    const tableOrigin = dataObj.TABLA_ORIGEN || currentTableName;
-    const tablePrefix = tableOrigin.split('_')[0].toUpperCase();
+function TransferAccountRecord() {
+    // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
+    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
     const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    
+    const tableClean = String(tableOrigin).toUpperCase();
+    const prefix = tableClean.split('_')[0]; 
+    const dictionaryTR = { ...dictionary };
 
-    // 1. PREPARACIÓN DE DATOS
-    const registroParaDuplicar = { ...registroOriginal };
+    // Inyectamos CUENTA2 en el diccionario para el select receptora
+    const keyEmisora = `${tableClean}|${prefix}ALIASCUENTA`;
+    const keyReceptora = `${tableClean}|${prefix}CUENTA2`;
+    
+    if (dictionary[keyEmisora]) {
+        dictionaryTR[keyReceptora] = dictionary[keyEmisora];
+    }
+
+    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+        TABLA_ORIGEN: tableOrigin,
+        DATOS_REGISTRO: null 
+    }));
 
     // 2. CONFIGURACIÓN DE INTERFAZ
     normalizeToolbar(); 
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
+    
     document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden'); 
     document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.add('hidden');
+    document.getElementById('detail-modal')?.classList.remove('hidden');
 
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) {
-        btnCancel.onclick = (e) => {
-            e.preventDefault();
-            cancelActualForm(); 
-        };
-    }
-
-    // RENDERIZADO DEL FORMULARIO
     const content = document.getElementById('detail-modal-content');
     const title = document.getElementById('detail-modal-title');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
     
-    // Normalización del configMap para búsqueda segura
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
     const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
+    Object.keys(configMapRaw).forEach(k => { configMap[k.toUpperCase()] = configMapRaw[k]; });
+    
     content.innerHTML = '';
 
-    // 3. TÍTULO
+    // 3. TÍTULO DE LA OPERACIÓN
     title.innerHTML = `
         <div class="flex items-center justify-end w-full px-2 py-1">
             <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                    NUEVO (DUPLICADO)
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    BORRADOR TR
                 </span>
-                <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-400"></i>
+                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
             </div>
         </div>`;
 
-    // 4. RENDERIZADO DINÁMICO
+    // 4. RENDERIZADO DINÁMICO DE CAMPOS
     Object.keys(configMap).forEach(key => {
+        const cfg = configMap[key]; 
         const cleanKey = key.toUpperCase();
-        const cfg = configMap[cleanKey] || {};
         
-        // Exclusión de campos técnicos
-        if (cleanKey.endsWith('ID') || cleanKey.includes('REGISTRO') || cleanKey.endsWith('CUENTA2')) return;
+        // --- A. GESTIÓN ROBUSTA DEL ID DE CUENTA (SILENCIOSO) ---
+        // Al igual que en Duplicate, necesitamos que el input exista para saveRecord
+        if (cleanKey === `${prefix}CUENTA`) {
+            const hiddenIdInput = document.createElement('input');
+            hiddenIdInput.type = 'hidden';
+            hiddenIdInput.dataset.field = key; 
+            hiddenIdInput.value = ''; // Se llenará vía Alias en saveRecord
+            content.appendChild(hiddenIdInput);
+            return;
+        }
 
-        const visValue = String(cfg.visible || '').toLowerCase().trim();
-        if (visValue === "") return;
+        // --- B. FILTROS DE VISIBILIDAD Y EXCLUSIÓN ---
+        const visibility = String(cfg.visible || '').toLowerCase().trim();
+        if (visibility !== 'x' && visibility !== 'xx') return;
+        if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
+        if (cleanKey.endsWith('ID')) return;
+        if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
 
-        // REGLAS DE EDICIÓN
-        const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-        const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
-
-        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-        // DETECCIÓN DE SELECT (DICCIONARIO)
-        const currentTableClean = String(currentTableName).trim().toUpperCase();
-        const dictKey = `${currentTableClean}|${cleanKey}`;
-        const dictOptions = dictionary[dictKey];
-        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO')
-        );
-
-        const istoggle = cleanKey.includes('TYPEREG');
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-        const rawValue = registroOriginal[key] !== undefined ? registroOriginal[key] : '';
-        const formattedValue = getFormattedValue(key, rawValue);
+        const isMovementField = cleanKey.includes('MOVIMIENTO');
+        const isTypeRegField = cleanKey.includes('TYPEREG');
+        const isReadOnly = visibility === 'xx' || cfg.editable === false;
         
         const rowItem = document.createElement('div');
-        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+        if (isTypeRegField) rowItem.className = 'hidden';
+        else rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
         
         let inputHTML = '';
 
-        // --- LÓGICA DE RENDERIZADO ---
-        if (!isEditable && !istoggle) {
-            // A. CAMPOS BLOQUEADOS
+        // --- C. LÓGICA DE DIBUJO ---
+        if (isMovementField) {
             inputHTML = `
-                <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                    <span>${formattedValue}</span>
-                    <input type="hidden" data-field="${key}" value="${rawValue}">
-                    <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                <div class="flex items-center h-[24px] px-2 py-0">
+                    <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">TRANSFERENCIA</span>
+                    <input type="hidden" data-field="${key}" value="TRANSFERENCIA">
                 </div>`;
-
-        } else if (istoggle) {
-            // B. TOGGLE
-            const isBlocked = String(rawValue).toUpperCase() === 'BLOQUEADO';
+        } 
+        else if (isTypeRegField) {
+            inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
+        }
+        else if (isReadOnly) {
+            const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
             inputHTML = `
-                <div class="flex items-center gap-3 px-2 h-[24px]">
-                    <button type="button" onclick="toggleStatus(this, '${key}')" class="focus:outline-none transition-transform active:scale-95" id="btn-toggle-${key}">
-                        <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
-                    </button>
-                    <span id="label-${key}" class="text-[10px] font-bold uppercase tracking-wider ${isBlocked ? 'text-red-500' : 'text-green-500'}">
-                        ${isBlocked ? 'Bloqueado' : 'Registrado'}
-                    </span>
-                    <input type="hidden" data-field="${key}" id="input-${key}" value="${rawValue}">
+                <div class="flex items-center h-[24px] px-2 py-0">
+                    <span class="text-sm text-gray-500 font-bold uppercase opacity-70">${val}</span>
+                    <input type="hidden" data-field="${key}" value="${val}">
                 </div>`;
+        }
+        else {
+            const dictOptions = dictionaryTR[`${tableClean}|${cleanKey}`];
+            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+            const isCuenta2 = cleanKey.endsWith('CUENTA2');
 
-        } else if (isSelect) {
-            // C. SELECT (DICCIONARIO) - INTEGRADO CON VARIABLES CSS
-            const optionsHtml = dictOptions.map(opt => {
-                const isSelected = String(opt).trim().toUpperCase() === String(rawValue).trim().toUpperCase();
-                return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
-            }).join('');
-
-            inputHTML = `
-                <div class="relative w-full group px-1">
-                    <select data-field="${key}" 
-                        style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                        class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                        <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                        ${optionsHtml}
-                    </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                        <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                    </div>
-                </div>`;
-
-        } else if (isDescription) {
-            // D. TEXTAREA
-            inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${rawValue}</textarea>`;
-
-        } else if (isDate) {
-            // E. FECHA
-            let dateISO = '';
-            if (rawValue) {
-                if (String(rawValue).includes('/')) {
-                    dateISO = rawValue.split('/').reverse().join('-');
-                } else {
-                    const d = new Date(rawValue);
-                    if (!isNaN(d)) dateISO = d.toISOString().split('T')[0];
+            // --- DISEÑO SELECT RESTAURADO ---
+            if (dictOptions || isAliasField || isCuenta2) {
+                let optionsArray = dictOptions || [];
+                // Carga de emergencia si es Alias y el diccionario está vacío
+                if ((isAliasField || isCuenta2) && optionsArray.length === 0) {
+                    optionsArray = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
                 }
+
+                const optionsHtml = optionsArray.map(opt => 
+                    `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+                ).join('');
+
+                inputHTML = `
+                    <div class="relative w-full group">
+                        <select data-field="${key}" 
+                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                            <option value="" selected style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                        </div>
+                    </div>`;
+            } 
+            else if (cleanKey.includes('DESCRIPCION')) {
+                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]"></textarea>`;
+            } 
+            else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
+                const today = new Date().toISOString().split('T')[0];
+                inputHTML = `<input type="date" data-field="${key}" value="${today}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
+            } 
+            else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right">`;
+            } 
+            else {
+                inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
             }
-            inputHTML = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-
-        } else if (isNumeric) {
-            // F. NUMÉRICO
-            inputHTML = `
-                <div class="relative w-full">
-                    <input type="text" data-field="${key}" data-raw="${rawValue}" value="${formattedValue}"
-                        onfocus="this.select()"
-                        oninput="applyAccountingMask(this)"
-                        class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">
-                </div>`;
-
-        } else {
-            // G. TEXTO SIMPLE
-            inputHTML = `<input type="text" data-field="${key}" value="${rawValue}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
         }
 
+        const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
+        const asterisco = isRequired && !isReadOnly && !isTypeRegField ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
         rowItem.innerHTML = `
-            <span class="text-gray-500 font-medium uppercase text-[10px] self-start flex items-center">
+            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
                 ${cfg.label || key}${asterisco}
             </span>
             ${inputHTML}`;
             
         content.appendChild(rowItem);
+    });
+
+    if (window.lucide) lucide.createIcons();
+    
+    // 5. VALIDACIÓN DE CUENTAS IDÉNTICAS
+    setTimeout(() => {
+        const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
+        const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
+        if (selectEmisora && selectReceptora) {
+            const validarCuentas = () => {
+                const sonIguales = selectEmisora.value && selectEmisora.value === selectReceptora.value;
+                selectReceptora.style.borderColor = sonIguales ? 'rgb(239 68 68)' : 'var(--th)';
+                // Un pequeño efecto de fondo para alertar
+                selectReceptora.style.backgroundColor = sonIguales ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+            };
+            selectEmisora.addEventListener('change', validarCuentas);
+            selectReceptora.addEventListener('change', validarCuentas);
+        }
+    }, 500);
+}
+       
+function duplicateCurrentRecord() {
+    const rawData = localStorage.getItem('TABLE_DATA');
+    const dataObj = JSON.parse(rawData || '{}');
+    const row = dataObj.DATOS_REGISTRO; // El registro base
+    
+    if (!row) return;
+
+    // 1. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar();
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+
+    // Normalización del configMap
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+    const tablePrefix = (dataObj.TABLA_ORIGEN || currentTableName).split('_')[0].toUpperCase();
+    const idFieldName = tablePrefix + 'ID';
+    
+    content.innerHTML = '';
+
+    // 2. TÍTULO (Estilo Duplicado)
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                NUEVO (DUPLICADO)
+            </span>
+        </div>`;
+
+    // 3. RENDERIZADO DE CAMPOS (Iteramos sobre el registro, igual que showEditMode)
+    Object.keys(row).forEach(key => {
+        const cleanKey = key.toUpperCase();
+        
+        // Exclusión: En duplicado NO inyectamos el ID original como PK (idFieldName), 
+        // pero SI necesitamos el ID de la cuenta (CUENTA).
+        if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+        
+        const cfg = configMap[cleanKey] || {};
+        const visValue = String(cfg.visible || '').toLowerCase().trim();
+
+        // Si el campo no es CUENTA y no tiene visibilidad, se ignora (igual que showEditMode)
+        const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
+        if (visValue === "" && !isIdCuenta) return;
+
+        // Reglas de edición (Si es duplicado, tratamos casi todo como editable si tiene 'x')
+        const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+        
+        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+        const item = document.createElement('div');
+        item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+        
+        const val = row[key] || '';
+        let valueElement = '';
+
+        // --- LÓGICA DE RENDERIZADO (ESPEJO DE showEditMode) ---
+        if (isIdCuenta) {
+            // IGUAL QUE EN EDIT: Input hidden para que saveRecord lo gestione/asigne
+            valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
+            item.className = 'hidden'; 
+        } 
+        else if (!isEditable) {
+            // Campos bloqueados o fijos
+            valueElement = `
+                <div class="flex items-center h-[24px] px-2 w-full justify-between">
+                    <span class="text-sm font-bold uppercase text-gray-500 opacity-90">${getFormattedValue(key, val)}</span>
+                    <input type="hidden" data-field="${key}" value="${val}">
+                    <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                </div>`;
+        } 
+        else {
+            // Detectamos si es Select (Moneda, Movimiento, AliasCuenta)
+            const dictKey = `${currentTableName}|${key}`.toUpperCase();
+            const dictOptions = dictionary[dictKey];
+            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+            const isSelect = dictOptions && dictOptions.length > 0 && (
+                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || isAliasField
+            );
+
+            if (isSelect) {
+                const valActual = String(val || '').trim();
+                let options = dictOptions || [];
+                
+                // Carga de emergencia de alias si el diccionario falla
+                if (isAliasField && options.length === 0) {
+                    options = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                }
+
+                const existeEnOpciones = options.some(opt => String(opt).trim() === valActual);
+                const optionsHtml = options.map(opt => {
+                    const isSelected = String(opt).trim() === valActual;
+                    return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+                }).join('');
+
+                valueElement = `
+                    <div class="relative w-full group">
+                        <select data-field="${key}" 
+                            class="bg-transparent border border-gray-700 rounded px-2 py-0 text-sm font-bold w-full focus:outline-none appearance-none cursor-pointer pr-8 shadow-sm">
+                            ${!existeEnOpciones ? `<option value="${valActual}" selected>${valActual || '-- SELECCIONE --'}</option>` : ''}
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        </div>
+                    </div>`;
+            } else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
+                let dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
+                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
+            } else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="${getFormattedValue(key, val)}" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none">`;
+            } else if (cleanKey.includes('DESCRIPCION')) {
+                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]">${val}</textarea>`;
+            } else {
+                valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+            }
+        }
+
+        item.innerHTML = `
+            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                ${cfg.label || key}${asterisco}
+            </span>
+            ${valueElement}`;
+            
+        content.appendChild(item);
     });
 
     if (window.lucide) lucide.createIcons();
@@ -2471,108 +2601,110 @@ function duplicateCurrentRecord() {
         }
     }
 
-function updateMetrics() {
-    if (!originalData || originalData.length === 0) return;
+    function updateMetrics() {
+        if (!originalData || originalData.length === 0) return;
 
-    // 1. Identificar dinámicamente los nombres reales de las columnas en esta tabla
-    // Buscamos en las llaves del primer registro de los datos
-    const firstRow = originalData[0];
-    const keys = Object.keys(firstRow);
-    
-    const colImporte = keys.find(k => k.toUpperCase().endsWith('IMPORTE'));
-    const colMovimiento = keys.find(k => k.toUpperCase().endsWith('MOVIMIENTO'));
-    const colMoneda = keys.find(k => k.toUpperCase().endsWith('MONEDA'));
+        const firstRow = originalData[0];
+        const keys = Object.keys(firstRow);
+        
+        const colImporte = keys.find(k => k.toUpperCase().endsWith('IMPORTE'));
+        const colMovimiento = keys.find(k => k.toUpperCase().endsWith('MOVIMIENTO'));
+        const colMoneda = keys.find(k => k.toUpperCase().endsWith('MONEDA'));
+        const colTypeReg = keys.find(k => k.toUpperCase().endsWith('TYPEREG')); 
 
-    // Si no encontramos las columnas básicas, abortamos para evitar errores
-    if (!colImporte || !colMovimiento || !colMoneda) {
-        console.warn("No se encontraron las columnas necesarias para calcular métricas.");
-        return;
+        if (!colImporte || !colMovimiento || !colMoneda) return;
+
+        // FILTRADO ROBUSTO
+        const filtered = originalData.filter(row => {
+            // 1. Validar Moneda (Indispensable)
+            const monedaMatch = row[colMoneda] === currentCurrency;
+            if (!monedaMatch) return false;
+
+            // 2. Normalizar valores para evitar errores de null/undefined
+            const movTipo = String(row[colMovimiento] || '').toUpperCase().trim();
+            const estatus = String(row[colTypeReg] || '').toLowerCase().trim();
+
+            // 3. REGLA DE EXCLUSIÓN: 
+            // Solo descartamos si es estrictamente 'TRANSFERENCIA' 
+            // o si el estatus contiene 'bloqueado'
+            const esTransferenciaMaestra = (movTipo === 'TRANSFERENCIA');
+            const estaBloqueado = estatus.includes('bloqueado');
+
+            return !esTransferenciaMaestra && !estaBloqueado;
+        });
+
+        let totalDebitos = 0;
+        let totalCreditos = 0;
+
+        filtered.forEach(row => {
+            const importe = parseFloat(row[colImporte]) || 0;
+            const tipo = String(row[colMovimiento] || '').toUpperCase().trim();
+
+            // Usamos includes para capturar "DÉBITO" con o sin tilde
+            if (tipo.includes('DÉB') || tipo.includes('DEB')) {
+                totalDebitos += importe;
+            } else if (tipo.includes('CRÉD') || tipo.includes('CRED')) {
+                totalCreditos += importe;
+            }
+        });
+
+        const saldoNeto = totalCreditos - totalDebitos;
+        
+        // --- Renderizado idéntico al original ---
+        const fmt = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const metricsMap = { 'Balance': saldoNeto, 'Debitos': totalDebitos, 'Abonos': totalCreditos };
+
+        Object.keys(metricsMap).forEach(key => {
+            const el = document.querySelector(`[data-metric="${key}"]`);
+            if (el) {
+                el.textContent = fmt.format(metricsMap[key]);
+                if (key === 'Balance') {
+                    el.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
+                    if (saldoNeto === 0) el.classList.add('text-white');
+                    else el.classList.add(saldoNeto < 0 ? 'text-red-400' : 'text-emerald-400');
+                }
+            }
+        });
     }
 
-    // 2. Filtrar por la moneda actual
-    const filtered = originalData.filter(row => row[colMoneda] === currentCurrency);
+    function changeCurrency(currency, btnElement) {
+        currentCurrency = currency;
+        
+        // 1. Buscamos el contenedor
+        const container = document.getElementById('currency-selector');
+        if (!container) return;
 
-    let totalDebitos = 0;
-    let totalCreditos = 0;
+        // 2. Limpiamos TODOS los botones usando la función de ayuda
+        container.querySelectorAll('.currency-btn').forEach(b => {
+            deactivateButtonVisuals(b);
+        });
+        
+        // 3. Activamos el botón clickeado usando la función de ayuda
+        // Esto aplicará automáticamente: bg-gray-600, text-white y las sombras
+        activateButtonVisuals(btnElement);
 
-    // 3. Sumatoria dinámica
-    filtered.forEach(row => {
-        const importe = parseFloat(row[colImporte]) || 0;
-        const tipo = String(row[colMovimiento]).toUpperCase(); // "DEBITO" o "CREDITO"
+        // 4. Actualizamos los números
+        updateMetrics(); 
+    }
 
-        if (tipo === 'DÉBITO') {
-            totalDebitos += importe;
-        } else if (tipo === 'CRÉDITO') {
-            totalCreditos += importe;
-        }
-    });
+    function updateModalTitle(technicalName) {
+        const titleElement = document.getElementById('config-table-title');
+        if (!titleElement) return;
 
-    const saldoNeto = totalCreditos - totalDebitos;
+        // 1. Recuperamos el mismo "Diccionario" que usa tu selector
+        const friendlyMap = JSON.parse(localStorage.getItem('TABLE_FRIENDLY_NAMES') || '{}');
 
-    // 4. Formateo y Renderizado en UI
-    const fmt = new Intl.NumberFormat('es-ES', { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-    });
+        // 2. Aplicamos exactamente tu misma lógica de validación:
+        // Si existe el ID técnico en el mapa y tiene un .label, lo usamos.
+        const label = (friendlyMap[technicalName] && friendlyMap[technicalName].label) 
+                    ? friendlyMap[technicalName].label 
+                    : technicalName;
 
-    const metricsMap = {
-        'Balance': saldoNeto,
-        'Debitos': totalDebitos,
-        'Abonos': totalCreditos
-    };
-
-    Object.keys(metricsMap).forEach(key => {
-        const el = document.querySelector(`[data-metric="${key}"]`);
-        if (el) {
-            el.textContent = fmt.format(metricsMap[key]);
-            
-            if (key === 'Balance') {
-                el.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
-                if (metricsMap[key] === 0) el.classList.add('text-white');
-                else el.classList.add(metricsMap[key] < 0 ? 'text-red-400' : 'text-emerald-400');
-            }
-        }
-    });
-}
-
-function changeCurrency(currency, btnElement) {
-    currentCurrency = currency;
-    
-    // 1. Buscamos el contenedor
-    const container = document.getElementById('currency-selector');
-    if (!container) return;
-
-    // 2. Limpiamos TODOS los botones usando la función de ayuda
-    container.querySelectorAll('.currency-btn').forEach(b => {
-        deactivateButtonVisuals(b);
-    });
-    
-    // 3. Activamos el botón clickeado usando la función de ayuda
-    // Esto aplicará automáticamente: bg-gray-600, text-white y las sombras
-    activateButtonVisuals(btnElement);
-
-    // 4. Actualizamos los números
-    updateMetrics(); 
-}
-
-function updateModalTitle(technicalName) {
-    const titleElement = document.getElementById('config-table-title');
-    if (!titleElement) return;
-
-    // 1. Recuperamos el mismo "Diccionario" que usa tu selector
-    const friendlyMap = JSON.parse(localStorage.getItem('TABLE_FRIENDLY_NAMES') || '{}');
-
-    // 2. Aplicamos exactamente tu misma lógica de validación:
-    // Si existe el ID técnico en el mapa y tiene un .label, lo usamos.
-    const label = (friendlyMap[technicalName] && friendlyMap[technicalName].label) 
-                ? friendlyMap[technicalName].label 
-                : technicalName;
-
-    // 3. Actualizamos el texto del encabezado en el modal
-    //titleElement.textContent = `${label} (${technicalName})`; // opcional
-    titleElement.textContent = label + " (" + technicalName + ")";      
-    
-}
+        // 3. Actualizamos el texto del encabezado en el modal
+        //titleElement.textContent = `${label} (${technicalName})`; // opcional
+        titleElement.textContent = label + " (" + technicalName + ")";      
+        
+    }
 
     function renderColumnConfig() {
         const container = document.getElementById('columns-list-container');
@@ -2710,83 +2842,152 @@ function updateModalTitle(technicalName) {
         renderColumnConfig(); 
     }
 
-    async function saveCurrentConfig() {
-        if (!currentTableName) return;
+    async function saveRecord() {
+        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
-        // 1. Elementos de UI
-        const loader = document.getElementById('global-loader');
-        const configPanel = document.getElementById('column-config-panel');
-        const friendlyName = document.getElementById('config-table-title')?.textContent?.trim() || "Tabla";
+        const container = document.getElementById('detail-modal-content');
+        const inputs = container.querySelectorAll('[data-field]');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-        // 2. Resolver mappedConfig (El corazón del problema)
-        // Intentamos obtener la variable global, si no existe, la cargamos del localStorage
-        let activeMappedConfig = (typeof mappedConfig !== 'undefined') 
-            ? mappedConfig 
-            : JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        let missingFields = [];
+        let payload = {};
 
-        // Mostrar Loader
-        if (loader) loader.classList.remove('hidden');
+        // 1. LIMPIEZA DE ERRORES VISUALES
+        inputs.forEach(i => {
+            i.classList.remove('border-red-500', 'bg-red-500/10');
+            i.classList.add('border-transparent'); 
+        });
 
-        try {
-            // --- A. ACTUALIZACIÓN DE LÓGICA LOCAL ---
+        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
+        inputs.forEach(input => {
+            const key = input.dataset.field;
+            const cleanKey = key.toUpperCase();
+            const cfg = configMap[cleanKey] || {};
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
             
-            // Actualizamos el orden global de las columnas
-            tableConfig.columnOrder = currentHeadersConfig.map(col => col.id);
+            let value;
+            if (input.hasAttribute('data-raw')) {
+                value = input.getAttribute('data-raw');
+            } else if (input.type === 'checkbox') {
+                value = input.checked;
+            } else {
+                value = input.value.trim();
+            }
 
-            // Sincronizamos la visibilidad en el mapa de configuración
-            currentHeadersConfig.forEach(col => {
-                if (activeMappedConfig[col.id]) {
-                    // Traducimos el booleano del modal al formato 'X' que espera renderTable
-                    activeMappedConfig[col.id].visible = col.visible ? 'X' : '';
-                }
+            if (isDate && value) {
+                const parts = value.split('-');
+                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+
+            if (cfg.Es_Obligatorio === true && !value) {
+                missingFields.push(cfg.label || key);
+                input.classList.add('border-red-500', 'bg-red-500/10');
+            }
+
+            payload[key] = value;
+        });
+
+        // 3. VALIDACIONES DE NEGOCIO Y VINCULACIÓN DE IDs
+        if (missingFields.length > 0) {
+            toggleGlobalLoader(false);
+            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+            return; 
+        }
+
+        const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
+
+// --- LÓGICA DE TRADUCCIÓN: ALIAS -> ID (OPTIMIZADA) ---
+const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+
+// 1. Obtener la fuente de verdad (RAM o LocalStorage)
+const cuentasData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+// 2. Traducción de Cuenta Principal (Emisora)
+const aliasSeleccionado = payload[`${tablePrefix}ALIASCUENTA`];
+if (aliasSeleccionado && cuentasData.length > 0) {
+    const cuentaEncontrada = cuentasData.find(c => c.ALIAS === aliasSeleccionado);
+    if (cuentaEncontrada) {
+        // Inyectamos el ID real en el campo técnico
+        payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID || cuentaEncontrada.TD102ID; 
+    }
+}
+
+// 3. Validación y Traducción para Transferencias (TR)
+if (badgeMode.includes('TR')) {
+    // Nota: En TR, CUENTA2 suele capturar el ALIAS del destino en el modal
+    const valEmisora = payload[`${tablePrefix}ALIASCUENTA`];
+    const valReceptora = payload[`${tablePrefix}CUENTA2`]; 
+
+    // Validación de duplicados (No transferir a la misma cuenta)
+    if (valEmisora && valReceptora && valEmisora === valReceptora) {
+        toggleGlobalLoader(false);
+        const fields = container.querySelectorAll(`[data-field="${tablePrefix}ALIASCUENTA"], [data-field="${tablePrefix}CUENTA2"]`);
+        fields.forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
+        
+        await showSystemModal({ 
+            title: 'Error en Transferencia', 
+            text: 'La cuenta origen y destino deben ser diferentes.', 
+            type: 'error' 
+        });
+        return;
+    }
+
+    // Traducción de Cuenta Receptora (Convertir Alias de CUENTA2 a su ID real)
+    if (valReceptora && cuentasData.length > 0) {
+        const cuenta2Encontrada = cuentasData.find(c => c.ALIAS === valReceptora);
+        if (cuenta2Encontrada) {
+            // MUY IMPORTANTE: Aquí sobreescribimos el Alias por el ID real 
+            // para que el Backend reciba el número/ID y no el nombre del banco
+            payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID || cuenta2Encontrada.TD102ID;
+            console.log(`🔄 TR Mapeada: ${valReceptora} -> ID: ${payload[`${tablePrefix}CUENTA2`]}`);
+        }
+    }
+}
+
+        // 4. PREPARACIÓN DE PAYLOAD FINAL
+        const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
+        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
+        const idFieldName = `${tablePrefix}ID`;
+        const userId = localStorage.getItem('Usuario_ID') || ""; 
+
+        if (isNewOrDuplicate) delete payload[idFieldName];
+
+        const finalPayload = {
+            ...payload,
+            action: gasAction,
+            TABLA_DESTINO: currentTableName,
+            currentUser: userId
+        };
+
+        // 5. ENVÍO
+        const createdRecord = await executeSubmit(finalPayload); 
+
+        if (createdRecord) {
+            if (badgeMode.includes('TR')) {
+                const loaderLabel = document.querySelector('#global-loader span');
+                if (loaderLabel) loaderLabel.textContent = "Generando asientos contables vinculados...";
+                await generateTransferAsientos(createdRecord);
+            }
+
+            needsRefresh = true; 
+            await fetchData(currentTableName); 
+
+            document.getElementById('detail-modal')?.classList.add('hidden');
+            toggleGlobalLoader(false);
+            
+            await showSystemModal({ 
+                title: 'Solicitud completada', 
+                text: 'Operación procesada y sincronizada correctamente.', 
+                type: 'info' 
             });
 
-            // 3. Persistencia local obligatoria para que renderTable lea los cambios
-            const configData = JSON.stringify(currentHeadersConfig);
-            localStorage.setItem(`config_${currentTableName}`, configData);
-            localStorage.setItem('TABLE_CONFIG', JSON.stringify(activeMappedConfig));
-
-            // Actualizamos la referencia global si existe para que otros procesos la vean
-            if (typeof mappedConfig !== 'undefined') {
-                mappedConfig = activeMappedConfig;
+            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+            if (updatedStorage.DATOS_REGISTRO) {
+                openDetailModal(updatedStorage.DATOS_REGISTRO);
             }
-
-            // --- B. SINCRONIZACIÓN CON EL BACKEND ---
-            const userId = localStorage.getItem(KEYS.USUARIO_ID); 
-            const userName = localStorage.getItem(KEYS.NOMBRE);    
-            const userTienda = localStorage.getItem(KEYS.TIENDA);  
-            const userTiendaID = localStorage.getItem(KEYS.TIENDA_ID);
-
-            const url = `${SCRIPT_URL}?action=saveTableConfig` + 
-                        `&userId=${encodeURIComponent(userId)}` + 
-                        `&userName=${encodeURIComponent(userName || 'Sin Nombre')}` +      
-                        `&userTienda=${encodeURIComponent(userTienda || 'General')}` +  
-                        `&userTiendaID=${encodeURIComponent(userTiendaID || 'N/A')}` + 
-                        `&tableName=${encodeURIComponent(currentTableName)}` + 
-                        `&configData=${encodeURIComponent(configData)}`;
-                        
-            const response = await fetch(url);
-            const result = await response.json();
-
-            if (result.success) {
-                if (configPanel) configPanel.classList.add('hidden');
-
-                showSystemModal({ 
-                    title: 'Proceso Completado', 
-                    text: `Configuración de "${currentTableName}" sincronizada.`, 
-                    type: 'success' 
-                });
-
-                // CAMBIO CLAVE: No llamar a renderTable(originalData)
-                // Llamar a la función maestra que considera filtros y orden
-                applyFiltersAndSort(); 
-            }
-        } catch (e) { 
-            console.error("Error en saveCurrentConfig:", e);
-            // Fallback: renderizar aunque falle el servidor para que el usuario vea el cambio local
-            if (typeof renderTable === 'function') renderTable(originalData);
-        } finally {
-            if (loader) loader.classList.add('hidden');
         }
     }
 
@@ -2814,30 +3015,71 @@ function updateModalTitle(technicalName) {
 
     }
 
-async function sincronizarAliasAlDiccionario(listaAlias) {
-    if (!listaAlias || listaAlias.length === 0) return;
+    async function sincronizarAliasAlDiccionario(listaAlias) {
+        if (!listaAlias || listaAlias.length === 0) return;
 
-    const payload = {
-        action: "actualizarValorEnDiccionario", // O la acción que procese tu GAS
-        usuarioId: localStorage.getItem('Usuario_ID'), // El ID que identifica al dueño
-        columnaNombre: "Valores_Encabezado",
-        nuevoValor: JSON.stringify(listaAlias), // Formato JSON correcto
-        // Datos de referencia para asegurar que caiga en la fila correcta
-        nombreTabla: "TD101_MAIN", 
-        encabezadoTabla: "TD101CUENTA"
-    };
+        const payload = {
+            action: "actualizarValorEnDiccionario", // O la acción que procese tu GAS
+            usuarioId: localStorage.getItem('Usuario_ID'), // El ID que identifica al dueño
+            columnaNombre: "Valores_Encabezado",
+            nuevoValor: JSON.stringify(listaAlias), // Formato JSON correcto
+            // Datos de referencia para asegurar que caiga en la fila correcta
+            nombreTabla: "TD101_MAIN", 
+            encabezadoTabla: "TD101ALIASCUENTA"
+        };
 
-    try {
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const res = await response.json();
-        if (res.success) {
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const res = await response.json();
+            if (res.success) {
+            }
+        } catch (err) {
+            console.error("❌ Error sincronizando ALIAS:", err);
         }
-    } catch (err) {
-        console.error("❌ Error sincronizando ALIAS:", err);
     }
+    
+//no usar
+    async function loadUserAccountsMetadata() {
+        const usuarioId = localStorage.getItem('Usuario_ID');
+        // Usamos la misma lógica de tu Dashboard
+        const url = `${GAS_URL}?action=getDashboardSummary&usuarioId=${encodeURIComponent(usuarioId)}`;
+
+        try {
+            const response = await fetch(url);
+            const res = await response.json();
+
+            if (res.success && res.cuentas) {
+                // Guardamos en memoria global para acceso rápido
+                window.dashboardState = {
+                    cuentas: res.cuentas // Aquí vienen con ID, NUMERO, ALIAS y MONEDA
+                };
+                // También en storage por si se refresca la página
+                localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(res.cuentas));
+                console.log("✅ Metadatos de cuentas cargados:", res.cuentas.length);
+            }
+        } catch (err) {
+            console.error("❌ Error cargando metadatos de cuentas:", err);
+        }
+    }
+
+function getAccountIdByAlias(aliasBuscado) {
+    // 1. Intentamos obtener de la memoria RAM (más rápido)
+    let cuentas = window.dashboardState?.cuentas;
+
+    // 2. Si no está en RAM, intentamos del Storage
+    if (!cuentas) {
+        const stored = localStorage.getItem('MATRIZ_CUENTAS_USUARIO');
+        cuentas = stored ? JSON.parse(stored) : [];
+    }
+
+    // 3. Buscamos la coincidencia exacta del Alias
+    // El backend en getDashboardSummary devuelve "ID" y "ALIAS"
+    const cuentaEncontrada = cuentas.find(c => c.ALIAS === aliasBuscado);
+    
+    return cuentaEncontrada ? cuentaEncontrada.ID : '';
 }
 
 </script>
