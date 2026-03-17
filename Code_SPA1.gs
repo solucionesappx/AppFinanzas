@@ -34,18 +34,18 @@ function doGet(e) {
       if (data101.length > 1) {
         const headers101 = data101[0];
         
-        // Localización de índices (Inclusión para saltar prefijos)
+        // 1. Localización de índices (Añadimos el nuevo campo de Alias)
         const idxFecha    = headers101.findIndex(h => h.toUpperCase().includes("FECHA"));
         const idxMonto    = headers101.findIndex(h => h.toUpperCase().includes("IMPORTE"));
         const idxMov      = headers101.findIndex(h => h.toUpperCase().includes("MOVIMIENTO"));
         const idxType     = headers101.findIndex(h => h.toUpperCase().includes("TYPEREG"));
-        const idxCuenta   = headers101.findIndex(h => h.toUpperCase().includes("CUENTA"));
+        const idxCuenta   = headers101.findIndex(h => h.toUpperCase().includes("CUENTA") && !h.toUpperCase().includes("ALIAS"));
+        const idxAlias    = headers101.findIndex(h => h.toUpperCase().includes("ALIASCUENTA")); // Nuevo campo
         const idxOwner101 = headers101.findIndex(h => h.toUpperCase().includes("IDOWNER"));
         
         resumenOps = data101.slice(1)
           .filter(row => isAdmin || String(row[idxOwner101]).trim() === String(usuarioId).trim())
           .map(row => {
-            // Formateo de fecha para el contrato de datos
             let fechaVal = row[idxFecha];
             let fechaStr = (fechaVal instanceof Date) 
               ? Utilities.formatDate(fechaVal, timeZone, "dd/MM/yyyy") 
@@ -53,10 +53,12 @@ function doGet(e) {
 
             return {
               FECHA: fechaStr,
-              IMPORTE: row[idxMonto], // Viaja como 1250.50 (formato nativo del backend)
+              IMPORTE: row[idxMonto],
               MOVIMIENTO: row[idxMov],
               TYPEREG: row[idxType],
-              CUENTA: String(row[idxCuenta]).trim()
+              // AHORA: CUENTA viaja como ID y ALIAS_CUENTA como el nombre legible
+              CUENTA: String(row[idxCuenta]).trim(),
+              ALIAS_CUENTA: idxAlias !== -1 ? String(row[idxAlias]).trim() : "Sin Alias" 
             };
           });
       }
@@ -256,21 +258,22 @@ function doPost(e) {
     params = detectarYProcesarImagenes(params);
 
     // 4. EJECUCIÓN DE ACCIONES
-    const action = params.action;
-    let result;
+        const action = params.action;
+        let result;
 
-    if (action === "registerDynamicDataTD") {
-      result = handleDynamicDataTD(params, "REGISTER");
-    } else if (action === "editDynamicDataTD") {
-      result = handleDynamicDataTD(params, "EDIT");
-    } else if (action === "deleteDynamicDataTD") {
-      result = handleDynamicDataTD(params, "DELETE");
-    } else if (action === "actualizarValorEnDiccionario") {
-      // Llamada a la nueva función de actualización
-      result = ejecutarActualizacionDiccionario(params);
-    } else {
-      throw new Error("Acción desconocida: " + action);
-    }
+        if (action === "registerDynamicDataTD") {
+          result = handleDynamicDataTD(params, "REGISTER");
+        } else if (action === "editDynamicDataTD") {
+          result = handleDynamicDataTD(params, "EDIT");
+        } else if (action === "deleteDynamicDataTD") {
+          result = handleDynamicDataTD(params, "DELETE");
+        } else if (action === "deleteTransferCascade") { // <--- NUEVA ACCIÓN
+          result = handleDeleteTransferCascade(params);
+        } else if (action === "actualizarValorEnDiccionario") {
+          result = ejecutarActualizacionDiccionario(params);
+        } else {
+          throw new Error("Acción desconocida: " + action);
+        }
 
     syncAndGetMasterFields();
     return result;
