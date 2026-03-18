@@ -6,114 +6,90 @@
     </title>
     <script src="https://cdn.tailwindcss.com"></script><script src="https://unpkg.com/lucide@latest"></script>
 <style>
-    /* --- 1. BASE & VARIABLES --- */
+    /* --- 1. BASE, VARIABLES & LAYOUT --- */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
     :root { --bg: #1f2937; --txt: #f3f4f6; --surf: #374151; --p-soft: #60a5fa; --th: #374151; }
     .light-mode { --bg: #f9fafb; --txt: #111827; --surf: #ffffff; }
-    html { font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+    
+    html { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--txt); transition: background .3s, color .3s; display: flex; justify-content: center; min-height: 100vh; margin: 0; }
     .hidden { display: none !important; }
 
-    /* --- 2. LAYOUT ESTRUCTURAL --- */
-    #app-container { width:100%; min-height:100vh; display:flex; flex-direction:column; box-shadow:0 0 20px rgba(0,0,0,.2); position:relative; background-color: var(--bg); transition: max-width 0.3s ease-in-out; }
-    .mode-mobile { max-width:500px; }
-    .mode-desktop { max-width:100%!important; }
-    main { flex-grow:1; overflow-y:auto; padding:76px 1rem 80px; width: 100%; box-sizing: border-box; }
-    header, footer { width:100%; max-width:inherit; z-index:50; position:fixed; background:var(--surf); border-color:#4b5563; left: auto; right: auto; transform: none; display:flex; align-items:center; }
-    header { top:0; height:3.5rem; border-bottom:1px solid; }
-    footer { bottom:0; height:3.5rem; border-top:1px solid; }
+    #app-container { width: 100%; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,.2); position: relative; background-color: var(--bg); transition: max-width 0.3s ease-in-out; }
+    .mode-mobile { max-width: 500px; }
+    .mode-desktop { max-width: 100% !important; }
+    
+    main { flex-grow: 1; overflow-y: auto; padding: 76px 1rem 80px; width: 100%; box-sizing: border-box; }
+    header, footer { width: 100%; max-width: inherit; z-index: 50; position: fixed; background: var(--surf); border-color: #4b5563; left: 0; right: 0; margin: 0 auto; display: flex; align-items: center; height: 3.5rem; border-style: solid; }
+    header { top: 0; border-bottom-width: 1px; }
+    footer { bottom: 0; border-top-width: 1px; }
     header, .footer-tienda { background: #374151 !important; color: #f3f4f6 !important; border-color: #4b5563 !important; }
 
-    /* --- 3. COMPONENTES (SEARCH & NAV) --- */
+    /* --- 2. COMPONENTES (SEARCH & NAV) --- */
     .search-actions-container { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; width: 100%; }
     .search-input-wrapper { position: relative; flex-grow: 1; border-radius: 0.75rem; }
-    .search-input-wrapper input { width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border-radius: 0.75rem; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06); background-color: #374151; color: #f3f4f6; border: 1px solid #4b5563; transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+    .search-input-wrapper input { width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border-radius: 0.75rem; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06); background-color: #374151; color: #f3f4f6; border: 1px solid #4b5563; transition: all 0.15s; outline: none; }
     .search-input-wrapper input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
     .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-    .search-highlight { background-color: rgba(59, 130, 246, 0.4); color: #ffffff; border-radius: 2px; padding: 0 2px; font-weight: bold; }
-    .footer-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.75rem; color:var(--txt); cursor:pointer; flex: 1; }
-    .footer-btn:hover { color:#152c94; }
-    .footer-btn.active { color:var(--p-soft); font-weight:700; }
+    .search-highlight { background: rgba(59, 130, 246, 0.4); color: #fff; border-radius: 2px; padding: 0 2px; font-weight: bold; }
+
+    .footer-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: .75rem; color: var(--txt); cursor: pointer; flex: 1; }
+    .footer-btn:hover { color: #152c94; }
+    .footer-btn.active { color: var(--p-soft); font-weight: 700; }
     .btn-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; filter: grayscale(1); }
+
     .custom-date-input::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.8) sepia(100%) saturate(500%) hue-rotate(180deg); opacity: 0.9; transition: opacity 0.2s; }
     .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
-    /* --- 4. MÉTRICAS (Estabilizador) --- */
+    /* --- 3. TABLA DE DATOS & MÉTRICAS --- */
     .metric-card i { flex-shrink: 0 !important; }
     .metric-card span[data-metric] { white-space: nowrap; }
 
-    /* --- 5. TABLA DE DATOS --- */
-    .table-scroll-container { max-height: calc(100vh - 340px); min-height: 180px; overflow: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: block; border: 1px solid #4b5563; }
-    .table-scroll-container table { border-collapse: collapse; table-layout: auto; width: max-content; min-width: 100%; }
-    .table-scroll-container th { color: #137be2; position: sticky; top: 0; z-index: 20; background-color: var(--th); padding: 8px 4px; text-align: center; white-space: normal !important; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.2); cursor: pointer; text-transform: uppercase; line-height: 1.2; vertical-align: middle; max-width: 126px; min-width: 20px; }
-    .sticky-id-cell { position: sticky; left: 0; z-index: 40; font-weight: bold; text-align: center; border-right: 1px solid rgba(255,255,255,0.2); background-color: var(--th); }
+    .table-scroll-container { max-height: calc(100vh - 340px); min-height: 180px; overflow: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #4b5563; }
+    .table-scroll-container table { border-collapse: collapse; width: max-content; min-width: 100%; }
+    .table-scroll-container th { color: #137be2; position: sticky; top: 0; z-index: 20; background: var(--th); padding: 8px 4px; text-align: center; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.2); cursor: pointer; text-transform: uppercase; line-height: 1.2; vertical-align: middle; max-width: 126px; }
+    
+    .sticky-id-cell { position: sticky; left: 0; z-index: 40; font-weight: bold; text-align: center; border-right: 1px solid rgba(255,255,255,0.2); background: var(--th); }
     thead th.sticky-id-cell { z-index: 60; }
-    .table-data-cell { height: 24px; font-size: 0.75rem; padding: 0.25rem 0.5rem; white-space: nowrap; transition: background-color 0.15s; border-bottom: 1px solid #4b5563; }
+    
+    .table-data-cell { height: 24px; font-size: 0.75rem; padding: 0.25rem 0.5rem; white-space: nowrap; transition: background 0.15s; border-bottom: 1px solid #4b5563; }
     .header-content { display: flex; align-items: center; justify-content: center; gap: 4px; }
     .row-warning-text .table-data-cell { color: #fcd34d; }
-    .row-alert-text .table-data-cell { background-color: #582b2b; color: #fca5a5; font-weight: 600; }
-    #main-table { border-collapse: collapse; }
-    #main-table tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; }
-    #main-table tbody tr:hover { background-color: rgba(59, 130, 246, 0.1); }
-    #table-selector { appearance: none; -webkit-appearance: none; padding-right: 20px; background-repeat: no-repeat; background-position: right center; background-size: 14px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); }
-    #table-selector option { font-size: 14px; padding: 12px; background-color: #1f2937; color: white; }
-
-    /* --- 6. MODALES --- */
-    .modal-overlay { position:fixed; inset:0; background:rgba(17,24,39,.8); backdrop-filter:blur(4px); z-index:100; display:flex; justify-content:center; align-items:center; }
-    .modal-content { background:var(--surf); border:1px solid #4b5563; border-radius:1rem; width:70%; max-width:220px; }
-    #detail-modal.modal-overlay { align-items: flex-start !important; padding-top: 2rem; padding-bottom: 2rem; }
-    #detail-modal-content { scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
-    #detail-modal-content::-webkit-scrollbar { width: 6px; }
-    #detail-modal-content::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; }
+    .row-alert-text .table-data-cell { background: #582b2b; color: #fca5a5; font-weight: 600; }
     
-    /* Adaptación Dinámica Modal Desktop */
+    #main-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+    #main-table tbody tr:hover { background: rgba(59, 130, 246, 0.1); }
+    
+    #table-selector { appearance: none; -webkit-appearance: none; padding-right: 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") no-repeat right center / 14px; }
+    #table-selector option { font-size: 14px; padding: 12px; background: #1f2937; color: #fff; }
+
+    /* --- 4. MODALES & CONFIGURACIÓN --- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.8); backdrop-filter: blur(4px); z-index: 100; display: flex; justify-content: center; align-items: center; }
+    .modal-content { background: var(--surf); border: 1px solid #4b5563; border-radius: 1rem; width: 70%; max-width: 220px; }
+    #detail-modal.modal-overlay { align-items: flex-start !important; padding: 2rem 0; }
+    
+    #detail-modal-content, #columns-list-container { scrollbar-width: thin; scrollbar-color: #4b5563 transparent; overflow-y: auto; }
+    #detail-modal-content::-webkit-scrollbar, #columns-list-container::-webkit-scrollbar { width: 5px; }
+    #detail-modal-content::-webkit-scrollbar-thumb, #columns-list-container::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    #columns-list-container::-webkit-scrollbar-thumb { background: #3b82f6; } /* Color específico solicitado */
+
+    #columns-list-container { max-height: 615px; padding-right: 4px; }
+    .config-modal-container { width: 400px !important; min-width: 400px !important; min-height: 700px; }
+    #system-modal { z-index: 9999 !important; }
+
+    /* --- 5. ADAPTACIÓN DINÁMICA & MEDIA QUERIES --- */
     body:has(.mode-desktop) #detail-modal.modal-overlay { padding-top: 5rem; }
     body:has(.mode-desktop) #detail-modal .relative.max-w-\[340px\] { max-width: 70% !important; width: 70% !important; transition: all 0.3s ease-in-out; }
-    body:has(.mode-desktop) #detail-modal-content span.text-sm, body:has(.mode-desktop) #detail-modal-content textarea { font-size: 0.95rem !important; }
+    body:has(.mode-desktop) #detail-modal-content :is(span.text-sm, textarea) { font-size: 0.95rem !important; }
 
-    /* --- 7. ANIMACIONES & MEDIA QUERIES --- */
     .spinner { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    @media (max-width: 420px) { .config-modal-container { width: 95% !important; min-width: auto !important; } }
     @media (orientation: landscape) and (max-height: 500px) { 
-        main { padding: 64px 0.5rem 64px; } 
+        main { padding: 64px 0.5rem; } 
         .table-scroll-container { max-height: calc(100vh - 200px); } 
     }
-
-#columns-list-container {
-    max-height: 615px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-/* Scrollbar sutil */
-#columns-list-container::-webkit-scrollbar { width: 4px; }
-#columns-list-container::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-
-/* Ancho estricto: 80% de 500px = 400px */
-.config-modal-container {
-    width: 400px !important;
-    min-width: 400px !important;
-    min-height: 700px
-}
-
-/* Ajuste para que en pantallas muy pequeñas (menos de 400px) no se rompa */
-@media (max-width: 420px) {
-    .config-modal-container {
-        width: 95% !important;
-        min-width: auto !important;
-    }
-}
-
-/* Scroll sutil estilo la imagen */
-#columns-list-container::-webkit-scrollbar {
-    width: 5px;
-}
-#columns-list-container::-webkit-scrollbar-thumb {
-    background: #374151;
-    border-radius: 10px;
-}
-#system-modal {
-    z-index: 9999 !important;
-}
 </style>
 
 </head>
@@ -361,7 +337,6 @@
                         <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            </div>
 
             <div id="columns-list-container" class="flex-grow overflow-y-auto p-4 space-y-2 bg-[#111827]">
                 <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border border-gray-700/50">
@@ -377,8 +352,6 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
    
@@ -923,7 +896,7 @@
         if (window.lucide) lucide.createIcons();
     }
 
-        // Auxiliares finales
+    // FUNCIONES AUXILIARES FINALES
     function activateButtonVisuals(btn) {
         // Limpiamos el estado inactivo
         btn.classList.remove('text-gray-500', 'text-gray-400');
@@ -995,7 +968,6 @@
         }
 
         // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
-        // Solo filtramos si hay algún valor escrito en currentHeadersConfig
         const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
 
         if (activeColFilters.length > 0) {
@@ -1164,10 +1136,7 @@
             }
         }
 
-        // 4. Actualizamos el botón de la barra de herramientas (Icono Candado Superior)
-        //updateToolbarLockButton(isNowBlocked);
-
-        // 5. Renderizado final de iconos
+         // 4. Renderizado final de iconos
         if (window.lucide) lucide.createIcons();
     }
 
@@ -1188,7 +1157,6 @@
         let raw = input.getAttribute('data-raw') || "";
         if (raw !== "" && raw !== "null") {
             // Multiplicamos por 100 y quitamos decimales para que la máscara los procese
-            // Ej: 9.28 -> "928"
             input.value = Math.round(parseFloat(raw) * 100).toString();
             applyAccountingMask(input);
         } else {
@@ -1335,121 +1303,121 @@
         });
     }
 
-async function deleteRecord() {
-    // 1. EXTRACCIÓN DE DATOS DE USUARIO Y REGISTRO
-    const usuarioLogueadoId = String(localStorage.getItem('Usuario_ID') || "").trim();
-    const perfilUsuario = String(localStorage.getItem('Usuario_Perfil') || "").trim().toUpperCase();
-    const idxCorrecto = String(localStorage.getItem('Usuario_Idx') || "").trim();
+    async function deleteRecord() {
+        // 1. EXTRACCIÓN DE DATOS DE USUARIO Y REGISTRO
+        const usuarioLogueadoId = String(localStorage.getItem('Usuario_ID') || "").trim();
+        const perfilUsuario = String(localStorage.getItem('Usuario_Perfil') || "").trim().toUpperCase();
+        const idxCorrecto = String(localStorage.getItem('Usuario_Idx') || "").trim();
 
-    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const row = tableData.DATOS_REGISTRO; 
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-    
-    if (!row || !tableOrigin) {
-        console.error("Error: No hay datos de registro cargados.");
-        return;
-    }
-
-    const prefix = tableOrigin.split('_')[0].toUpperCase();
-    const recordId = row[`${prefix}ID`];
-    const registroOwner = String(row[`${prefix}RegistroUser`] || "").trim();
-    const movTipo = String(row[`${prefix}MOVIMIENTO`] || '').toUpperCase();
-    const referencia = String(row[`${prefix}REF`] || '').toUpperCase();
-
-    // 2. LÓGICA DE PERMISOS (Seguridad Original)
-    const esAdmin = (perfilUsuario === 'ADMIN');
-    const esPropietario = (registroOwner !== "" && registroOwner === usuarioLogueadoId);
-
-    console.log("--- Validación de Seguridad ---", { usuarioLogueadoId, registroOwner, esAdmin, esPropietario });
-
-    if (!esPropietario && !esAdmin) {
-        await showSystemModal({ 
-            title: 'Acceso Denegado', 
-            text: `Solo el propietario (${registroOwner}) o un Administrador pueden eliminar este registro.`, 
-            type: 'warning' 
-        });
-        return;
-    }
-
-    // 3. VALIDACIÓN DE NEGOCIO (Lógica Reciente: Impedir borrar hijos)
-    if (movTipo !== 'TRANSFERENCIA' && referencia.includes('TRANSFERENCIA ')) {
-        await showSystemModal({
-            title: 'Acción Bloqueada',
-            text: `Este registro es un asiento vinculado a la <b>${referencia}</b>.<br><br>Para eliminarlo, debe localizar y eliminar el registro original de tipo TRANSFERENCIA.`,
-            type: 'warning'
-        });
-        return;
-    }
-
-    // 4. CONFIRMACIÓN CON PIN (IDX)
-    const esPadre = (movTipo === 'TRANSFERENCIA');
-    const mensajeConfirmacion = esPadre 
-        ? 'Esta es una <b>TRANSFERENCIA</b>. Al eliminarla, se borrarán automáticamente los asientos de Débito y Crédito asociados.<br><br>Ingrese su Idx de Seguridad:'
-        : 'Este registro se moverá al historial de borrados. Ingrese su Idx de Seguridad:';
-
-    const pinIngresado = await showSystemModal({
-        title: 'Confirmar Eliminación',
-        text: mensajeConfirmacion,
-        type: 'danger', 
-        isPrompt: true,
-        inputType: 'password',
-        placeholder: 'PIN de seguridad...'
-    });
-
-    if (pinIngresado === null) return; // Canceló
-
-    if (String(pinIngresado).trim() !== idxCorrecto) {
-        await showSystemModal({ 
-            title: 'Error de Seguridad', 
-            text: 'El Idx de Seguridad es incorrecto. Operación cancelada.', 
-            type: 'warning' 
-        });
-        return;
-    }
-
-    // 5. PROCESAMIENTO Y ENVÍO (Payload Fiel al Backend)
-    toggleGlobalLoader(true, "Eliminando...", "Sincronizando con el servidor GAS.");
-
-    const finalPayload = {
-        action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
-        TABLA_DESTINO: tableOrigin,
-        [prefix + 'ID']: recordId,
-        REF_CASCADE: esPadre ? `TRANSFERENCIA ${recordId}` : '',
-        currentUser: usuarioLogueadoId
-    };
-
-    // Si no es cascada, incluimos parámetros para borrado simple por compatibilidad
-    if (!esPadre) {
-        finalPayload.CAMPO_CLAVE = `${prefix}ID`;
-        finalPayload.ID_VALUE = recordId;
-    }
-
-    try {
-        const success = await executeSubmit(finalPayload);
-
-        if (success) {
-            needsRefresh = true;
-            await fetchData(tableOrigin);
-            document.getElementById('detail-modal')?.classList.add('hidden');
-            toggleGlobalLoader(false);
-            await showSystemModal({ 
-                title: 'Proceso Completado', 
-                text: 'Registros eliminados correctamente.', 
-                type: 'info' 
-            });
-        } else {
-            toggleGlobalLoader(false);
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const row = tableData.DATOS_REGISTRO; 
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+        
+        if (!row || !tableOrigin) {
+            console.error("Error: No hay datos de registro cargados.");
+            return;
         }
-    } catch (error) {
-        toggleGlobalLoader(false);
-        console.error("Error crítico en deleteRecord:", error);
-        await showSystemModal({ 
-            title: 'Error Crítico', 
-            text: 'No se pudo conectar con el servidor.', 
-            type: 'danger' 
+
+        const prefix = tableOrigin.split('_')[0].toUpperCase();
+        const recordId = row[`${prefix}ID`];
+        const registroOwner = String(row[`${prefix}RegistroUser`] || "").trim();
+        const movTipo = String(row[`${prefix}MOVIMIENTO`] || '').toUpperCase();
+        const referencia = String(row[`${prefix}REF`] || '').toUpperCase();
+
+        // 2. LÓGICA DE PERMISOS (Seguridad Original)
+        const esAdmin = (perfilUsuario === 'ADMIN');
+        const esPropietario = (registroOwner !== "" && registroOwner === usuarioLogueadoId);
+
+        console.log("--- Validación de Seguridad ---", { usuarioLogueadoId, registroOwner, esAdmin, esPropietario });
+
+        if (!esPropietario && !esAdmin) {
+            await showSystemModal({ 
+                title: 'Acceso Denegado', 
+                text: `Solo el propietario (${registroOwner}) o un Administrador pueden eliminar este registro.`, 
+                type: 'warning' 
+            });
+            return;
+        }
+
+        // 3. VALIDACIÓN DE NEGOCIO (Lógica Reciente: Impedir borrar hijos)
+        if (movTipo !== 'TRANSFERENCIA' && referencia.includes('TRANSFERENCIA ')) {
+            await showSystemModal({
+                title: 'Acción Bloqueada',
+                text: `Este registro es un asiento vinculado a la <b>${referencia}</b>.<br><br>Para eliminarlo, debe localizar y eliminar el registro original de tipo TRANSFERENCIA.`,
+                type: 'warning'
+            });
+            return;
+        }
+
+        // 4. CONFIRMACIÓN CON PIN (IDX)
+        const esPadre = (movTipo === 'TRANSFERENCIA');
+        const mensajeConfirmacion = esPadre 
+            ? 'Esta es una <b>TRANSFERENCIA</b>. Al eliminarla, se borrarán automáticamente los asientos de Débito y Crédito asociados.<br><br>Ingrese su Idx de Seguridad:'
+            : 'Este registro se moverá al historial de borrados. Ingrese su Idx de Seguridad:';
+
+        const pinIngresado = await showSystemModal({
+            title: 'Confirmar Eliminación',
+            text: mensajeConfirmacion,
+            type: 'danger', 
+            isPrompt: true,
+            inputType: 'password',
+            placeholder: 'PIN de seguridad...'
         });
+
+        if (pinIngresado === null) return; // Canceló
+
+        if (String(pinIngresado).trim() !== idxCorrecto) {
+            await showSystemModal({ 
+                title: 'Error de Seguridad', 
+                text: 'El Idx de Seguridad es incorrecto. Operación cancelada.', 
+                type: 'warning' 
+            });
+            return;
+        }
+
+        // 5. PROCESAMIENTO Y ENVÍO (Payload Fiel al Backend)
+        toggleGlobalLoader(true, "Eliminando...", "Sincronizando con el servidor GAS.");
+
+        const finalPayload = {
+            action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
+            TABLA_DESTINO: tableOrigin,
+            [prefix + 'ID']: recordId,
+            REF_CASCADE: esPadre ? `TRANSFERENCIA ${recordId}` : '',
+            currentUser: usuarioLogueadoId
+        };
+
+        // Si no es cascada, incluimos parámetros para borrado simple por compatibilidad
+        if (!esPadre) {
+            finalPayload.CAMPO_CLAVE = `${prefix}ID`;
+            finalPayload.ID_VALUE = recordId;
+        }
+
+        try {
+            const success = await executeSubmit(finalPayload);
+
+            if (success) {
+                needsRefresh = true;
+                await fetchData(tableOrigin);
+                document.getElementById('detail-modal')?.classList.add('hidden');
+                toggleGlobalLoader(false);
+                await showSystemModal({ 
+                    title: 'Proceso Completado', 
+                    text: 'Registros eliminados correctamente.', 
+                    type: 'info' 
+                });
+            } else {
+                toggleGlobalLoader(false);
+            }
+        } catch (error) {
+            toggleGlobalLoader(false);
+            console.error("Error crítico en deleteRecord:", error);
+            await showSystemModal({ 
+                title: 'Error Crítico', 
+                text: 'No se pudo conectar con el servidor.', 
+                type: 'danger' 
+            });
+        }
     }
-}
 
     /**
      * Envía datos al servidor GAS y gestiona la respuesta global
@@ -1633,135 +1601,135 @@ async function deleteRecord() {
         localStorage.removeItem('TABLE_DATA_REGISTRO'); 
     }
 
-    function openDetailModal(row) {
-        // 1. Inicialización de estado
-        needsRefresh = false;
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        
-        // Normalización de configMap para búsqueda segura
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+ function openDetailModal(row) {
+    // 1. Inicialización de estado
+    needsRefresh = false;
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-        // 2. Normalización de la Barra de Herramientas
-        normalizeToolbar();
-        ['Cancelar'].forEach(disableButton);
-        
-        // 3. Ajuste estético para Modo Lectura
-        document.getElementById('btn-modal-save')?.classList.add('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.add('hidden');
-        document.getElementById('footer-save-container')?.classList.add('hidden');
+    // 2. Normalización de la Barra de Herramientas
+    normalizeToolbar();
+    ['Cancelar'].forEach(disableButton);
+    
+    // 3. Ajuste estético para Modo Lectura
+    document.getElementById('btn-modal-save')?.classList.add('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.add('hidden');
+    document.getElementById('footer-save-container')?.classList.add('hidden');
 
-        // 4. Preparación de contenedores y prefijos
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    // 4. Preparación de contenedores y prefijos
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
 
-        // --- DETECCIÓN DE LÓGICA DE TRANSFERENCIA ---
-        const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
-        const valorRef = String(row[tablePrefix + 'REF'] || '').toUpperCase();
-        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRef.includes('TRANSFERENCIA #');
+    // --- DETECCIÓN DE LÓGICA DE TRANSFERENCIA ---
+    const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
+    const valorRef = String(row[tablePrefix + 'REF'] || '').toUpperCase();
+    const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRef.includes('TRANSFERENCIA ');
 
-        // 5. Renderizado del Título Dinámico
-        content.innerHTML = '';
-        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
-        
-        const statusClass = isTransferRelated ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:bg-white/10 rounded-full transition-all";
-        const statusTitle = isTransferRelated ? "Las transferencias no pueden bloquearse" : "Cambiar Estatus";
+    // 5. Renderizado del Título Dinámico
+    content.innerHTML = '';
+    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+    
+    const statusClass = isTransferRelated ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:bg-white/10 rounded-full transition-all";
+    const statusTitle = isTransferRelated ? "Las transferencias no pueden bloquearse" : "Cambiar Estatus";
 
-        title.innerHTML = `
-            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-                <div class="min-w-10 flex justify-start">
-                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                    <span class="text-blue-400 text-2xl font-bold truncate">${row[tablePrefix + 'ID'] || 'Detalle'}</span>
-                </div>
-                <div class="flex justify-center min-w-0">
-                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${
-                        isActuallyBlocked 
-                        ? 'bg-red-500/20 text-red-400 border-red-500/30' 
-                        : 'bg-green-500/20 text-green-400 border-green-500/30'
-                    }">${rawStatus}</span>
-                </div>
-                <div id="status-icon-container" class="flex justify-end ${statusClass}" title="${statusTitle}">
-                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-                </div>
-            </div>`;
+    title.innerHTML = `
+        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+            <div class="min-w-10 flex justify-start">
+                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                <span class="text-blue-400 text-2xl font-bold truncate">${row[tablePrefix + 'ID'] || 'Detalle'}</span>
+            </div>
+            <div class="flex justify-center min-w-0">
+                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${
+                    isActuallyBlocked 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                    : 'bg-green-500/20 text-green-400 border-green-500/30'
+                }">${rawStatus}</span>
+            </div>
+            <div id="status-icon-container" class="flex justify-end ${statusClass}" title="${statusTitle}">
+                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+            </div>
+        </div>`;
 
-        if (!isTransferRelated) {
-            const statusBtn = document.getElementById('status-icon-container');
-            if (statusBtn) statusBtn.onclick = () => toggleStatus(row);
-        }
-
-        // 6. Renderizado de Campos de Datos
-        Object.keys(row).forEach(key => {
-            const cleanKey = key.toUpperCase();
-            const idFieldName = tablePrefix + 'ID';
-            const refFieldName = tablePrefix + 'REF';
-            
-            if (cleanKey.includes('TYPEREG') || cleanKey === idFieldName);
-            
-            const cfg = configMap[cleanKey] || {};
-            const visibility = String(cfg.visible || '').toLowerCase().trim();
-            const isForced = cleanKey.includes('REGISTRO') || cleanKey.includes('MOVIMIENTO');
-
-            if (visibility !== 'x' && visibility !== 'xx' && !isForced) return;
-
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isNormalCase = cleanKey.includes('CONFIG');
-            
-            // --- BLOQUEO VISUAL IGUAL A EDIT MODE ---
-            const isLockedRef = cleanKey === refFieldName && valorRef.includes('TRANSFERENCIA');
-
-            const item = document.createElement('div');
-            item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
-            
-            let valueHTML = '';
-
-            if (isDescription) {
-                valueHTML = `
-                    <textarea 
-                        readonly 
-                        tabindex="-1"
-                        class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
-                        style="height: 60px; text-align: left !important; display: block !important;"
-                    >${row[key] || ''}</textarea>`;
-            } else if (isLockedRef) {
-                // DISEÑO ESPECIAL UNIFICADO CON SHOWEDITMODE
-                valueHTML = `
-                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between bg-orange-500/5 rounded border border-orange-500/10">
-                        <span class="text-sm font-bold uppercase tracking-tight text-orange-400/80 truncate">
-                            ${getFormattedValue(key, row[key])}
-                        </span>
-                        <i data-lucide="lock-keyhole" class="w-3.5 h-3.5 text-orange-500/50 ml-2"></i>
-                    </div>`;
-            } else {
-                const textColor = isForced ? 'text-blue-400' : 'text-white';
-                valueHTML = `
-                    <span class="${textColor} font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
-                        style="text-align: left !important;">
-                        ${getFormattedValue(key, row[key])}
-                    </span>`;
-            }
-                
-            item.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-0' : 'self-center'}" style="text-align: left !important;">
-                    ${cfg.label || key}
-                </span>
-                ${valueHTML}`;
-                
-            content.appendChild(item);
-        });
-
-        // 7. Mostrar Modal y Refrescar Iconos
-        const modal = document.getElementById('detail-modal');
-        if (modal) modal.classList.remove('hidden');
-        
-        if (window.lucide) {
-            lucide.createIcons();
-        }
+    if (!isTransferRelated) {
+        const statusBtn = document.getElementById('status-icon-container');
+        if (statusBtn) statusBtn.onclick = () => toggleStatus(row);
     }
 
-    function showEditMode() {
+    // 6. Renderizado de Campos de Datos
+    Object.keys(row).forEach(key => {
+        const cleanKey = key.toUpperCase();
+        const idFieldName = tablePrefix + 'ID';
+        const refFieldName = tablePrefix + 'REF';
+        
+        // --- FILTROS DE EXCLUSIÓN ---
+        if (cleanKey.includes('TYPEREG') || cleanKey === idFieldName || cleanKey.includes('REGISTRO')) return;
+        
+        // Ocultar CUENTA2 si no es transferencia
+        if (cleanKey.endsWith('CUENTA2') && movTipo !== 'TRANSFERENCIA') return;
+
+        const cfg = configMap[cleanKey] || {};
+        const visibility = String(cfg.visible || '').toLowerCase().trim();
+        const isForced = cleanKey.includes('REGISTRO') || cleanKey.includes('MOVIMIENTO');
+
+        if (visibility !== 'x' && visibility !== 'xx' && !isForced) return;
+
+        const isDescription = cleanKey.includes('DESCRIPCION');
+        const isNormalCase = cleanKey.includes('CONFIG');
+        const isLockedRef = cleanKey === refFieldName && valorRef.includes('TRANSFERENCIA');
+
+        const item = document.createElement('div');
+        item.className = `grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start ${isDescription ? 'items-start' : 'items-center'}`;
+        
+        let valueHTML = '';
+
+        if (isDescription) {
+            valueHTML = `
+                <textarea 
+                    readonly 
+                    tabindex="-1"
+                    class="bg-gray-500/10 border border-transparent rounded px-2 py-0 text-sm text-white font-bold w-full resize-none pointer-events-none select-none uppercase"
+                    style="height: 60px; text-align: left !important; display: block !important;"
+                >${row[key] || ''}</textarea>`;
+        } else if (isLockedRef) {
+            valueHTML = `
+                <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between bg-orange-500/5 rounded border border-orange-500/10">
+                    <span class="text-sm font-bold uppercase tracking-tight text-orange-400/80 truncate">
+                        ${getFormattedValue(key, row[key])}
+                    </span>
+                    <i data-lucide="lock-keyhole" class="w-3.5 h-3.5 text-orange-500/50 ml-2"></i>
+                </div>`;
+        } else {
+            const textColor = isForced ? 'text-blue-400' : 'text-white';
+            valueHTML = `
+                <span class="${textColor} font-bold px-2 py-0 text-sm text-left justify-self-start block w-full ${isNormalCase ? 'normal-case' : 'uppercase'}" 
+                    style="text-align: left !important;">
+                    ${getFormattedValue(key, row[key])}
+                </span>`;
+        }
+            
+        item.innerHTML = `
+            <span class="text-gray-200 font-medium uppercase text-[10px] text-left ${isDescription ? 'pt-0' : 'self-center'}" style="text-align: left !important;">
+                ${cfg.label || key}
+            </span>
+            ${valueHTML}`;
+            
+        content.appendChild(item);
+    });
+
+    // 7. Mostrar Modal y Refrescar Iconos
+    const modal = document.getElementById('detail-modal');
+    if (modal) modal.classList.remove('hidden');
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function showEditMode() {
         normalizeToolbar(); // Limpiamos la barra de herramientas
         ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
         
@@ -1791,7 +1759,7 @@ async function deleteRecord() {
         // --- 0. LÓGICA DE DETECCIÓN DE TRANSFERENCIA ---
         const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
         const valorRefActual = String(row[refFieldName] || '').toUpperCase();
-        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRefActual.includes('TRANSFERENCIA #');
+        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRefActual.includes('TRANSFERENCIA ');
 
         // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
         const hiddenId = document.createElement('input');
@@ -1804,7 +1772,6 @@ async function deleteRecord() {
         const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
         const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
 
-        // Si es transferencia, el contenedor del icono se vuelve visualmente inactivo
         const statusIconClass = isTransferRelated ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 rounded-full transition-all';
 
         title.innerHTML = `
@@ -1825,19 +1792,28 @@ async function deleteRecord() {
         Object.keys(row).forEach(key => {
             const cleanKey = key.toUpperCase();
             
-            // Exclusión de campos técnicos
             if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-            
+
+            // Ocultar CUENTA2 y TYPEREG si no es transferencia
+             if (cleanKey.endsWith('CUENTA2') && !isTransferRelated) return
+             if (cleanKey.includes('TYPEREG') && isTransferRelated) return;
+                        
             const cfg = configMap[cleanKey] || {};
             const visValue = String(cfg.visible || '').toLowerCase().trim();
 
-            // REGLA: Si está vacío, no se renderiza.
             if (visValue === "") return;
 
-            // REGLA DE EDICIÓN: Solo si es exactamente 'x' y no es calculado.
-            let isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+            const isDescription = cleanKey.includes('DESCRIPCION');
             
-            // --- BLOQUEO ESPECÍFICO TD101REF SI ES TRANSFERENCIA ---
+            // --- AJUSTE DE EDICIÓN PARA TRANSFERENCIAS ---
+            // Solo es editable si: es 'x' Y NO es calculado Y (no es transferencia O es la descripción)
+            let isEditable = (visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true);
+            
+            if (isTransferRelated && !isDescription) {
+                isEditable = false; // Bloqueo maestro por transferencia
+            }
+
+            // Bloqueo específico de REF si contiene la palabra transferencia
             const isLockedTransferRef = cleanKey === refFieldName && valorRefActual.includes('TRANSFERENCIA');
             if (isLockedTransferRef) isEditable = false;
 
@@ -1847,7 +1823,6 @@ async function deleteRecord() {
             const istoggle = cleanKey.includes('TYPEREG');
             const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
             const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-            const isDescription = cleanKey.includes('DESCRIPCION');
             
             const dictKey = `${currentTableName}|${key}`.toUpperCase();
             const dictOptions = dictionary[dictKey];
@@ -1864,13 +1839,13 @@ async function deleteRecord() {
 
             // --- LÓGICA DE RENDERIZADO ---
             if (!isEditable) {
-                // A. CAMPOS BLOQUEADOS (Incluye el REF de transferencia ahora)
+                // CAMPOS INHABILITADOS (Incluye lógica de opacidad solicitada)
                 const rawValue = row[key] !== null ? row[key] : '';
-                const isSpecialLock = isLockedTransferRef;
+                const isSpecialLock = isLockedTransferRef || (isTransferRelated && !isDescription);
                 
                 valueElement = `
-                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between ${isSpecialLock ? 'bg-orange-500/5 rounded' : ''}">
-                        <span class="text-sm font-bold uppercase tracking-tight ${isSpecialLock ? 'text-orange-400/80' : 'text-gray-500 opacity-90'}">
+                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between ${isSpecialLock ? 'bg-orange-500/5 rounded opacity-60' : 'opacity-50'}">
+                        <span class="text-sm font-bold uppercase tracking-tight ${isSpecialLock ? 'text-orange-400/80' : 'text-gray-500'}">
                             ${getFormattedValue(key, rawValue)}
                         </span>
                         <input type="hidden" data-field="${key}" value="${rawValue}">
@@ -1879,7 +1854,6 @@ async function deleteRecord() {
                     </div>`;
             } 
             else if (istoggle) {
-                // B. TOGGLE (Bloqueado si es transferencia)
                 const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
                 const toggleDisabled = isTransferRelated ? 'pointer-events-none opacity-30' : '';
                 
@@ -1898,13 +1872,10 @@ async function deleteRecord() {
                     </div>`;
             } 
             else if (isIdCuenta) {
-                // Renderizamos como input hidden para mantener el ID actual del registro
                 valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
-                // Opcional: puedes hacer que el item completo no se vea
                 item.className = 'hidden'; 
             } 
             else if (isSelect) {
-                // C. SELECT (DICCIONARIO) - Tu lógica original intacta
                 const valActual = String(val || '').trim();
                 const existeEnOpciones = dictOptions.some(opt => String(opt).trim() === valActual);
                 const optionsHtml = dictOptions.map(opt => {
@@ -1926,23 +1897,24 @@ async function deleteRecord() {
                     </div>`;
             }
             else if (isDate) {
-                // D. FECHA
                 let dateISO = '';
-                if (val) {
-                    dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
-                }
+                if (val) {dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];}
                 valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
             } 
+
             else if (isNumeric) {
-                // E. NUMÉRICO
                 valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
             } 
-            else if (isDescription) {
-                // F. TEXTAREA
-                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]">${val}</textarea>`;
+
+            else if (isDescription && isTransferRelated) {
+                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border gray-800 focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase">${val}</textarea>`;
             } 
+
+            else if (isDescription) {
+                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase">${val}</textarea>`;
+            } 
+
             else {
-                // G. TEXTO SIMPLE
                 valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
             }
 
@@ -2037,7 +2009,7 @@ async function deleteRecord() {
             }
 
             // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
-            if (cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+            if (cleanKey.endsWith('CUENTA2') || cleanKey.endsWith('IDOWNER') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
 
             const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
             const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
@@ -2109,6 +2081,7 @@ async function deleteRecord() {
                 const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
 
                 inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+            
             } else if (isNumeric) {
                 inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
 
@@ -2205,7 +2178,7 @@ async function deleteRecord() {
             const visibility = String(cfg.visible || '').toLowerCase().trim();
             if (visibility !== 'x' && visibility !== 'xx') return;
             if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
-            if (cleanKey.endsWith('ID')) return;
+            if (cleanKey.endsWith('ID') || cleanKey.includes('IDOWNER')) return;
             if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
 
             const isMovementField = cleanKey.includes('MOVIMIENTO');
@@ -2307,28 +2280,56 @@ async function deleteRecord() {
 
         if (window.lucide) lucide.createIcons();
         
-        // 5. VALIDACIÓN DE CUENTAS IDÉNTICAS
+        // 5. VALIDACIÓN VISUAL INTEGRAL (Simetría de errores)
         setTimeout(() => {
             const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
             const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
-            if (selectEmisora && selectReceptora) {
-                const validarCuentas = () => {
-                    const sonIguales = selectEmisora.value && selectEmisora.value === selectReceptora.value;
-                    selectReceptora.style.borderColor = sonIguales ? 'rgb(239 68 68)' : 'var(--th)';
-                    // Un pequeño efecto de fondo para alertar
-                    selectReceptora.style.backgroundColor = sonIguales ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+            const selectMoneda = content.querySelector(`[data-field$="MONEDA"]`); 
+            const matrizCuentas = JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+            if (selectEmisora && selectReceptora && selectMoneda) {
+                const validarTodoVisual = () => {
+                    const aliasE = selectEmisora.value?.trim();
+                    const aliasR = selectReceptora.value?.trim();
+                    const monedaReg = selectMoneda.value?.trim().toUpperCase();
+
+                    const infoE = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasE);
+                    const infoR = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasR);
+
+                    // --- VALIDACIÓN 1: MONEDA REGISTRO VS CUENTA ORIGEN ---
+                    const monedaInconsistente = infoE && monedaReg && infoE.TD102MONEDA !== monedaReg;
+                    
+                    // Aplicamos error a AMBOS campos involucrados en la moneda
+                    [selectEmisora, selectMoneda].forEach(el => {
+                        el.style.borderColor = monedaInconsistente ? 'rgb(239 68 68)' : 'var(--th)';
+                        el.style.backgroundColor = monedaInconsistente ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+                    });
+
+                    // --- VALIDACIÓN 2: TRANSFERENCIA (CUENTA DESTINO) ---
+                    if (infoE && infoR) {
+                        const sonIguales = (infoE.TD102ID || infoE.ID) === (infoR.TD102ID || infoR.ID);
+                        const monedasTrDiff = infoE.TD102MONEDA !== infoR.TD102MONEDA;
+
+                        const hayErrorDestino = sonIguales || monedasTrDiff;
+                        
+                        selectReceptora.style.borderColor = hayErrorDestino ? 'rgb(239 68 68)' : 'var(--th)';
+                        selectReceptora.style.backgroundColor = hayErrorDestino ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+                        
+                        // Si el error en la receptora es por moneda, también marcamos la moneda del registro
+                        if (monedasTrDiff) {
+                            selectMoneda.style.borderColor = 'rgb(239 68 68)';
+                            selectMoneda.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+                        }
+                    }
                 };
-                selectEmisora.addEventListener('change', validarCuentas);
-                selectReceptora.addEventListener('change', validarCuentas);
+
+                selectEmisora.addEventListener('change', validarTodoVisual);
+                selectReceptora.addEventListener('change', validarTodoVisual);
+                selectMoneda.addEventListener('change', validarTodoVisual);
+                
+                validarTodoVisual();
             }
         }, 500);
-        setTimeout(() => {
-        const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
-        if (selectReceptora) {
-            // Esto imprime el valor en el momento del renderizado
-            //console.log("Valor inicial de CUENTA2:", selectReceptora.value);
-        }
-    }, 500);
     }
        
     function duplicateCurrentRecord() {
@@ -2729,99 +2730,166 @@ async function deleteRecord() {
         renderColumnConfig(); 
     }
 
-    async function saveRecord() {
-        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
+async function saveRecord() {
+    toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
-        const container = document.getElementById('detail-modal-content');
-        const inputs = container.querySelectorAll('[data-field]');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+    const container = document.getElementById('detail-modal-content');
+    const inputs = container.querySelectorAll('[data-field]');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-        let missingFields = [];
-        let payload = {};
+    let missingFields = [];
+    let payload = {};
 
-        // 1. LIMPIEZA DE ERRORES VISUALES
-        inputs.forEach(i => {
-            i.classList.remove('border-red-500', 'bg-red-500/10');
-            i.classList.add('border-transparent'); 
-        });
+    // 1. LIMPIEZA DE ERRORES VISUALES
+    inputs.forEach(i => {
+        i.classList.remove('border-red-500', 'bg-red-500/10');
+        i.classList.add('border-transparent'); 
+    });
 
-        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
-        inputs.forEach(input => {
-            const key = input.dataset.field;
-            const cleanKey = key.toUpperCase();
-            const cfg = configMap[cleanKey] || {};
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            
-            let value;
-            if (input.hasAttribute('data-raw')) {
-                value = input.getAttribute('data-raw');
-            } else if (input.type === 'checkbox') {
-                value = input.checked;
-            } else {
-                value = input.value.trim();
-            }
-
-            if (isDate && value && value.includes('-')) {
-                const parts = value.split('-');
-                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-
-            if (cfg.Es_Obligatorio === true && !value) {
-                missingFields.push(cfg.label || key);
-                input.classList.add('border-red-500', 'bg-red-500/10');
-            }
-
-            payload[key] = value;
-        });
-
-        if (missingFields.length > 0) {
-            toggleGlobalLoader(false);
-            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-            return; 
+    // 2. EXTRACCIÓN Y FORMATEO DE DATOS
+    inputs.forEach(input => {
+        const key = input.dataset.field;
+        const cleanKey = key.toUpperCase();
+        const cfg = configMap[cleanKey] || {};
+        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+        
+        let value;
+        if (input.hasAttribute('data-raw')) {
+            value = input.getAttribute('data-raw');
+        } else if (input.type === 'checkbox') {
+            value = input.checked;
+        } else {
+            value = input.value.trim();
         }
 
-    // 3. LÓGICA DE NEGOCIO (PRE-ENVÍO)
-    const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
+        if (isDate && value && value.includes('-')) {
+            const parts = value.split('-');
+            if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        if (cfg.Es_Obligatorio === true && !value) {
+            missingFields.push(cfg.label || key);
+            input.classList.add('border-red-500', 'bg-red-500/10');
+        }
+
+        payload[key] = value;
+    });
+
+// --- 3. VALIDACIONES DE NEGOCIO (BLOQUEO) ---
+
+    // A. Validación de Campos Obligatorios
+    if (missingFields.length > 0) {
+        toggleGlobalLoader(false);
+        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+        return; 
+    }
+
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
 
-    // --- SOLUCIÓN DE ESTABILIDAD ---
-    // 1. Obtenemos los datos (vengan de donde vengan)
-    const rawData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+    // B. VALIDACIÓN: IMPORTE MAYOR A 0.00
+    const keyImporte = `${tablePrefix}IMPORTE`;
+    const valorImporte = parseFloat(String(payload[keyImporte] || "0").replace(',', '.'));
 
-    // 2. Los normalizamos inmediatamente para que TODA la lógica de abajo funcione siempre
-    const cuentasData = rawData.map(c => ({
-        ID: c.ID || c.TD102ID,
-        ALIAS: c.ALIAS || c.TD102ALIAS
-    }));
+    if (isNaN(valorImporte) || valorImporte <= 0) {
+        toggleGlobalLoader(false);
+        const inputImporte = container.querySelector(`[data-field="${keyImporte}"]`);
+        if (inputImporte) inputImporte.classList.add('border-red-500', 'bg-red-500/10');
 
-    // --- AHORA TU CÓDIGO SIGUIENTE ES 100% ESTABLE ---
-
-    // Traducción de Cuenta Origen
-    const aliasSeleccionado = payload[`${tablePrefix}ALIASCUENTA`];
-    if (aliasSeleccionado && cuentasData.length > 0) {
-        // Esto ahora SIEMPRE funcionará porque cuentasData siempre tiene .ALIAS
-        const cuentaEncontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(aliasSeleccionado).trim());
-        if (cuentaEncontrada) payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID; 
+        await showSystemModal({ 
+            title: 'Importe Inválido', 
+            text: 'El <b>Importe</b> debe ser un monto mayor a <b>0,00</b>.', 
+            type: 'warning' 
+        });
+        return;
     }
 
-    // Lógica de Transferencia
-    if (badgeMode.includes('TR')) {
-        const valReceptoraAlias = payload[`${tablePrefix}CUENTA2`];
-        if (valReceptoraAlias) {
-            payload[`${tablePrefix}ALIASCUENTA2`] = valReceptoraAlias; 
+// C. Traducción de Cuentas y Validación de Monedas/Negocio
+    const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
+    const matrizCuentas = JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
 
-            // Esto también funcionará siempre
-            const cuenta2Encontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(valReceptoraAlias).trim());
-            if (cuenta2Encontrada) {
-                payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID;
+    // 1. Obtener Moneda de la Transacción (del payload)
+    const monedaTransaccion = String(payload[`${tablePrefix}MONEDA`] || "").trim().toUpperCase();
+
+    // 2. Procesamiento de Cuenta Emisora
+    const aliasEmisora = payload[`${tablePrefix}ALIASCUENTA`];
+    let infoEmisora = null;
+
+    if (aliasEmisora && matrizCuentas.length > 0) {
+        infoEmisora = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === String(aliasEmisora).trim());
+        if (infoEmisora) {
+            const monedaE = infoEmisora.TD102MONEDA;
+            
+            // VALIDACIÓN A: Moneda Transacción vs Cuenta Origen
+            if (monedaTransaccion && monedaE && monedaTransaccion !== monedaE) {
+                toggleGlobalLoader(false);
+                container.querySelector(`[data-field$="ALIASCUENTA"]`)?.classList.add('border-red-500', 'bg-red-500/10');
+                
+                await showSystemModal({ 
+                    title: 'Inconsistencia de Moneda', 
+                    text: `La moneda del registro (<b>${monedaTransaccion}</b>) no coincide con la moneda de la cuenta seleccionada (<b>${monedaE}</b>).`, 
+                    type: 'error' 
+                });
+                return;
+            }
+            
+            payload[`${tablePrefix}CUENTA`] = infoEmisora.TD102ID || infoEmisora.ID;
+        }
+    }
+
+    // 3. Lógica específica para Modo Transferencia (TR)
+    if (badgeMode.includes('TR')) {
+        const aliasReceptora = payload[`${tablePrefix}CUENTA2`];
+        let infoReceptora = null;
+
+        if (aliasReceptora && matrizCuentas.length > 0) {
+            infoReceptora = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === String(aliasReceptora).trim());
+            if (infoReceptora) {
+                payload[`${tablePrefix}CUENTA2`] = infoReceptora.TD102ID || infoReceptora.ID;
+                payload[`${tablePrefix}ALIASCUENTA2`] = aliasReceptora;
+            }
+        }
+
+        if (infoEmisora && infoReceptora) {
+            const idE = infoEmisora.TD102ID || infoEmisora.ID;
+            const idR = infoReceptora.TD102ID || infoReceptora.ID;
+            const monedaE = infoEmisora.TD102MONEDA;
+            const monedaR = infoReceptora.TD102MONEDA;
+
+            // VALIDACIÓN B: CUENTAS IDÉNTICAS
+            if (idE === idR) {
+                toggleGlobalLoader(false);
+                container.querySelectorAll(`[data-field$="ALIASCUENTA"], [data-field$="CUENTA2"]`)
+                    .forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
+
+                await showSystemModal({ 
+                    title: 'Error en Transferencia', 
+                    text: 'La <b>Cuenta Emisora</b> y la <b>Cuenta Receptora</b> no pueden ser iguales.', 
+                    type: 'error' 
+                });
+                return;
+            }
+
+            // VALIDACIÓN C: MONEDA ORIGEN VS MONEDA DESTINO
+            if (monedaE !== monedaR) {
+                toggleGlobalLoader(false);
+                container.querySelectorAll(`[data-field$="ALIASCUENTA"], [data-field$="CUENTA2"]`)
+                    .forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
+
+                await showSystemModal({ 
+                    title: 'Conflicto de Moneda', 
+                    text: `En transferencias, ambas cuentas deben manejar la misma moneda.<br><br>` +
+                          `Origen: <b>${monedaE}</b><br>Destino: <b>${monedaR}</b>`, 
+                    type: 'error' 
+                });
+                return;
             }
         }
     }
 
-    // 4. ENVÍO ÚNICO
+    // 4. PREPARACIÓN DE ENVÍO
     const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
     const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
     const userId = localStorage.getItem('Usuario_ID') || ""; 
@@ -2839,45 +2907,32 @@ async function deleteRecord() {
         currentUser: userId
     };
 
- // 5. ENVÍO ÚNICO (El Backend crea los 3 registros)
+    // 5. ENVÍO ÚNICO
     const createdRecord = await executeSubmit(finalPayload); 
 
     if (createdRecord) {
-        // Mantenemos el loader y actualizamos el mensaje
         const loaderLabel = document.querySelector('#global-loader span');
         if (loaderLabel) loaderLabel.innerHTML = "Sincronizando registros...<br>Actualizando vista de tabla.";
 
-        // 1. REFRESCAR DATOS (fetchData debe internamente ejecutar renderTable)
-        // Usamos await para que el loader no se quite hasta que la tabla esté dibujada
         needsRefresh = true; 
         await fetchData(currentTableName); 
 
-        // 2. CERRAR EL FORMULARIO
         document.getElementById('detail-modal')?.classList.add('hidden');
-
-        // 3. APAGAR LOADER
         toggleGlobalLoader(false);
         
-        // 4. MOSTRAR MODAL DE ÉXITO (Opcional, según tu preferencia de flujo)
         await showSystemModal({ 
             title: 'Proceso Completado', 
-            text: 'Registro(s) creado(s) correctamente.', 
+            text: 'Registro(s) procesado(s) correctamente.', 
             type: 'info' 
         });
 
-        // 5. ABRIR DETALLE DEL REGISTRO CREADO
-        // Usamos directamente 'createdRecord' que es lo que devolvió el servidor
-        if (createdRecord) {
-            openDetailModal(createdRecord);
-        }
-
-        console.log("✅ Proceso culminado: Tabla refrescada y detalle abierto.");
+        if (createdRecord) openDetailModal(createdRecord);
           
-        } else {
-            toggleGlobalLoader(false);
-            showSystemModal({ title: 'Error', text: 'No se pudo guardar el registro.', type: 'error' });
-        }
-    } 
+    } else {
+        toggleGlobalLoader(false);
+        showSystemModal({ title: 'Error', text: 'No se pudo guardar el registro.', type: 'error' });
+    }
+}
 
     function resetAllColumnFilters() {
         // 1. Limpiar el estado de los filtros en el array de configuración
