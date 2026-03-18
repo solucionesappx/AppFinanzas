@@ -26,7 +26,7 @@ function doGet(e) {
       const ssData = SpreadsheetApp.openById(DATA_SS_ID);
       const timeZone = ssData.getSpreadsheetTimeZone();
       
-      // --- TD101_MAIN (OPERACIONES) ---
+      // --- 1. TD101_MAIN (OPERACIONES) ---
       const sheet101 = ssData.getSheetByName("TD101_MAIN");
       const data101 = sheet101 ? sheet101.getDataRange().getValues() : [];
       let resumenOps = [];
@@ -34,36 +34,45 @@ function doGet(e) {
       if (data101.length > 1) {
         const headers101 = data101[0];
         
-        // 1. Localización de índices (Añadimos el nuevo campo de Alias)
-        const idxFecha    = headers101.findIndex(h => h.toUpperCase().includes("FECHA"));
-        const idxMonto    = headers101.findIndex(h => h.toUpperCase().includes("IMPORTE"));
-        const idxMov      = headers101.findIndex(h => h.toUpperCase().includes("MOVIMIENTO"));
-        const idxType     = headers101.findIndex(h => h.toUpperCase().includes("TYPEREG"));
-        const idxCuenta   = headers101.findIndex(h => h.toUpperCase().includes("CUENTA") && !h.toUpperCase().includes("ALIAS"));
-        const idxAlias    = headers101.findIndex(h => h.toUpperCase().includes("ALIASCUENTA")); // Nuevo campo
-        const idxOwner101 = headers101.findIndex(h => h.toUpperCase().includes("IDOWNER"));
-        
+        // Mapeo robusto de índices
+        const idx = {
+          fecha:  headers101.findIndex(h => h.toUpperCase().includes("FECHA")),
+          monto:  headers101.findIndex(h => h.toUpperCase().includes("IMPORTE")),
+          mov:    headers101.findIndex(h => h.toUpperCase().includes("MOVIMIENTO")),
+          type:   headers101.findIndex(h => h.toUpperCase().includes("TYPEREG")),
+          cuenta: headers101.findIndex(h => h.toUpperCase().includes("CUENTA") && !h.toUpperCase().includes("ALIAS")),
+          alias:  headers101.findIndex(h => h.toUpperCase().includes("ALIASCUENTA")),
+          owner:  headers101.findIndex(h => h.toUpperCase().includes("IDOWNER"))
+        };
+
         resumenOps = data101.slice(1)
-          .filter(row => isAdmin || String(row[idxOwner101]).trim() === String(usuarioId).trim())
+          .filter(row => {
+            const rowOwner = String(row[idx.owner] || "").trim();
+            return isAdmin || rowOwner === usuarioId;
+          })
           .map(row => {
-            let fechaVal = row[idxFecha];
+            // Normalización de Fecha
+            let fechaVal = row[idx.fecha];
             let fechaStr = (fechaVal instanceof Date) 
               ? Utilities.formatDate(fechaVal, timeZone, "dd/MM/yyyy") 
-              : String(fechaVal);
+              : String(fechaVal || "");
+
+            // Normalización de Importe (Asegurar que sea número para el Dashboard)
+            let importeRaw = row[idx.monto];
+            let importeNum = (typeof importeRaw === 'number') ? importeRaw : parseFloat(String(importeRaw).replace(/[^\d.-]/g, '')) || 0;
 
             return {
               FECHA: fechaStr,
-              IMPORTE: row[idxMonto],
-              MOVIMIENTO: row[idxMov],
-              TYPEREG: row[idxType],
-              // AHORA: CUENTA viaja como ID y ALIAS_CUENTA como el nombre legible
-              CUENTA: String(row[idxCuenta]).trim(),
-              ALIAS_CUENTA: idxAlias !== -1 ? String(row[idxAlias]).trim() : "Sin Alias" 
+              IMPORTE: importeNum,
+              MOVIMIENTO: String(row[idx.mov] || "").trim().toUpperCase(),
+              TYPEREG: String(row[idx.type] || "").trim().toUpperCase(),
+              CUENTA: String(row[idx.cuenta] || "").trim(),
+              ALIAS_CUENTA: idx.alias !== -1 ? String(row[idx.alias] || "").trim() : "Sin Alias"
             };
           });
       }
 
-      // --- TD102_CUENTAS (MAESTRO) ---
+      // --- 2. TD102_CUENTAS (MAESTRO) ---
       const sheet102 = ssData.getSheetByName("TD102_CUENTAS");
       const data102 = sheet102 ? sheet102.getDataRange().getValues() : [];
       let resumenCuentas = [];
@@ -71,25 +80,29 @@ function doGet(e) {
       if (data102.length > 1) {
         const headers102 = data102[0];
         
-        // Localización (endsWith para ID de tabla)
-        const idxIdCta    = headers102.findIndex(h => h.toUpperCase().endsWith("ID")); 
-        const idxBanco    = headers102.findIndex(h => h.toUpperCase().includes("BANCO"));
-        const idxTipo     = headers102.findIndex(h => h.toUpperCase().includes("TIPO"));
-        const idxMoneda   = headers102.findIndex(h => h.toUpperCase().includes("MONEDA"));
-        const idxNumCta   = headers102.findIndex(h => h.toUpperCase().includes("NUMERO"));
-        const idxOwner102 = headers102.findIndex(h => h.toUpperCase().includes("IDOWNER"));
+        const idxCta = {
+          id:     headers102.findIndex(h => h.toUpperCase().endsWith("ID")), 
+          banco:  headers102.findIndex(h => h.toUpperCase().includes("BANCO")),
+          tipo:   headers102.findIndex(h => h.toUpperCase().includes("TIPO")),
+          moneda: headers102.findIndex(h => h.toUpperCase().includes("MONEDA")),
+          num:    headers102.findIndex(h => h.toUpperCase().includes("NUMERO")),
+          owner:  headers102.findIndex(h => h.toUpperCase().includes("IDOWNER"))
+        };
 
         resumenCuentas = data102.slice(1)
-          .filter(row => isAdmin || String(row[idxOwner102]).trim() === String(usuarioId).trim())
+          .filter(row => {
+            const rowOwner = String(row[idxCta.owner] || "").trim();
+            return isAdmin || rowOwner === usuarioId;
+          })
           .map(row => {
-            const banco  = String(row[idxBanco] || '').trim();
-            const tipo   = String(row[idxTipo] || '').trim();
-            const moneda = String(row[idxMoneda] || '').trim();
+            const banco  = String(row[idxCta.banco] || '').trim();
+            const tipo   = String(row[idxCta.tipo] || '').trim();
+            const moneda = String(row[idxCta.moneda] || '').trim();
             
             return {
-              ID: String(row[idxIdCta]).trim(),
-              NUMERO: String(row[idxNumCta]).trim(),
-              ALIAS: `${banco} ${tipo} ${moneda}`.trim(),
+              ID: String(row[idxCta.id] || "").trim(),
+              NUMERO: String(row[idxCta.num] || "").trim(),
+              ALIAS: `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim() || "Cuenta sin nombre",
               MONEDA: moneda
             };
           });
