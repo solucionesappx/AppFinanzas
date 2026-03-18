@@ -387,17 +387,32 @@ async function fetchDashboardData() {
         const res = await response.json();
 
         if (res.success) {
+            // 1. Guardar en RAM (Estructura: ID, ALIAS...)
             window.dashboardState = {
                 operaciones: res.operaciones || [],
                 cuentas: res.cuentas || []
             };
 
-            dashboardData.cuentas = res.cuentas || [];
+            // 2. GUARDAR EN STORAGE (Estructura: TD102ID, TD102ALIAS...)
+            // Normalizamos aquí para que la SPA que envía datos no falle
+            const matrizParaStorage = (res.cuentas || []).map(c => ({
+                TD102ID: c.ID,
+                TD102NUMERO: c.NUMERO,
+                TD102ALIAS: c.ALIAS,
+                TD102MONEDA: c.MONEDA,
+                TD102BANCO: c.BANCO || '' // Si el dashboard trae banco, lo incluimos
+            }));
 
+            localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(matrizParaStorage));
+
+            // 3. Actualizar UI
+            dashboardData.cuentas = res.cuentas || [];
             updateDashboardMetrics(null);
             
             const countEl = document.getElementById('dash-cant-cuentas');
             if (countEl) countEl.textContent = dashboardData.cuentas.length;
+
+            console.log("✅ Datos sincronizados en RAM y Storage (Formato TD102)");
         }
     } catch (err) {
         console.error("❌ Error fetchDashboardData:", err);
