@@ -103,7 +103,8 @@ function doGet(e) {
               ID: String(row[idxCta.id] || "").trim(),
               NUMERO: String(row[idxCta.num] || "").trim(),
               ALIAS: `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim() || "Cuenta sin nombre",
-              MONEDA: moneda
+              MONEDA: moneda,
+              BANCO: banco
             };
           });
       }
