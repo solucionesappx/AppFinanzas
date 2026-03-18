@@ -1387,7 +1387,7 @@
             await fetchData(currentTableName);
             document.getElementById('detail-modal')?.classList.add('hidden');
             toggleGlobalLoader(false);
-            await showSystemModal({ title: 'Éxito', text: 'Registros eliminados correctamente.', type: 'info' });
+            await showSystemModal({ title: 'Proceso Completado', text: 'Registros eliminados correctamente.', type: 'info' });
         }
     }
 
@@ -1466,203 +1466,6 @@
             return false;
         }
     }
-
-    async function saveRecord() {
-        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
-
-        const container = document.getElementById('detail-modal-content');
-        const inputs = container.querySelectorAll('[data-field]');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-        let missingFields = [];
-        let payload = {};
-
-        // 1. LIMPIEZA DE ERRORES VISUALES
-        inputs.forEach(i => {
-            i.classList.remove('border-red-500', 'bg-red-500/10');
-            i.classList.add('border-transparent'); 
-        });
-
-        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
-        inputs.forEach(input => {
-            const key = input.dataset.field;
-            const cleanKey = key.toUpperCase();
-            const cfg = configMap[cleanKey] || {};
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            
-            let value;
-            if (input.hasAttribute('data-raw')) {
-                value = input.getAttribute('data-raw');
-            } else if (input.type === 'checkbox') {
-                value = input.checked;
-            } else {
-                value = input.value.trim();
-            }
-
-            // Formateo de fecha para Sheets (dd/mm/yyyy)
-            if (isDate && value) {
-                const parts = value.split('-');
-                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-
-            // Validación de obligatorios
-            if (cfg.Es_Obligatorio === true && !value) {
-                missingFields.push(cfg.label || key);
-                input.classList.add('border-red-500', 'bg-red-500/10');
-            }
-
-            payload[key] = value;
-        });
-
-        // 3. VALIDACIONES DE NEGOCIO (BLOQUEO)
-        if (missingFields.length > 0) {
-            toggleGlobalLoader(false);
-            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-            return; 
-        }
-
-        const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-
-        // Validación Transferencia: Cuentas no pueden ser iguales
-        if (badgeMode.includes('TR')) {
-            const valEmisora = payload[`${tablePrefix}CUENTA`];
-            const valReceptora = payload[`${tablePrefix}CUENTA2`];
-            if (valEmisora && valReceptora && valEmisora === valReceptora) {
-                toggleGlobalLoader(false);
-                container.querySelectorAll(`[data-field="${tablePrefix}CUENTA"], [data-field="${tablePrefix}CUENTA2"]`)
-                    .forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
-                await showSystemModal({ title: 'Error en Transferencia', text: 'La cuenta origen y destino deben ser diferentes.', type: 'error' });
-                return;
-            }
-        }
-
-        // 4. PREPARACIÓN DE PAYLOAD FINAL
-        const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
-        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
-        const idFieldName = `${tablePrefix}ID`;
-        const userId = localStorage.getItem('Usuario_ID') || ""; 
-
-        if (isNewOrDuplicate) {
-            delete payload[idFieldName];
-            
-            // INYECCIÓN CRÍTICA PARA NUEVOS REGISTROS
-            // Esto asegura que el registro nazca con dueño y sea visible luego
-            payload[`${tablePrefix}IDOWNER`] = userId; 
-        }
-
-        const finalPayload = {
-            ...payload,
-            action: gasAction,
-            TABLA_DESTINO: currentTableName,
-            currentUser: userId // Este se usa para la auditoría (REGISTROUSER)
-        };
-
-        // 5. ENVÍO Y GENERACIÓN DE ASIENTOS DERIVADOS
-        // IMPORTANTE: executeSubmit debe retornar res.data para que esto funcione
-        const createdRecord = await executeSubmit(finalPayload); 
-
-        if (createdRecord) {
-            // Si es una Transferencia, generamos el Débito y Crédito usando el ID del maestro
-            if (badgeMode.includes('TR')) {
-                const loaderLabel = document.querySelector('#global-loader span');
-                if (loaderLabel) loaderLabel.textContent = "Generando asientos contables vinculados...";
-                
-                // Pasamos el objeto createdRecord que ya contiene el ID asignado por el servidor
-                await generateTransferAsientos(createdRecord);
-            }
-
-            // Sincronización final y cierre
-            needsRefresh = true; 
-            await fetchData(currentTableName); 
-
-            document.getElementById('detail-modal')?.classList.add('hidden');
-            toggleGlobalLoader(false);
-            
-            await showSystemModal({ 
-                title: 'Solicitud completada', 
-                text: 'Operación procesada y sincronizada correctamente.', 
-                type: 'info' 
-            });
-
-            // Reapertura opcional para ver el registro final
-            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-            if (updatedStorage.DATOS_REGISTRO) {
-                openDetailModal(updatedStorage.DATOS_REGISTRO);
-            }
-        }
-    }
-
-    /**
-     * Función Auxiliar para crear los dos movimientos de la transferencia
-     */
-async function generateTransferAsientos(trMaster) {
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const trID = trMaster[`${tablePrefix}ID`]; // El ID real del servidor
-    const userId = localStorage.getItem('Usuario_ID') || "";
-    
-    const colCuenta = `${tablePrefix}CUENTA`;
-    const colAlias = `${tablePrefix}ALIASCUENTA`;
-    const colCuenta2 = `${tablePrefix}CUENTA2`;
-    const colMov = `${tablePrefix}MOVIMIENTO`;
-    const colRef = `${tablePrefix}REF`;
-
-    // 1. Clonamos el objeto base y limpiamos lo que no corresponde a los hijos
-    const baseData = { ...trMaster };
-    delete baseData[`${tablePrefix}ID`];
-    delete baseData[colCuenta2];
-
-    // --- LÓGICA DE TRADUCCIÓN (Copiada de saveRecord) ---
-    const buscarID = (alias) => {
-        if (alias && window.dashboardState?.cuentas) {
-            const encontrada = window.dashboardState.cuentas.find(c => c.ALIAS === alias);
-            return encontrada ? encontrada.ID : "";
-        }
-        return "";
-    };
-
-    // 2. Payload DÉBITO (Salida - Cuenta Emisora)
-    // Nos aseguramos de enviar su ID correcto basado en su ALIASCUENTA
-    const aliasEmisor = trMaster[colAlias];
-    const payloadDebito = {
-        ...baseData,
-        [colAlias]: aliasEmisor,
-        [colCuenta]: buscarID(aliasEmisor), 
-        [colMov]: 'DÉBITO',
-        [colRef]: `TRANSFERENCIA #${trID}`,
-        action: 'registerDynamicDataTD',
-        TABLA_DESTINO: currentTableName,
-        currentUser: userId
-    };
-
-    // 3. Payload CRÉDITO (Entrada - Cuenta Receptora)
-    // Aquí invertimos: ALIASCUENTA ahora es lo que venía en CUENTA2
-    const aliasReceptor = trMaster[colCuenta2];
-    const payloadCredito = {
-        ...baseData,
-        [colAlias]: aliasReceptor,
-        [colCuenta]: buscarID(aliasReceptor), // Inyectamos el ID de la receptora
-        [colMov]: 'CRÉDITO',
-        [colRef]: `TRANSFERENCIA #${trID}`,
-        action: 'registerDynamicDataTD',
-        TABLA_DESTINO: currentTableName,
-        currentUser: userId
-    };
-
-    try {
-        // Enviamos ambos registros ya procesados con sus IDs correspondientes
-        await Promise.all([
-            fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payloadDebito) }),
-            fetch(GAS_URL, { method: 'POST', body: new URLSearchParams(payloadCredito) })
-        ]);
-        console.log(`✅ Asientos contables vinculados a TR #${trID} generados con éxito.`);
-    } catch (e) {
-        console.error("❌ Error crítico en generación de asientos:", e);
-    }
-}
 
     function normalizeToolbar() {
         const ids = ['btn-modal-save', 'btn-modal-cancel', 'btn-modal-return'];
@@ -2442,6 +2245,13 @@ function TransferAccountRecord() {
             selectReceptora.addEventListener('change', validarCuentas);
         }
     }, 500);
+    setTimeout(() => {
+    const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
+    if (selectReceptora) {
+        // Esto imprime el valor en el momento del renderizado
+        //console.log("Valor inicial de CUENTA2:", selectReceptora.value);
+    }
+}, 500);
 }
        
 function duplicateCurrentRecord() {
@@ -2842,154 +2652,152 @@ function duplicateCurrentRecord() {
         renderColumnConfig(); 
     }
 
-    async function saveRecord() {
-        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
+async function saveRecord() {
+    toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
-        const container = document.getElementById('detail-modal-content');
-        const inputs = container.querySelectorAll('[data-field]');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+    const container = document.getElementById('detail-modal-content');
+    const inputs = container.querySelectorAll('[data-field]');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-        let missingFields = [];
-        let payload = {};
+    let missingFields = [];
+    let payload = {};
 
-        // 1. LIMPIEZA DE ERRORES VISUALES
-        inputs.forEach(i => {
-            i.classList.remove('border-red-500', 'bg-red-500/10');
-            i.classList.add('border-transparent'); 
-        });
+    // 1. LIMPIEZA DE ERRORES VISUALES
+    inputs.forEach(i => {
+        i.classList.remove('border-red-500', 'bg-red-500/10');
+        i.classList.add('border-transparent'); 
+    });
 
-        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
-        inputs.forEach(input => {
-            const key = input.dataset.field;
-            const cleanKey = key.toUpperCase();
-            const cfg = configMap[cleanKey] || {};
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            
-            let value;
-            if (input.hasAttribute('data-raw')) {
-                value = input.getAttribute('data-raw');
-            } else if (input.type === 'checkbox') {
-                value = input.checked;
-            } else {
-                value = input.value.trim();
-            }
-
-            if (isDate && value) {
-                const parts = value.split('-');
-                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-
-            if (cfg.Es_Obligatorio === true && !value) {
-                missingFields.push(cfg.label || key);
-                input.classList.add('border-red-500', 'bg-red-500/10');
-            }
-
-            payload[key] = value;
-        });
-
-        // 3. VALIDACIONES DE NEGOCIO Y VINCULACIÓN DE IDs
-        if (missingFields.length > 0) {
-            toggleGlobalLoader(false);
-            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-            return; 
-        }
-
-        const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
-
-// --- LÓGICA DE TRADUCCIÓN: ALIAS -> ID (OPTIMIZADA) ---
-const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-
-// 1. Obtener la fuente de verdad (RAM o LocalStorage)
-const cuentasData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
-
-// 2. Traducción de Cuenta Principal (Emisora)
-const aliasSeleccionado = payload[`${tablePrefix}ALIASCUENTA`];
-if (aliasSeleccionado && cuentasData.length > 0) {
-    const cuentaEncontrada = cuentasData.find(c => c.ALIAS === aliasSeleccionado);
-    if (cuentaEncontrada) {
-        // Inyectamos el ID real en el campo técnico
-        payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID || cuentaEncontrada.TD102ID; 
-    }
-}
-
-// 3. Validación y Traducción para Transferencias (TR)
-if (badgeMode.includes('TR')) {
-    // Nota: En TR, CUENTA2 suele capturar el ALIAS del destino en el modal
-    const valEmisora = payload[`${tablePrefix}ALIASCUENTA`];
-    const valReceptora = payload[`${tablePrefix}CUENTA2`]; 
-
-    // Validación de duplicados (No transferir a la misma cuenta)
-    if (valEmisora && valReceptora && valEmisora === valReceptora) {
-        toggleGlobalLoader(false);
-        const fields = container.querySelectorAll(`[data-field="${tablePrefix}ALIASCUENTA"], [data-field="${tablePrefix}CUENTA2"]`);
-        fields.forEach(el => el.classList.add('border-red-500', 'bg-red-500/10'));
+    // 2. EXTRACCIÓN Y FORMATEO DE DATOS
+    inputs.forEach(input => {
+        const key = input.dataset.field;
+        const cleanKey = key.toUpperCase();
+        const cfg = configMap[cleanKey] || {};
+        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
         
-        await showSystemModal({ 
-            title: 'Error en Transferencia', 
-            text: 'La cuenta origen y destino deben ser diferentes.', 
-            type: 'error' 
-        });
-        return;
+        let value;
+        if (input.hasAttribute('data-raw')) {
+            value = input.getAttribute('data-raw');
+        } else if (input.type === 'checkbox') {
+            value = input.checked;
+        } else {
+            value = input.value.trim();
+        }
+
+        if (isDate && value && value.includes('-')) {
+            const parts = value.split('-');
+            if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        if (cfg.Es_Obligatorio === true && !value) {
+            missingFields.push(cfg.label || key);
+            input.classList.add('border-red-500', 'bg-red-500/10');
+        }
+
+        payload[key] = value;
+    });
+
+    if (missingFields.length > 0) {
+        toggleGlobalLoader(false);
+        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+        return; 
     }
 
-    // Traducción de Cuenta Receptora (Convertir Alias de CUENTA2 a su ID real)
-    if (valReceptora && cuentasData.length > 0) {
-        const cuenta2Encontrada = cuentasData.find(c => c.ALIAS === valReceptora);
-        if (cuenta2Encontrada) {
-            // MUY IMPORTANTE: Aquí sobreescribimos el Alias por el ID real 
-            // para que el Backend reciba el número/ID y no el nombre del banco
-            payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID || cuenta2Encontrada.TD102ID;
-            console.log(`🔄 TR Mapeada: ${valReceptora} -> ID: ${payload[`${tablePrefix}CUENTA2`]}`);
+    // 3. LÓGICA DE NEGOCIO (PRE-ENVÍO)
+    const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const cuentasData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+    // Traducción de Cuenta Origen
+    const aliasSeleccionado = payload[`${tablePrefix}ALIASCUENTA`];
+    if (aliasSeleccionado && cuentasData.length > 0) {
+        const cuentaEncontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(aliasSeleccionado).trim());
+        if (cuentaEncontrada) payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID || cuentaEncontrada.TD102ID; 
+    }
+
+    // Lógica de Transferencia (Preparar datos para el Triple Registro en Backend)
+    if (badgeMode.includes('TR')) {
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        
+        // 1. Capturamos el nombre (Alias) que el usuario seleccionó en el Select de CUENTA2
+        // En este momento, payload[`${tablePrefix}CUENTA2`] tiene el texto (ej: "BANCO DESTINO")
+        const valReceptoraAlias = payload[`${tablePrefix}CUENTA2`];
+
+        if (valReceptoraAlias) {
+            // --- LA CLAVE ---
+            // Creamos una nueva propiedad en el payload llamada ALIASCUENTA2
+            // Esta propiedad viajará al backend aunque no exista una columna física con ese nombre
+            payload[`${tablePrefix}ALIASCUENTA2`] = valReceptoraAlias; 
+
+            // Ahora sí, buscamos el ID para convertir el CUENTA2 original en número
+            const cuenta2Encontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(valReceptoraAlias).trim());
+            if (cuenta2Encontrada) {
+                payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID || cuenta2Encontrada.TD102ID;
+                //console.log("✈️ Enviando Alias2 al Backend:", payload[`${tablePrefix}ALIASCUENTA2`]);
+            }
         }
     }
-}
 
-        // 4. PREPARACIÓN DE PAYLOAD FINAL
-        const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
-        const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
-        const idFieldName = `${tablePrefix}ID`;
-        const userId = localStorage.getItem('Usuario_ID') || ""; 
+    // 4. ENVÍO ÚNICO
+    const isNewOrDuplicate = badgeMode.includes('BORRADOR') || badgeMode.includes('DUPLICADO');
+    const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
+    const userId = localStorage.getItem('Usuario_ID') || ""; 
 
-        if (isNewOrDuplicate) delete payload[idFieldName];
+    if (isNewOrDuplicate) {
+        delete payload[`${tablePrefix}ID`];
+        payload[`${tablePrefix}TYPEREG`] = "Registrado"; 
+        payload[`${tablePrefix}IDOWNER`] = userId;      
+    }
 
-        const finalPayload = {
-            ...payload,
-            action: gasAction,
-            TABLA_DESTINO: currentTableName,
-            currentUser: userId
-        };
+    const finalPayload = {
+        ...payload,
+        action: gasAction,
+        TABLA_DESTINO: currentTableName,
+        currentUser: userId
+    };
 
-        // 5. ENVÍO
+ // 5. ENVÍO ÚNICO (El Backend crea los 3 registros)
         const createdRecord = await executeSubmit(finalPayload); 
 
         if (createdRecord) {
-            if (badgeMode.includes('TR')) {
-                const loaderLabel = document.querySelector('#global-loader span');
-                if (loaderLabel) loaderLabel.textContent = "Generando asientos contables vinculados...";
-                await generateTransferAsientos(createdRecord);
-            }
+            // Mantenemos el loader y actualizamos el mensaje
+            const loaderLabel = document.querySelector('#global-loader span');
+            if (loaderLabel) loaderLabel.innerHTML = "Sincronizando registros...<br>Actualizando vista de tabla.";
 
+            // 1. REFRESCAR DATOS (fetchData debe internamente ejecutar renderTable)
+            // Usamos await para que el loader no se quite hasta que la tabla esté dibujada
             needsRefresh = true; 
             await fetchData(currentTableName); 
 
+            // 2. CERRAR EL FORMULARIO
             document.getElementById('detail-modal')?.classList.add('hidden');
+
+            // 3. APAGAR LOADER
             toggleGlobalLoader(false);
             
+            // 4. MOSTRAR MODAL DE ÉXITO (Opcional, según tu preferencia de flujo)
             await showSystemModal({ 
-                title: 'Solicitud completada', 
-                text: 'Operación procesada y sincronizada correctamente.', 
+                title: 'Proceso Completado', 
+                text: 'Registro(s) creado(s) correctamente.', 
                 type: 'info' 
             });
 
-            const updatedStorage = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-            if (updatedStorage.DATOS_REGISTRO) {
-                openDetailModal(updatedStorage.DATOS_REGISTRO);
+            // 5. ABRIR DETALLE DEL REGISTRO CREADO
+            // Usamos directamente 'createdRecord' que es lo que devolvió el servidor
+            if (createdRecord) {
+                openDetailModal(createdRecord);
             }
+
+            console.log("✅ Proceso culminado: Tabla refrescada y detalle abierto.");
+          
+        } else {
+            toggleGlobalLoader(false);
+            showSystemModal({ title: 'Error', text: 'No se pudo guardar el registro.', type: 'error' });
         }
-    }
+    } 
 
     function resetAllColumnFilters() {
         // 1. Limpiar el estado de los filtros en el array de configuración
@@ -3058,7 +2866,7 @@ if (badgeMode.includes('TR')) {
                 };
                 // También en storage por si se refresca la página
                 localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(res.cuentas));
-                console.log("✅ Metadatos de cuentas cargados:", res.cuentas.length);
+                //console.log("✅ Metadatos de cuentas cargados:", res.cuentas.length);
             }
         } catch (err) {
             console.error("❌ Error cargando metadatos de cuentas:", err);
