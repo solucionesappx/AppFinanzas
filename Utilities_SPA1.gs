@@ -111,24 +111,20 @@ function handleDynamicDataTD(params, mode) {
       if (typeof val === 'string' && val.indexOf('data:image') === 0) {
         var nombreArchivo = "IMG_" + new Date().getTime() + ".jpg";
         var driveUrl = uploadImageToDrive(val, nombreArchivo);
-        
         if (driveUrl && !driveUrl.startsWith("Error")) {
-          // Guardamos la fórmula para que veas la miniatura en el Excel/Sheets
           params[key] = '=IMAGE("' + driveUrl + '")';
         }
       }
     }
   }
-  // --- FIN DETECCIÓN ---
 
   const ssData = SpreadsheetApp.openById(DATA_SS_ID);
   const sheet = ssData.getSheetByName(params.TABLA_DESTINO);
-  
   if (!sheet) return createJsonResponse({ success: false, message: 'Tabla no encontrada: ' + params.TABLA_DESTINO });
 
   const range = sheet.getDataRange();
-  const fullData = range.getValues();      // Valores resultantes
-  const fullFormulas = range.getFormulas(); // Fórmulas originales
+  const fullData = range.getValues();
+  const fullFormulas = range.getFormulas();
   const headers = fullData[0];
   const timestamp = Utilities.formatDate(new Date(), "GMT-4", "dd/MM/yyyy HH:mm:ss");
   
@@ -158,7 +154,7 @@ function handleDynamicDataTD(params, mode) {
     if (mode === "DELETE") return moveRowToHistory(ssData, sheet, rowIndex, headers, params);
   }
 
-  // --- 2. PREPARACIÓN DE FILA (INTELIGENCIA DE FÓRMULAS) ---
+  // --- 2. PREPARACIÓN DE FILA ---
   const rowValues = (mode === "EDIT") ? [...fullData[rowIndex - 1]] : new Array(headers.length).fill("");
   const rowFormulas = (mode === "EDIT") ? [...fullFormulas[rowIndex - 1]] : new Array(headers.length).fill("");
 
@@ -166,17 +162,11 @@ function handleDynamicDataTD(params, mode) {
     const cleanH = header.trim();
     const upperH = cleanH.toUpperCase();
     
-    // A. Asignación de Llave Primaria
     if (cleanH === campoClave && mode === "REGISTER") {
       rowValues[index] = newGeneratedId;
     } 
-    // B. Auditoría y SEGURIDAD (Forzado de IDOWNER)
     else if (upperH.endsWith("IDOWNER")) {
-      // Solo asignamos dueño al crear. 
-      // Si es EDIT, conservamos el valor que ya traía la fila.
-      if (mode === "REGISTER") {
-        rowValues[index] = params.currentUser || ""; 
-      }
+      if (mode === "REGISTER") rowValues[index] = params.currentUser || ""; 
     }
     else if (upperH.endsWith("REGISTROUSER")) {
       rowValues[index] = params.currentUser || "UserSys";
@@ -184,14 +174,9 @@ function handleDynamicDataTD(params, mode) {
     else if (upperH.endsWith("REGISTRODATA")) {
       rowValues[index] = timestamp;
     }
-    // C. Datos del Frontend vs Fórmulas
     else if (params[cleanH] !== undefined) {
       let val = params[cleanH];
-      
-      // Si el valor es una cadena que parece número (y no es un ID o Código)
       if (typeof val === "string" && val.trim() !== "" && !upperH.endsWith("IDNOMBRE") && !upperH.endsWith("ID")) {
-        // Si el frontend envía el valor "limpio" (ej. "1250.50"), 
-        // nos aseguramos de que Google Sheets lo trate como número
         if (!isNaN(val) && val.includes('.')) {
           val = parseFloat(val);
         } else if (!isNaN(val)) {
@@ -200,22 +185,71 @@ function handleDynamicDataTD(params, mode) {
       }
       rowValues[index] = val;
     }
-    // D. LÓGICA CRÍTICA: Si el campo NO viene en el payload (Calculado o omitido)
     else if (mode === "EDIT") {
-      // Si la celda original tenía una fórmula, la PRESERVAMOS sobre el valor estático
       if (rowFormulas[index] && rowFormulas[index].toString().startsWith('=')) {
         rowValues[index] = rowFormulas[index];
       }
-      // Si no es fórmula, rowValues[index] ya tiene el valor estático de fullData[rowIndex-1]
     }
   });
 
-  // 3. PERSISTENCIA
+// --- 3. LÓGICA DE TRIPLE REGISTRO (TRANSFERENCIAS) ---
   try {
     if (mode === "REGISTER") {
+      // Verificamos si CUENTA2 tiene datos para disparar los asientos vinculados
+      const colCuenta2Index = headers.findIndex(h => h.toUpperCase().endsWith("CUENTA2"));
+      const valCuenta2OriginalID = colCuenta2Index !== -1 ? rowValues[colCuenta2Index] : null;
+
+      // Identificamos el nombre de la propiedad que viene del frontend (ej: TD101ALIASCUENTA2)
+      const keyAlias2 = tablePrefix + "ALIASCUENTA2";
+      const aliasCapturado = params[keyAlias2];
+
+      // Si detecto que CUENTA2 no está vacío, cambio su valor por ALIASCUENTA2 antes de guardar el principal
+      if (valCuenta2OriginalID && String(valCuenta2OriginalID).trim() !== "" && aliasCapturado) {
+        rowValues[colCuenta2Index] = aliasCapturado;
+      }
+
+      // Guardamos primero el registro principal (TRANSFERENCIA)
       sheet.appendRow(rowValues);
+
+      // Si valCuenta2 tenía datos, procedemos con los otros 2 registros/asientos
+      if (valCuenta2OriginalID && String(valCuenta2OriginalID).trim() !== "") {
+        const colMovIndex = headers.findIndex(h => h.toUpperCase().endsWith("MOVIMIENTO"));
+        const colCuentaIndex = headers.findIndex(h => h.toUpperCase().endsWith("CUENTA") && !h.toUpperCase().endsWith("CUENTA2"));
+        const colAliasIndex = headers.findIndex(h => h.toUpperCase().endsWith("ALIASCUENTA"));
+        const colRefIndex = headers.findIndex(h => h.toUpperCase().endsWith("REF"));
+
+        // --- Asiento DÉBITO (Salida de dinero) ---
+        let rowDebito = [...rowValues];
+        rowDebito[idColIndex] = newGeneratedId + 1; // ID siguiente
+        if (colMovIndex !== -1) rowDebito[colMovIndex] = "DÉBITO";
+        if (colRefIndex !== -1) rowDebito[colRefIndex] = "TRANSFERENCIA " + newGeneratedId;
+        if (colCuenta2Index !== -1) rowDebito[colCuenta2Index] = ""; // Limpiar receptora
+        sheet.appendRow(rowDebito);
+
+        // --- Asiento CRÉDITO (Entrada de dinero) ---
+        let rowCredito = [...rowValues];
+        rowCredito[idColIndex] = newGeneratedId + 2; // ID subsiguiente
+        if (colMovIndex !== -1) rowCredito[colMovIndex] = "CRÉDITO";
+        if (colRefIndex !== -1) rowCredito[colRefIndex] = "TRANSFERENCIA " + newGeneratedId;
+        
+        // 1. La cuenta destino (ID original de CUENTA2) se convierte en la principal (CUENTA)
+        if (colCuentaIndex !== -1 && valCuenta2OriginalID) {
+            rowCredito[colCuentaIndex] = valCuenta2OriginalID;
+        }
+
+        // 2. El Alias capturado se convierte en el ALIASCUENTA principal
+        if (colAliasIndex !== -1 && aliasCapturado) {
+            rowCredito[colAliasIndex] = aliasCapturado;
+        }
+        
+        // 3. Limpiar la referencia a la cuenta secundaria
+        if (colCuenta2Index !== -1) rowCredito[colCuenta2Index] = ""; 
+        
+        sheet.appendRow(rowCredito);
+      }
     } else {
-      // Escribimos la fila completa. Aquellas posiciones con "=" serán tratadas como fórmulas por Sheets.
+      // Escribimos la fila completa para el modo EDIT. 
+      // Aquellas posiciones con "=" serán tratadas como fórmulas por Sheets.
       sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowValues]);
     }
 
@@ -224,11 +258,12 @@ function handleDynamicDataTD(params, mode) {
 
     return createJsonResponse({ 
       success: true, 
-      message: mode === "EDIT" ? 'Registro actualizado.' : 'Creado correctamente.',
+      message: mode === "REGISTER" ? 'Procesado con asientos' : 'Actualizado', 
       data: responseObj 
     });
+
   } catch (e) {
-    return createJsonResponse({ success: false, message: 'Error: ' + e.toString() });
+    return createJsonResponse({ success: false, message: 'Error en persistencia: ' + e.toString() });
   }
 }
 
@@ -592,4 +627,23 @@ function handleDeleteTransferCascade(params) {
     success: true, 
     message: 'Cascada completada. ' + rowsDeleted + ' registros procesados.' 
   });
+}
+
+function buscarDatoCuentaG(aliasBuscado) {
+  if (!aliasBuscado) return "";
+  
+  const ss = SpreadsheetApp.openById(DATA_SS_ID);
+  const sheetCuentas = ss.getSheetByName("TD102_CUENTAS");
+  if (!sheetCuentas) return aliasBuscado; // Si no existe la tabla, devolvemos el original
+
+  const data = sheetCuentas.getDataRange().getValues();
+  
+  // Buscamos en la Columna A (índice 0) y devolvemos la Columna G (índice 6)
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim().toUpperCase() === String(aliasBuscado).trim().toUpperCase()) {
+      return data[i][6]; // Columna G
+    }
+  }
+  
+  return aliasBuscado; // Si no lo encuentra, deja lo que venía
 }
