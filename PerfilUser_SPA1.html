@@ -32,6 +32,10 @@
         /* ESTILOS ESPECÍFICOS DE LA SECCIÓN (SPA PERFIL) */
         .input-form{margin-top:0.25rem;display:block;width:100%;padding:0.5rem 1rem;background-color:#1f2937;border:1px solid #4b5563;border-radius:0.5rem;color:white;outline:none}
         .input-form:focus{border-color:#3b82f6}
+        input::placeholder {font-style: italic; color: #9ca3af; opacity: 0.7;}
+        .light-mode input::placeholder {color: #6b7280;}
+        :root { --input-bg: rgba(75, 85, 99, 0.2); } 
+        .light-mode { --input-bg: rgba(229, 231, 235, 0.5); }
     </style>
 </head>
 <body class="dark">
@@ -125,7 +129,7 @@
         if (theme === 'light') {document.documentElement.classList.add('light-mode');} 
         else {document.documentElement.classList.remove('light-mode');}
     }
-    function logout(){localStorage.clear();window.location.href='index.html'}
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}
 </script>
 
 <script>
@@ -138,6 +142,7 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
 });
 
     document.addEventListener('DOMContentLoaded', () => {
+        applyTheme(); // Aplica el modo visual guardado
         if(localStorage.getItem(KEYS.CORREO)) {
             renderProfile();
             document.getElementById('editProfileForm').onsubmit = handleEditSubmit;
@@ -145,11 +150,14 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
     });
 
     function renderProfile() {
+        const currentTheme = localStorage.getItem(PROFILE_KEYS.THEME) || 'dark';
+
         const flds = [
             { id: 'Nombre', l: 'Nombre Usuario', v: localStorage.getItem(PROFILE_KEYS.NOMBRE), i: true },
             { id: 'Usuario_ID', l: 'ID Usuario', v: localStorage.getItem(PROFILE_KEYS.USUARIO_ID), i: true },
             { id: 'Tienda', l: 'Tienda', v: localStorage.getItem(PROFILE_KEYS.TIENDA), i: true },
             { id: 'Perfil', l: 'Perfil', v: localStorage.getItem(PROFILE_KEYS.PERFIL), i: true },
+            { id: 'Tema', l: 'Tema Interfaz App', v: currentTheme.toUpperCase() }, // Texto estático: DARK o LIGHT
             { id: 'Correo', l: 'Correo registrado', v: localStorage.getItem(PROFILE_KEYS.CORREO) },
             { id: 'Telefono', l: 'Teléfono registrado', v: localStorage.getItem(PROFILE_KEYS.TELEFONO) },
             { id: 'Pregunta', l: 'Pregunta de Seguridad', v: localStorage.getItem(PROFILE_KEYS.PREGUNTA) },
@@ -160,7 +168,7 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
         document.getElementById('perfilBodyContent').innerHTML = flds.map(f => {
             const isSensitive = f.s === true;
             const valReal = (f.v || '---').replace(/'/g, "\\'");
-            const valueClass = f.i ? 'text-[22px] text-blue-300 font-bold leading-tight' : 'text-[18px] text-gray-200 leading-tight';
+            const valueClass = f.i ? 'text-[22px] text-blue-300 font-bold leading-tight' : 'text-[18px] text-gray-200 font-bold leading-tight';
 
             return `
                 <div class="border-b border-gray-700/40 py-1">
@@ -169,10 +177,10 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
                         ${isSensitive ? `onmouseenter="toggleMaskedValue('val-${f.id}', '${valReal}', true, 'icon-${f.id}')" 
                                         onmouseleave="toggleMaskedValue('val-${f.id}', '${valReal}', false, 'icon-${f.id}')"` : ''}>
                         <span id="val-${f.id}" class="${valueClass}">${isSensitive ? '••••••' : (f.v || '---')}</span>
-                        ${isSensitive ? `<span id="icon-${f.id}" class="text-gray-500 transition-opacity duration-200"><i data-lucide="eye" class="w-4 h-4"></i></span>` : ''}
+                        ${isSensitive ? `<span id="icon-${f.id}" class="text-gray-500 transition-opacity duration-200">
+                            <i data-lucide="eye" class="w-4 h-4"></i></span>` : ''}
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
         if(window.lucide) lucide.createIcons();
     }
@@ -181,11 +189,15 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
         document.getElementById('DetallePerfilContent').classList.add('hidden');
         document.getElementById('EditPerfilContent').classList.remove('hidden');
         const editForm = document.getElementById('editProfileFormFields');
+        
+        const currentTheme = (localStorage.getItem(PROFILE_KEYS.THEME) || 'dark').toLowerCase();
+
         const fields = [
             { id: 'Nombre', l: 'Nombre Usuario', v: localStorage.getItem(PROFILE_KEYS.NOMBRE), edit: false, i: true },
             { id: 'Usuario_ID', l: 'ID Usuario', v: localStorage.getItem(PROFILE_KEYS.USUARIO_ID), edit: false, i: true }, 
-            { id: 'Tienda', l: 'Tienda', v: localStorage.getItem(PROFILE_KEYS.TIENDA), edit: false, i: true },               
+            { id: 'Tienda', l: 'Tienda', v: localStorage.getItem(PROFILE_KEYS.TIENDA), edit: false, i: true },              
             { id: 'Perfil', l: 'Perfil', v: localStorage.getItem(PROFILE_KEYS.PERFIL), edit: false, i: true },
+            { id: 'Usuario_Tema', l: 'Tema Interfaz App', v: currentTheme, edit: true, isTheme: true },
             { id: 'Usuario_Correo', l: 'Correo registrado', v: localStorage.getItem(PROFILE_KEYS.CORREO), edit: true, type: 'email' },
             { id: 'Usuario_Telefono', l: 'Teléfono registrado', v: localStorage.getItem(PROFILE_KEYS.TELEFONO), edit: true, type: 'text' },
             { id: 'Usuario_PreguntaSeg', l: 'Pregunta de Seguridad', v: localStorage.getItem(PROFILE_KEYS.PREGUNTA), edit: true, type: 'text' },
@@ -193,14 +205,54 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
         ];
 
         editForm.innerHTML = fields.map((f) => {
-            const valueClass = f.i ? 'text-[22px] text-blue-300 font-bold leading-tight' : 'text-[18px] text-gray-200 leading-tight';
+            const valueClass = f.i ? 'text-[22px] text-blue-300 font-bold leading-tight' : 'text-[18px] text-gray-200 font-bold leading-tight';
             const labelClass = f.edit ? 'text-blue-400' : 'text-gray-500';
+
             if (!f.edit) {
-                return `<div class="border-b border-gray-700/40 py-1"><span class="text-[10px] font-bold ${labelClass} uppercase block -mb-1">${f.l}</span><div class="flex items-center h-[32px]"><span class="${valueClass} opacity-60">${f.v || '---'}</span></div></div>`;
+                // MODO VISTA (BLOQUEADO)
+                return `<div class="border-b border-gray-700/40 py-1">
+                            <span class="text-[10px] font-bold ${labelClass} uppercase block -mb-1">${f.l}</span>
+                            <div class="flex items-center h-[32px]">
+                                <span class="${valueClass} opacity-60">${f.v || '---'}</span>
+                            </div>
+                        </div>`;
+            } else if (f.isTheme) {
+                // MODO EDICIÓN: TEMA (INHABILITADO PERO VISIBLE)
+                const isLight = f.v === 'light';
+                return `
+                    <div class="border-b border-blue-700/40 py-1 group hover:bg-gray-500/10">
+                        <label class="text-[10px] py-0 text-red-500 font-bold ${labelClass} uppercase block -mb-1">
+                            ${f.l}
+                        </label>
+                        <div class="flex items-center justify-between h-[32px] pr-1">
+                            <span id="txt-tema-actual" class="${valueClass} uppercase">
+                                ${f.v}
+                            </span>
+                            <input type="hidden" id="Usuario_Tema" name="Usuario_Tema" value="${f.v}">
+                            
+                            <div class="relative inline-flex items-center h-5 rounded-full w-10 bg-gray-600 opacity-40 cursor-not-allowed">
+                                <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${isLight ? 'translate-x-5' : 'translate-x-1'}"></span>
+                            </div>
+                        </div>
+                    </div>`;
             } else {
-                return `<div class="border-b border-blue-700/40 py-1 group hover:bg-gray-500"><label for="${f.id}" class="text-[10px] font-bold ${labelClass} uppercase block -mb-1 cursor-pointer">${f.l}</label><div class="flex items-center h-[32px]"><input type="${f.type}" id="${f.id}" name="${f.id}" placeholder="${f.v || ''}" class="px-1 w-full bg-gray-500 ${valueClass} outline-none placeholder-white p-0 m-0 border border-blue-600 rounded-md focus:ring-0 appearance-none leading-tight"></div></div>`;
-            } 
+                // MODO EDICIÓN: CAMPOS ESTÁNDAR
+                return `
+                    <div class="border-b border-blue-700/40 py-1 group hover:bg-gray-500/10">
+                        <label for="${f.id}" class="text-[10px] py-0 text-red-500 font-bold ${labelClass} uppercase block -mb-1 cursor-pointer">
+                            ${f.l}
+                        </label>
+                        <div class="flex items-center h-[32px]">
+                            <input type="${f.type}" 
+                                id="${f.id}" 
+                                name="${f.id}" 
+                                placeholder="${f.v || ''}" 
+                                class="w-full bg-transparent ${valueClass} outline-none placeholder:italic placeholder-gray-500 p-0 m-0 focus:ring-0 appearance-none leading-tight">
+                        </div>
+                    </div>`;
+            }
         }).join('');
+
         document.getElementById('Usuario_Correo_Actual').value = localStorage.getItem(PROFILE_KEYS.CORREO);
         if(window.lucide) lucide.createIcons();
     }
@@ -219,41 +271,112 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
         }
     }
 
-    async function handleEditSubmit(e) {
-        e.preventDefault();
-        const f = e.target;
-        const submitBtn = f.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = "Procesando...";
-        submitBtn.disabled = true;
+async function handleEditSubmit(e) {
+    e.preventDefault();
+    const f = e.target;
+    const submitBtn = f.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    
+    // Bloqueo de UI para evitar múltiples clics
+    submitBtn.textContent = "Procesando...";
+    submitBtn.disabled = true;
 
-        const d = { 
-            action: 'editProfile', 
-            Usuario_Tienda: localStorage.getItem(PROFILE_KEYS.TIENDA), 
-            Usuario_Correo_Actual: f.Usuario_Correo_Actual.value,
-            Usuario_Correo: f.Usuario_Correo.value.trim() || localStorage.getItem(PROFILE_KEYS.CORREO), 
-            Usuario_Telefono: f.Usuario_Telefono.value.trim() || localStorage.getItem(PROFILE_KEYS.TELEFONO),
-            Usuario_PreguntaSeg: f.Usuario_PreguntaSeg.value.trim() || localStorage.getItem(PROFILE_KEYS.PREGUNTA), 
-            Usuario_RespuestaSeg: f.Usuario_RespuestaSeg.value.trim() || localStorage.getItem(PROFILE_KEYS.RESPUESTA) 
-        };
+    // 1. Capturamos el tema del campo hidden (actualizado en vivo por el switch)
+    // El valor proviene del input 'Usuario_Tema' inyectado en showEditMode
+    const nuevoTemaLocal = f.Usuario_Tema ? f.Usuario_Tema.value : localStorage.getItem(PROFILE_KEYS.THEME);
 
-        try {
-            const r = await fetch(GAS_SCRIPT_URL, { method: 'POST', body: new URLSearchParams(d) });
-            const res = await r.json();
-            if (res.success) {
-                localStorage.setItem(PROFILE_KEYS.CORREO, d.Usuario_Correo);
-                localStorage.setItem(PROFILE_KEYS.TELEFONO, d.Usuario_Telefono);
-                localStorage.setItem(PROFILE_KEYS.PREGUNTA, d.Usuario_PreguntaSeg);
-                localStorage.setItem(PROFILE_KEYS.RESPUESTA, d.Usuario_RespuestaSeg);
-                // Usamos el modal de la plantilla en lugar de alert
-                await showSystemModal({title:'Proceso Completado', text:'Perfil actualizado correctamente.', type:'info'});
-                location.reload();
-            } else {
-                await showSystemModal({title:'Error', text: res.message || "No se pudo actualizar el Perfil", type:'warning'});
-            }
-        } catch (err) { await showSystemModal({title:'Error', text:'Error de conexión', type:'warning'}); }
-        finally { submitBtn.textContent = originalBtnText; submitBtn.disabled = false; }
+    // 2. Construimos el objeto para el BACKEND (Sin el tema, como acordamos)
+    const d = { 
+        action: 'editProfile', 
+        Usuario_Tienda: localStorage.getItem(PROFILE_KEYS.TIENDA), 
+        Usuario_Correo_Actual: f.Usuario_Correo_Actual.value,
+        Usuario_Correo: f.Usuario_Correo.value.trim() || localStorage.getItem(PROFILE_KEYS.CORREO), 
+        Usuario_Telefono: f.Usuario_Telefono.value.trim() || localStorage.getItem(PROFILE_KEYS.TELEFONO),
+        Usuario_PreguntaSeg: f.Usuario_PreguntaSeg.value.trim() || localStorage.getItem(PROFILE_KEYS.PREGUNTA), 
+        Usuario_RespuestaSeg: f.Usuario_RespuestaSeg.value.trim() || localStorage.getItem(PROFILE_KEYS.RESPUESTA) 
+    };
+
+    try {
+        // Enviamos los datos de identidad y seguridad al servidor (GAS)
+        const r = await fetch(GAS_SCRIPT_URL, { method: 'POST', body: new URLSearchParams(d) });
+        const res = await r.json();
+
+        if (res.success) {
+            // 3. PERSISTENCIA LOCAL: Si el backend aceptó los cambios, guardamos todo.
+            // Aquí es donde el tema seleccionado "sobrevive" al cierre de sesión o recarga.
+            localStorage.setItem(PROFILE_KEYS.THEME, nuevoTemaLocal);
+            localStorage.setItem(PROFILE_KEYS.CORREO, d.Usuario_Correo);
+            localStorage.setItem(PROFILE_KEYS.TELEFONO, d.Usuario_Telefono);
+            localStorage.setItem(PROFILE_KEYS.PREGUNTA, d.Usuario_PreguntaSeg);
+            localStorage.setItem(PROFILE_KEYS.RESPUESTA, d.Usuario_RespuestaSeg);
+
+            // 4. Confirmación visual final
+            applyTheme();
+
+            // Notificación de éxito
+            await showSystemModal({
+                title: 'Proceso Completado', 
+                text: 'Perfil y preferencias actualizadas correctamente.', 
+                type: 'info'
+            });
+
+            // Recarga final para resetear la SPA a modo vista con los nuevos datos
+            location.reload();
+        } else {
+            // Si el backend falla (ej. correo duplicado), el tema NO se guarda en localStorage
+            // y al recargar o cancelar volverá al estado anterior.
+            await showSystemModal({
+                title: 'Error', 
+                text: res.message || "No se pudo actualizar el Perfil", 
+                type: 'warning'
+            });
+        }
+    } catch (err) { 
+        console.error("Error en la petición:", err);
+        await showSystemModal({
+            title: 'Error', 
+            text: 'Error de conexión con el servidor', 
+            type: 'warning'
+        }); 
+    } finally { 
+        // Restauración del botón
+        submitBtn.textContent = originalBtnText; 
+        submitBtn.disabled = false; 
     }
+}
+
+    function handleThemeToggle() {
+        // Llamamos a tu función original que cambia la clase en el HTML
+        toggleTheme(); 
+        // Refrescamos solo el perfil para actualizar el texto de "Tema App" y la posición del switch
+        renderProfile();
+    }
+
+function toggleVisualTheme(btn) {
+    const input = document.getElementById('Usuario_Tema');
+    const txt = document.getElementById('txt-tema-actual');
+    const circle = btn.querySelector('span');
+    
+    // Cambiamos el valor
+    const isNowLight = input.value === 'dark';
+    input.value = isNowLight ? 'light' : 'dark';
+    txt.textContent = input.value.toUpperCase();
+    
+    // 1. Alternar color de fondo del botón
+    btn.classList.toggle('bg-blue-600', isNowLight);
+    btn.classList.toggle('bg-gray-700', !isNowLight);
+    
+    // 2. Alternar posición del círculo (Usando translate-x-5)
+    circle.classList.toggle('translate-x-5', isNowLight);
+    circle.classList.toggle('translate-x-1', !isNowLight);
+    
+    // 3. Efecto Online (Opcional, si quieres que cambie el resto de la interfaz)
+    if (isNowLight) {
+        document.documentElement.classList.add('light-mode');
+    } else {
+        document.documentElement.classList.remove('light-mode');
+    }
+}
 
 </script>
 </body>
