@@ -1335,61 +1335,121 @@
         });
     }
 
-    async function deleteRecord() {
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const record = tableData.DATOS_REGISTRO;
-        if (!record) return;
+async function deleteRecord() {
+    // 1. EXTRACCIÓN DE DATOS DE USUARIO Y REGISTRO
+    const usuarioLogueadoId = String(localStorage.getItem('Usuario_ID') || "").trim();
+    const perfilUsuario = String(localStorage.getItem('Usuario_Perfil') || "").trim().toUpperCase();
+    const idxCorrecto = String(localStorage.getItem('Usuario_Idx') || "").trim();
 
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-        const movTipo = String(record[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
-        const referencia = String(record[tablePrefix + 'REF'] || '').toUpperCase();
-        const recordId = record[tablePrefix + 'ID'];
+    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const row = tableData.DATOS_REGISTRO; 
+    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+    
+    if (!row || !tableOrigin) {
+        console.error("Error: No hay datos de registro cargados.");
+        return;
+    }
 
-        // 1. VALIDACIÓN: Impedir borrar hijos directamente
-        if (movTipo !== 'TRANSFERENCIA' && referencia.includes('TRANSFERENCIA #')) {
-            await showSystemModal({
-                title: 'Acción Bloqueada',
-                text: `Este registro es un asiento vinculado a la <b>${referencia}</b>.<br><br>Para eliminarlo, debe localizar y eliminar el registro original de tipo TRANSFERENCIA.`,
-                type: 'warning'
-            });
-            return;
-        }
+    const prefix = tableOrigin.split('_')[0].toUpperCase();
+    const recordId = row[`${prefix}ID`];
+    const registroOwner = String(row[`${prefix}RegistroUser`] || "").trim();
+    const movTipo = String(row[`${prefix}MOVIMIENTO`] || '').toUpperCase();
+    const referencia = String(row[`${prefix}REF`] || '').toUpperCase();
 
-        // 2. CONFIRMACIÓN
-        const esPadre = movTipo === 'TRANSFERENCIA';
-        const confirm = await showSystemModal({
-            title: '¿Confirmar eliminación?',
-            text: esPadre 
-                ? 'Esta es una <b>TRANSFERENCIA</b>. Al eliminarla, se borrarán automáticamente los asientos de Débito y Crédito asociados.'
-                : '¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.',
-            type: 'danger',
-            confirmText: 'Eliminar'
+    // 2. LÓGICA DE PERMISOS (Seguridad Original)
+    const esAdmin = (perfilUsuario === 'ADMIN');
+    const esPropietario = (registroOwner !== "" && registroOwner === usuarioLogueadoId);
+
+    console.log("--- Validación de Seguridad ---", { usuarioLogueadoId, registroOwner, esAdmin, esPropietario });
+
+    if (!esPropietario && !esAdmin) {
+        await showSystemModal({ 
+            title: 'Acceso Denegado', 
+            text: `Solo el propietario (${registroOwner}) o un Administrador pueden eliminar este registro.`, 
+            type: 'warning' 
         });
+        return;
+    }
 
-        if (!confirm) return;
+    // 3. VALIDACIÓN DE NEGOCIO (Lógica Reciente: Impedir borrar hijos)
+    if (movTipo !== 'TRANSFERENCIA' && referencia.includes('TRANSFERENCIA ')) {
+        await showSystemModal({
+            title: 'Acción Bloqueada',
+            text: `Este registro es un asiento vinculado a la <b>${referencia}</b>.<br><br>Para eliminarlo, debe localizar y eliminar el registro original de tipo TRANSFERENCIA.`,
+            type: 'warning'
+        });
+        return;
+    }
 
-        // 3. PROCESAMIENTO
-        toggleGlobalLoader(true, "Eliminando...", "Sincronizando con el servidor GAS.");
+    // 4. CONFIRMACIÓN CON PIN (IDX)
+    const esPadre = (movTipo === 'TRANSFERENCIA');
+    const mensajeConfirmacion = esPadre 
+        ? 'Esta es una <b>TRANSFERENCIA</b>. Al eliminarla, se borrarán automáticamente los asientos de Débito y Crédito asociados.<br><br>Ingrese su Idx de Seguridad:'
+        : 'Este registro se moverá al historial de borrados. Ingrese su Idx de Seguridad:';
 
-        const finalPayload = {
-            action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
-            TABLA_DESTINO: currentTableName,
-            [tablePrefix + 'ID']: recordId,
-            // Si es padre, enviamos la referencia que comparten los hijos
-            REF_CASCADE: esPadre ? `TRANSFERENCIA #${recordId}` : '',
-            currentUser: localStorage.getItem('Usuario_ID') || ''
-        };
+    const pinIngresado = await showSystemModal({
+        title: 'Confirmar Eliminación',
+        text: mensajeConfirmacion,
+        type: 'danger', 
+        isPrompt: true,
+        inputType: 'password',
+        placeholder: 'PIN de seguridad...'
+    });
 
+    if (pinIngresado === null) return; // Canceló
+
+    if (String(pinIngresado).trim() !== idxCorrecto) {
+        await showSystemModal({ 
+            title: 'Error de Seguridad', 
+            text: 'El Idx de Seguridad es incorrecto. Operación cancelada.', 
+            type: 'warning' 
+        });
+        return;
+    }
+
+    // 5. PROCESAMIENTO Y ENVÍO (Payload Fiel al Backend)
+    toggleGlobalLoader(true, "Eliminando...", "Sincronizando con el servidor GAS.");
+
+    const finalPayload = {
+        action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
+        TABLA_DESTINO: tableOrigin,
+        [prefix + 'ID']: recordId,
+        REF_CASCADE: esPadre ? `TRANSFERENCIA ${recordId}` : '',
+        currentUser: usuarioLogueadoId
+    };
+
+    // Si no es cascada, incluimos parámetros para borrado simple por compatibilidad
+    if (!esPadre) {
+        finalPayload.CAMPO_CLAVE = `${prefix}ID`;
+        finalPayload.ID_VALUE = recordId;
+    }
+
+    try {
         const success = await executeSubmit(finalPayload);
 
         if (success) {
             needsRefresh = true;
-            await fetchData(currentTableName);
+            await fetchData(tableOrigin);
             document.getElementById('detail-modal')?.classList.add('hidden');
             toggleGlobalLoader(false);
-            await showSystemModal({ title: 'Proceso Completado', text: 'Registros eliminados correctamente.', type: 'info' });
+            await showSystemModal({ 
+                title: 'Proceso Completado', 
+                text: 'Registros eliminados correctamente.', 
+                type: 'info' 
+            });
+        } else {
+            toggleGlobalLoader(false);
         }
+    } catch (error) {
+        toggleGlobalLoader(false);
+        console.error("Error crítico en deleteRecord:", error);
+        await showSystemModal({ 
+            title: 'Error Crítico', 
+            text: 'No se pudo conectar con el servidor.', 
+            type: 'danger' 
+        });
     }
+}
 
     /**
      * Envía datos al servidor GAS y gestiona la respuesta global
@@ -1898,500 +1958,517 @@
         if (window.lucide) lucide.createIcons();
     }
 
-function showRegisterMode() {
-    // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-    
-    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-        TABLA_ORIGEN: tableOrigin,
-        DATOS_REGISTRO: null 
-    }));
-
-    // 2. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar(); 
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.remove('hidden');
-    document.getElementById('detail-modal')?.classList.remove('hidden');
-
-    const btnReturn = document.getElementById('btn-modal-return');
-    if (btnReturn) {
-        btnReturn.onclick = (e) => {
-            e.preventDefault();
-            cancelActualForm();
-        };
-    }
-
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
-
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => {
-        configMap[k.toUpperCase()] = configMapRaw[k];
-    });
-    
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
-    const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
-
-    content.innerHTML = '';
-
-    // 3. TÍTULO
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    BORRADOR NV
-                </span>
-                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-            </div>
-        </div>`;
-
-    // 4. RENDERIZADO DINÁMICO DE CAMPOS
-    Object.keys(configMap).forEach(key => {
-        const cfg = configMap[key]; 
-        const cleanKey = key.toUpperCase();
+    function showRegisterMode() {
+        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
         
-        // --- REGLA DE VISIBILIDAD ---
-        const visValue = String(cfg.visible || '').toLowerCase().trim();
-        if (visValue === "") return;
+        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+            TABLA_ORIGEN: tableOrigin,
+            DATOS_REGISTRO: null 
+        }));
 
-        // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
-        // Si es el ID de la tabla o el ID de la Cuenta, los creamos ocultos y vacíos
-        if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.dataset.field = key; 
-            hiddenInput.value = ''; // Crítico: Vacío para que mande el Alias en saveRecord
-            content.appendChild(hiddenInput);
-            return; 
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); 
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+        
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.remove('hidden');
+        document.getElementById('detail-modal')?.classList.remove('hidden');
+
+        const btnReturn = document.getElementById('btn-modal-return');
+        if (btnReturn) {
+            btnReturn.onclick = (e) => {
+                e.preventDefault();
+                cancelActualForm();
+            };
         }
 
-        // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
-        if (cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
 
-        const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-        const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
-
-        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-        // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
-        const currentTableClean = String(currentTableName).trim().toUpperCase();
-        const dictKey = `${currentTableClean}|${cleanKey}`;
-        let dictOptions = dictionary[dictKey] || [];
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
         
-        const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => {
+            configMap[k.toUpperCase()] = configMapRaw[k];
+        });
         
-        // Soporte dinámico para Alias de Cuentas si el diccionario no lo trae
-        if (isAliasField && dictOptions.length === 0) {
-            dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-        }
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
+        const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
 
-        const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-            cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
-        );
+        content.innerHTML = '';
 
-        const isDescription = cleanKey.includes('DESCRIPCION');
-        const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+        // 3. TÍTULO
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        BORRADOR NV
+                    </span>
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+                </div>
+            </div>`;
 
-        const rowItem = document.createElement('div');
-        rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-        
-        let inputHTML = '';
-
-        if (!isEditable) {
-            inputHTML = `
-                <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                    <span>---</span>
-                    <input type="hidden" data-field="${key}" value="">
-                    <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                </div>`;
-
-        } else if (isSelect) {
-            const optionsHtml = dictOptions.map(opt => 
-                `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
-            ).join('');
-
-            inputHTML = `
-                <div class="relative w-full group px-1">
-                    <select data-field="${key}" 
-                        style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                        class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                        <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                        ${optionsHtml}
-                    </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                        <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                    </div>
-                </div>`;
-
-        } else if (isDescription) {
-            inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
-
-        } else if (isDate) {
-            const hoy = new Date().toISOString().split('T')[0];
-            inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-
-        } else if (isNumeric) {
-            inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-
-        } else {
-            inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-        }
-
-        rowItem.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${inputHTML}`;
+        // 4. RENDERIZADO DINÁMICO DE CAMPOS
+        Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key]; 
+            const cleanKey = key.toUpperCase();
             
-        content.appendChild(rowItem);
-    });
+            // --- REGLA DE VISIBILIDAD ---
+            const visValue = String(cfg.visible || '').toLowerCase().trim();
+            if (visValue === "") return;
 
-    if (window.lucide) lucide.createIcons();
-    
-    setTimeout(() => {
-        const firstInput = content.querySelector('input, textarea, select');
-        if (firstInput) firstInput.focus();
-    }, 200);
-}
+            // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
+            // Si es el ID de la tabla o el ID de la Cuenta, los creamos ocultos y vacíos
+            if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.dataset.field = key; 
+                hiddenInput.value = ''; // Crítico: Vacío para que mande el Alias en saveRecord
+                content.appendChild(hiddenInput);
+                return; 
+            }
 
-function TransferAccountRecord() {
-    // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
-    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-    
-    const tableClean = String(tableOrigin).toUpperCase();
-    const prefix = tableClean.split('_')[0]; 
-    const dictionaryTR = { ...dictionary };
+            // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
+            if (cleanKey.endsWith('CUENTA2') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
 
-    // Inyectamos CUENTA2 en el diccionario para el select receptora
-    const keyEmisora = `${tableClean}|${prefix}ALIASCUENTA`;
-    const keyReceptora = `${tableClean}|${prefix}CUENTA2`;
-    
-    if (dictionary[keyEmisora]) {
-        dictionaryTR[keyReceptora] = dictionary[keyEmisora];
-    }
+            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
 
-    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-        TABLA_ORIGEN: tableOrigin,
-        DATOS_REGISTRO: null 
-    }));
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
 
-    // 2. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar(); 
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
-    
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden'); 
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('detail-modal')?.classList.remove('hidden');
-
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => { configMap[k.toUpperCase()] = configMapRaw[k]; });
-    
-    content.innerHTML = '';
-
-    // 3. TÍTULO DE LA OPERACIÓN
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    BORRADOR TR
-                </span>
-                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-            </div>
-        </div>`;
-
-    // 4. RENDERIZADO DINÁMICO DE CAMPOS
-    Object.keys(configMap).forEach(key => {
-        const cfg = configMap[key]; 
-        const cleanKey = key.toUpperCase();
-        
-        // --- A. GESTIÓN ROBUSTA DEL ID DE CUENTA (SILENCIOSO) ---
-        // Al igual que en Duplicate, necesitamos que el input exista para saveRecord
-        if (cleanKey === `${prefix}CUENTA`) {
-            const hiddenIdInput = document.createElement('input');
-            hiddenIdInput.type = 'hidden';
-            hiddenIdInput.dataset.field = key; 
-            hiddenIdInput.value = ''; // Se llenará vía Alias en saveRecord
-            content.appendChild(hiddenIdInput);
-            return;
-        }
-
-        // --- B. FILTROS DE VISIBILIDAD Y EXCLUSIÓN ---
-        const visibility = String(cfg.visible || '').toLowerCase().trim();
-        if (visibility !== 'x' && visibility !== 'xx') return;
-        if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
-        if (cleanKey.endsWith('ID')) return;
-        if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
-
-        const isMovementField = cleanKey.includes('MOVIMIENTO');
-        const isTypeRegField = cleanKey.includes('TYPEREG');
-        const isReadOnly = visibility === 'xx' || cfg.editable === false;
-        
-        const rowItem = document.createElement('div');
-        if (isTypeRegField) rowItem.className = 'hidden';
-        else rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-        
-        let inputHTML = '';
-
-        // --- C. LÓGICA DE DIBUJO ---
-        if (isMovementField) {
-            inputHTML = `
-                <div class="flex items-center h-[24px] px-2 py-0">
-                    <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">TRANSFERENCIA</span>
-                    <input type="hidden" data-field="${key}" value="TRANSFERENCIA">
-                </div>`;
-        } 
-        else if (isTypeRegField) {
-            inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
-        }
-        else if (isReadOnly) {
-            const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
-            inputHTML = `
-                <div class="flex items-center h-[24px] px-2 py-0">
-                    <span class="text-sm text-gray-500 font-bold uppercase opacity-70">${val}</span>
-                    <input type="hidden" data-field="${key}" value="${val}">
-                </div>`;
-        }
-        else {
-            const dictOptions = dictionaryTR[`${tableClean}|${cleanKey}`];
+            // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
+            const currentTableClean = String(currentTableName).trim().toUpperCase();
+            const dictKey = `${currentTableClean}|${cleanKey}`;
+            let dictOptions = dictionary[dictKey] || [];
+            
             const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-            const isCuenta2 = cleanKey.endsWith('CUENTA2');
+            
+            // Soporte dinámico para Alias de Cuentas si el diccionario no lo trae
+            if (isAliasField && dictOptions.length === 0) {
+                dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+            }
 
-            // --- DISEÑO SELECT RESTAURADO ---
-            if (dictOptions || isAliasField || isCuenta2) {
-                let optionsArray = dictOptions || [];
-                // Carga de emergencia si es Alias y el diccionario está vacío
-                if ((isAliasField || isCuenta2) && optionsArray.length === 0) {
-                    optionsArray = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-                }
+            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
+            );
 
-                const optionsHtml = optionsArray.map(opt => 
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+            const rowItem = document.createElement('div');
+            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            if (!isEditable) {
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
+                        <span>---</span>
+                        <input type="hidden" data-field="${key}" value="">
+                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                    </div>`;
+
+            } else if (isSelect) {
+                const optionsHtml = dictOptions.map(opt => 
                     `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
                 ).join('');
 
                 inputHTML = `
-                    <div class="relative w-full group">
+                    <div class="relative w-full group px-1">
                         <select data-field="${key}" 
                             style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
                             class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                            <option value="" selected style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                            <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
                             ${optionsHtml}
                         </select>
-                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
                             <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
                         </div>
                     </div>`;
-            } 
-            else if (cleanKey.includes('DESCRIPCION')) {
-                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]"></textarea>`;
-            } 
-            else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
-                const today = new Date().toISOString().split('T')[0];
-                inputHTML = `<input type="date" data-field="${key}" value="${today}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
-            } 
-            else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
-                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right">`;
-            } 
-            else {
-                inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+
+            } else if (isDescription) {
+                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
+
+            } else if (isDate) {
+                // Obtenemos la fecha local del sistema (Año-Mes-Día)
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                const day = d.getDate().toString().padStart(2, '0');
+                
+                const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
+
+                inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+            } else if (isNumeric) {
+                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
+
+            } else {
+                inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
             }
+
+            rowItem.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+        if (window.lucide) lucide.createIcons();
+        
+        setTimeout(() => {
+            const firstInput = content.querySelector('input, textarea, select');
+            if (firstInput) firstInput.focus();
+        }, 200);
+    }
+
+    function TransferAccountRecord() {
+        // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+        
+        const tableClean = String(tableOrigin).toUpperCase();
+        const prefix = tableClean.split('_')[0]; 
+        const dictionaryTR = { ...dictionary };
+
+        // Inyectamos CUENTA2 en el diccionario para el select receptora
+        const keyEmisora = `${tableClean}|${prefix}ALIASCUENTA`;
+        const keyReceptora = `${tableClean}|${prefix}CUENTA2`;
+        
+        if (dictionary[keyEmisora]) {
+            dictionaryTR[keyReceptora] = dictionary[keyEmisora];
         }
 
-        const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
-        const asterisco = isRequired && !isReadOnly && !isTypeRegField ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+            TABLA_ORIGEN: tableOrigin,
+            DATOS_REGISTRO: null 
+        }));
 
-        rowItem.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${inputHTML}`;
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); 
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
+        
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden'); 
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('detail-modal')?.classList.remove('hidden');
+
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => { configMap[k.toUpperCase()] = configMapRaw[k]; });
+        
+        content.innerHTML = '';
+
+        // 3. TÍTULO DE LA OPERACIÓN
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        BORRADOR TR
+                    </span>
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+                </div>
+            </div>`;
+
+        // 4. RENDERIZADO DINÁMICO DE CAMPOS
+        Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key]; 
+            const cleanKey = key.toUpperCase();
             
-        content.appendChild(rowItem);
-    });
+            // --- A. GESTIÓN ROBUSTA DEL ID DE CUENTA (SILENCIOSO) ---
+            // Al igual que en Duplicate, necesitamos que el input exista para saveRecord
+            if (cleanKey === `${prefix}CUENTA`) {
+                const hiddenIdInput = document.createElement('input');
+                hiddenIdInput.type = 'hidden';
+                hiddenIdInput.dataset.field = key; 
+                hiddenIdInput.value = ''; // Se llenará vía Alias en saveRecord
+                content.appendChild(hiddenIdInput);
+                return;
+            }
 
-    if (window.lucide) lucide.createIcons();
-    
-    // 5. VALIDACIÓN DE CUENTAS IDÉNTICAS
-    setTimeout(() => {
-        const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
+            // --- B. FILTROS DE VISIBILIDAD Y EXCLUSIÓN ---
+            const visibility = String(cfg.visible || '').toLowerCase().trim();
+            if (visibility !== 'x' && visibility !== 'xx') return;
+            if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
+            if (cleanKey.endsWith('ID')) return;
+            if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
+
+            const isMovementField = cleanKey.includes('MOVIMIENTO');
+            const isTypeRegField = cleanKey.includes('TYPEREG');
+            const isReadOnly = visibility === 'xx' || cfg.editable === false;
+            const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
+            const asterisco = isRequired && !isReadOnly ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            // Identificación de tipos para el renderizado
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+            
+            const rowItem = document.createElement('div');
+            if (isTypeRegField) rowItem.className = 'hidden';
+            else rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            // --- C. LÓGICA DE DIBUJO ---
+            if (isMovementField) {
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 py-0">
+                        <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">TRANSFERENCIA</span>
+                        <input type="hidden" data-field="${key}" value="TRANSFERENCIA">
+                    </div>`;
+            } 
+            else if (isTypeRegField) {
+                inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
+            }
+            else if (isReadOnly) {
+                const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 py-0">
+                        <span class="text-sm text-gray-500 font-bold uppercase opacity-70">${val}</span>
+                        <input type="hidden" data-field="${key}" value="${val}">
+                    </div>`;
+            }
+            else {
+                const dictOptions = dictionaryTR[`${tableClean}|${cleanKey}`];
+                const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+                const isCuenta2 = cleanKey.endsWith('CUENTA2');
+
+                // --- DISEÑO SELECT RESTAURADO ---
+                if (dictOptions || isAliasField || isCuenta2) {
+                    let optionsArray = dictOptions || [];
+                    // Carga de emergencia si es Alias y el diccionario está vacío
+                    if ((isAliasField || isCuenta2) && optionsArray.length === 0) {
+                        optionsArray = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                    }
+
+                    const optionsHtml = optionsArray.map(opt => 
+                        `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+                    ).join('');
+
+                    inputHTML = `
+                        <div class="relative w-full group">
+                            <select data-field="${key}" 
+                                style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                                class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                                <option value="" selected style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                                ${optionsHtml}
+                            </select>
+                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                            </div>
+                        </div>`;
+                } 
+                else if (cleanKey.includes('DESCRIPCION')) {
+                    inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]"></textarea>`;
+                } 
+                else if (isDate) {
+                    // Obtenemos la fecha local del sistema (Año-Mes-Día)
+                    const d = new Date();
+                    const year = d.getFullYear();
+                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    
+                    const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
+
+                    inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+                } 
+                else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                    inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right">`;
+                } 
+                else {
+                    inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+                }
+            }
+
+             rowItem.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+        if (window.lucide) lucide.createIcons();
+        
+        // 5. VALIDACIÓN DE CUENTAS IDÉNTICAS
+        setTimeout(() => {
+            const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
+            const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
+            if (selectEmisora && selectReceptora) {
+                const validarCuentas = () => {
+                    const sonIguales = selectEmisora.value && selectEmisora.value === selectReceptora.value;
+                    selectReceptora.style.borderColor = sonIguales ? 'rgb(239 68 68)' : 'var(--th)';
+                    // Un pequeño efecto de fondo para alertar
+                    selectReceptora.style.backgroundColor = sonIguales ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+                };
+                selectEmisora.addEventListener('change', validarCuentas);
+                selectReceptora.addEventListener('change', validarCuentas);
+            }
+        }, 500);
+        setTimeout(() => {
         const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
-        if (selectEmisora && selectReceptora) {
-            const validarCuentas = () => {
-                const sonIguales = selectEmisora.value && selectEmisora.value === selectReceptora.value;
-                selectReceptora.style.borderColor = sonIguales ? 'rgb(239 68 68)' : 'var(--th)';
-                // Un pequeño efecto de fondo para alertar
-                selectReceptora.style.backgroundColor = sonIguales ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
-            };
-            selectEmisora.addEventListener('change', validarCuentas);
-            selectReceptora.addEventListener('change', validarCuentas);
+        if (selectReceptora) {
+            // Esto imprime el valor en el momento del renderizado
+            //console.log("Valor inicial de CUENTA2:", selectReceptora.value);
         }
     }, 500);
-    setTimeout(() => {
-    const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
-    if (selectReceptora) {
-        // Esto imprime el valor en el momento del renderizado
-        //console.log("Valor inicial de CUENTA2:", selectReceptora.value);
     }
-}, 500);
-}
        
-function duplicateCurrentRecord() {
-    const rawData = localStorage.getItem('TABLE_DATA');
-    const dataObj = JSON.parse(rawData || '{}');
-    const row = dataObj.DATOS_REGISTRO; // El registro base
-    
-    if (!row) return;
-
-    // 1. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar();
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.add('hidden');
-
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-
-    // Normalización del configMap
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-    const tablePrefix = (dataObj.TABLA_ORIGEN || currentTableName).split('_')[0].toUpperCase();
-    const idFieldName = tablePrefix + 'ID';
-    
-    content.innerHTML = '';
-
-    // 2. TÍTULO (Estilo Duplicado)
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                NUEVO (DUPLICADO)
-            </span>
-        </div>`;
-
-    // 3. RENDERIZADO DE CAMPOS (Iteramos sobre el registro, igual que showEditMode)
-    Object.keys(row).forEach(key => {
-        const cleanKey = key.toUpperCase();
+    function duplicateCurrentRecord() {
+        const rawData = localStorage.getItem('TABLE_DATA');
+        const dataObj = JSON.parse(rawData || '{}');
+        const row = dataObj.DATOS_REGISTRO; // El registro base
         
-        // Exclusión: En duplicado NO inyectamos el ID original como PK (idFieldName), 
-        // pero SI necesitamos el ID de la cuenta (CUENTA).
-        if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+        if (!row) return;
+
+        // 1. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar();
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
         
-        const cfg = configMap[cleanKey] || {};
-        const visValue = String(cfg.visible || '').toLowerCase().trim();
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.add('hidden');
 
-        // Si el campo no es CUENTA y no tiene visibilidad, se ignora (igual que showEditMode)
-        const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
-        if (visValue === "" && !isIdCuenta) return;
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
 
-        // Reglas de edición (Si es duplicado, tratamos casi todo como editable si tiene 'x')
-        const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+        // Normalización del configMap
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+        const tablePrefix = (dataObj.TABLA_ORIGEN || currentTableName).split('_')[0].toUpperCase();
+        const idFieldName = tablePrefix + 'ID';
         
-        const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-        const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+        content.innerHTML = '';
 
-        const item = document.createElement('div');
-        item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-        
-        const val = row[key] || '';
-        let valueElement = '';
+        // 2. TÍTULO (Estilo Duplicado)
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                    NUEVO (DUPLICADO)
+                </span>
+            </div>`;
 
-        // --- LÓGICA DE RENDERIZADO (ESPEJO DE showEditMode) ---
-        if (isIdCuenta) {
-            // IGUAL QUE EN EDIT: Input hidden para que saveRecord lo gestione/asigne
-            valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
-            item.className = 'hidden'; 
-        } 
-        else if (!isEditable) {
-            // Campos bloqueados o fijos
-            valueElement = `
-                <div class="flex items-center h-[24px] px-2 w-full justify-between">
-                    <span class="text-sm font-bold uppercase text-gray-500 opacity-90">${getFormattedValue(key, val)}</span>
-                    <input type="hidden" data-field="${key}" value="${val}">
-                    <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                </div>`;
-        } 
-        else {
-            // Detectamos si es Select (Moneda, Movimiento, AliasCuenta)
-            const dictKey = `${currentTableName}|${key}`.toUpperCase();
-            const dictOptions = dictionary[dictKey];
-            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-            const isSelect = dictOptions && dictOptions.length > 0 && (
-                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || isAliasField
-            );
-
-            if (isSelect) {
-                const valActual = String(val || '').trim();
-                let options = dictOptions || [];
-                
-                // Carga de emergencia de alias si el diccionario falla
-                if (isAliasField && options.length === 0) {
-                    options = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-                }
-
-                const existeEnOpciones = options.some(opt => String(opt).trim() === valActual);
-                const optionsHtml = options.map(opt => {
-                    const isSelected = String(opt).trim() === valActual;
-                    return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
-                }).join('');
-
-                valueElement = `
-                    <div class="relative w-full group">
-                        <select data-field="${key}" 
-                            class="bg-transparent border border-gray-700 rounded px-2 py-0 text-sm font-bold w-full focus:outline-none appearance-none cursor-pointer pr-8 shadow-sm">
-                            ${!existeEnOpciones ? `<option value="${valActual}" selected>${valActual || '-- SELECCIONE --'}</option>` : ''}
-                            ${optionsHtml}
-                        </select>
-                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60">
-                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                        </div>
-                    </div>`;
-            } else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
-                let dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
-                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
-            } else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
-                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="${getFormattedValue(key, val)}" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none">`;
-            } else if (cleanKey.includes('DESCRIPCION')) {
-                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]">${val}</textarea>`;
-            } else {
-                valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
-            }
-        }
-
-        item.innerHTML = `
-            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                ${cfg.label || key}${asterisco}
-            </span>
-            ${valueElement}`;
+        // 3. RENDERIZADO DE CAMPOS (Iteramos sobre el registro, igual que showEditMode)
+        Object.keys(row).forEach(key => {
+            const cleanKey = key.toUpperCase();
             
-        content.appendChild(item);
-    });
+            // Exclusión: En duplicado NO inyectamos el ID original como PK (idFieldName), 
+            // pero SI necesitamos el ID de la cuenta (CUENTA).
+            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+            
+            const cfg = configMap[cleanKey] || {};
+            const visValue = String(cfg.visible || '').toLowerCase().trim();
 
-    if (window.lucide) lucide.createIcons();
-}
+            // Si el campo no es CUENTA y no tiene visibilidad, se ignora (igual que showEditMode)
+            const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
+            if (visValue === "" && !isIdCuenta) return;
+
+            // Reglas de edición (Si es duplicado, tratamos casi todo como editable si tiene 'x')
+            const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+            
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            const item = document.createElement('div');
+            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+            
+            const val = row[key] || '';
+            let valueElement = '';
+
+            // --- LÓGICA DE RENDERIZADO (ESPEJO DE showEditMode) ---
+            if (isIdCuenta) {
+                // IGUAL QUE EN EDIT: Input hidden para que saveRecord lo gestione/asigne
+                valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
+                item.className = 'hidden'; 
+            } 
+            else if (!isEditable) {
+                // Campos bloqueados o fijos
+                valueElement = `
+                    <div class="flex items-center h-[24px] px-2 w-full justify-between">
+                        <span class="text-sm font-bold uppercase text-gray-500 opacity-90">${getFormattedValue(key, val)}</span>
+                        <input type="hidden" data-field="${key}" value="${val}">
+                        <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                    </div>`;
+            } 
+            else {
+                // Detectamos si es Select (Moneda, Movimiento, AliasCuenta)
+                const dictKey = `${currentTableName}|${key}`.toUpperCase();
+                const dictOptions = dictionary[dictKey];
+                const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+                const isSelect = dictOptions && dictOptions.length > 0 && (
+                    cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || isAliasField
+                );
+
+                if (isSelect) {
+                    const valActual = String(val || '').trim();
+                    let options = dictOptions || [];
+                    
+                    // Carga de emergencia de alias si el diccionario falla
+                    if (isAliasField && options.length === 0) {
+                        options = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                    }
+
+                    const existeEnOpciones = options.some(opt => String(opt).trim() === valActual);
+                    const optionsHtml = options.map(opt => {
+                        const isSelected = String(opt).trim() === valActual;
+                        return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+                    }).join('');
+
+                    valueElement = `
+                        <div class="relative w-full group">
+                            <select data-field="${key}" 
+                                class="bg-transparent border border-gray-700 rounded px-2 py-0 text-sm font-bold w-full focus:outline-none appearance-none cursor-pointer pr-8 shadow-sm">
+                                ${!existeEnOpciones ? `<option value="${valActual}" selected>${valActual || '-- SELECCIONE --'}</option>` : ''}
+                                ${optionsHtml}
+                            </select>
+                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60">
+                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                            </div>
+                        </div>`;
+                } else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
+                    let dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
+                    valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
+                } else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                    valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="${getFormattedValue(key, val)}" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none">`;
+                } else if (cleanKey.includes('DESCRIPCION')) {
+                    valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]">${val}</textarea>`;
+                } else {
+                    valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+                }
+            }
+
+            item.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${valueElement}`;
+                
+            content.appendChild(item);
+        });
+
+        if (window.lucide) lucide.createIcons();
+    }
 
     function disableButton(title) {
         const btn = document.querySelector(`button[title="${title}"]`);
@@ -2652,91 +2729,94 @@ function duplicateCurrentRecord() {
         renderColumnConfig(); 
     }
 
-async function saveRecord() {
-    toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
+    async function saveRecord() {
+        toggleGlobalLoader(true, "Procesando Registro...", "Sincronizando valores en la base de datos GAS<br>Por favor, espere.");
 
-    const container = document.getElementById('detail-modal-content');
-    const inputs = container.querySelectorAll('[data-field]');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+        const container = document.getElementById('detail-modal-content');
+        const inputs = container.querySelectorAll('[data-field]');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-    let missingFields = [];
-    let payload = {};
+        let missingFields = [];
+        let payload = {};
 
-    // 1. LIMPIEZA DE ERRORES VISUALES
-    inputs.forEach(i => {
-        i.classList.remove('border-red-500', 'bg-red-500/10');
-        i.classList.add('border-transparent'); 
-    });
+        // 1. LIMPIEZA DE ERRORES VISUALES
+        inputs.forEach(i => {
+            i.classList.remove('border-red-500', 'bg-red-500/10');
+            i.classList.add('border-transparent'); 
+        });
 
-    // 2. EXTRACCIÓN Y FORMATEO DE DATOS
-    inputs.forEach(input => {
-        const key = input.dataset.field;
-        const cleanKey = key.toUpperCase();
-        const cfg = configMap[cleanKey] || {};
-        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-        
-        let value;
-        if (input.hasAttribute('data-raw')) {
-            value = input.getAttribute('data-raw');
-        } else if (input.type === 'checkbox') {
-            value = input.checked;
-        } else {
-            value = input.value.trim();
+        // 2. EXTRACCIÓN Y FORMATEO DE DATOS
+        inputs.forEach(input => {
+            const key = input.dataset.field;
+            const cleanKey = key.toUpperCase();
+            const cfg = configMap[cleanKey] || {};
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            
+            let value;
+            if (input.hasAttribute('data-raw')) {
+                value = input.getAttribute('data-raw');
+            } else if (input.type === 'checkbox') {
+                value = input.checked;
+            } else {
+                value = input.value.trim();
+            }
+
+            if (isDate && value && value.includes('-')) {
+                const parts = value.split('-');
+                if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+
+            if (cfg.Es_Obligatorio === true && !value) {
+                missingFields.push(cfg.label || key);
+                input.classList.add('border-red-500', 'bg-red-500/10');
+            }
+
+            payload[key] = value;
+        });
+
+        if (missingFields.length > 0) {
+            toggleGlobalLoader(false);
+            const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+            await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+            return; 
         }
-
-        if (isDate && value && value.includes('-')) {
-            const parts = value.split('-');
-            if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
-
-        if (cfg.Es_Obligatorio === true && !value) {
-            missingFields.push(cfg.label || key);
-            input.classList.add('border-red-500', 'bg-red-500/10');
-        }
-
-        payload[key] = value;
-    });
-
-    if (missingFields.length > 0) {
-        toggleGlobalLoader(false);
-        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-        return; 
-    }
 
     // 3. LÓGICA DE NEGOCIO (PRE-ENVÍO)
     const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const cuentasData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+    // --- SOLUCIÓN DE ESTABILIDAD ---
+    // 1. Obtenemos los datos (vengan de donde vengan)
+    const rawData = window.dashboardState?.cuentas || JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+    // 2. Los normalizamos inmediatamente para que TODA la lógica de abajo funcione siempre
+    const cuentasData = rawData.map(c => ({
+        ID: c.ID || c.TD102ID,
+        ALIAS: c.ALIAS || c.TD102ALIAS
+    }));
+
+    // --- AHORA TU CÓDIGO SIGUIENTE ES 100% ESTABLE ---
 
     // Traducción de Cuenta Origen
     const aliasSeleccionado = payload[`${tablePrefix}ALIASCUENTA`];
     if (aliasSeleccionado && cuentasData.length > 0) {
+        // Esto ahora SIEMPRE funcionará porque cuentasData siempre tiene .ALIAS
         const cuentaEncontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(aliasSeleccionado).trim());
-        if (cuentaEncontrada) payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID || cuentaEncontrada.TD102ID; 
+        if (cuentaEncontrada) payload[`${tablePrefix}CUENTA`] = cuentaEncontrada.ID; 
     }
 
-    // Lógica de Transferencia (Preparar datos para el Triple Registro en Backend)
+    // Lógica de Transferencia
     if (badgeMode.includes('TR')) {
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-        
-        // 1. Capturamos el nombre (Alias) que el usuario seleccionó en el Select de CUENTA2
-        // En este momento, payload[`${tablePrefix}CUENTA2`] tiene el texto (ej: "BANCO DESTINO")
         const valReceptoraAlias = payload[`${tablePrefix}CUENTA2`];
-
         if (valReceptoraAlias) {
-            // --- LA CLAVE ---
-            // Creamos una nueva propiedad en el payload llamada ALIASCUENTA2
-            // Esta propiedad viajará al backend aunque no exista una columna física con ese nombre
             payload[`${tablePrefix}ALIASCUENTA2`] = valReceptoraAlias; 
 
-            // Ahora sí, buscamos el ID para convertir el CUENTA2 original en número
+            // Esto también funcionará siempre
             const cuenta2Encontrada = cuentasData.find(c => String(c.ALIAS).trim() === String(valReceptoraAlias).trim());
             if (cuenta2Encontrada) {
-                payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID || cuenta2Encontrada.TD102ID;
-                //console.log("✈️ Enviando Alias2 al Backend:", payload[`${tablePrefix}ALIASCUENTA2`]);
+                payload[`${tablePrefix}CUENTA2`] = cuenta2Encontrada.ID;
             }
         }
     }
@@ -2760,38 +2840,38 @@ async function saveRecord() {
     };
 
  // 5. ENVÍO ÚNICO (El Backend crea los 3 registros)
-        const createdRecord = await executeSubmit(finalPayload); 
+    const createdRecord = await executeSubmit(finalPayload); 
 
+    if (createdRecord) {
+        // Mantenemos el loader y actualizamos el mensaje
+        const loaderLabel = document.querySelector('#global-loader span');
+        if (loaderLabel) loaderLabel.innerHTML = "Sincronizando registros...<br>Actualizando vista de tabla.";
+
+        // 1. REFRESCAR DATOS (fetchData debe internamente ejecutar renderTable)
+        // Usamos await para que el loader no se quite hasta que la tabla esté dibujada
+        needsRefresh = true; 
+        await fetchData(currentTableName); 
+
+        // 2. CERRAR EL FORMULARIO
+        document.getElementById('detail-modal')?.classList.add('hidden');
+
+        // 3. APAGAR LOADER
+        toggleGlobalLoader(false);
+        
+        // 4. MOSTRAR MODAL DE ÉXITO (Opcional, según tu preferencia de flujo)
+        await showSystemModal({ 
+            title: 'Proceso Completado', 
+            text: 'Registro(s) creado(s) correctamente.', 
+            type: 'info' 
+        });
+
+        // 5. ABRIR DETALLE DEL REGISTRO CREADO
+        // Usamos directamente 'createdRecord' que es lo que devolvió el servidor
         if (createdRecord) {
-            // Mantenemos el loader y actualizamos el mensaje
-            const loaderLabel = document.querySelector('#global-loader span');
-            if (loaderLabel) loaderLabel.innerHTML = "Sincronizando registros...<br>Actualizando vista de tabla.";
+            openDetailModal(createdRecord);
+        }
 
-            // 1. REFRESCAR DATOS (fetchData debe internamente ejecutar renderTable)
-            // Usamos await para que el loader no se quite hasta que la tabla esté dibujada
-            needsRefresh = true; 
-            await fetchData(currentTableName); 
-
-            // 2. CERRAR EL FORMULARIO
-            document.getElementById('detail-modal')?.classList.add('hidden');
-
-            // 3. APAGAR LOADER
-            toggleGlobalLoader(false);
-            
-            // 4. MOSTRAR MODAL DE ÉXITO (Opcional, según tu preferencia de flujo)
-            await showSystemModal({ 
-                title: 'Proceso Completado', 
-                text: 'Registro(s) creado(s) correctamente.', 
-                type: 'info' 
-            });
-
-            // 5. ABRIR DETALLE DEL REGISTRO CREADO
-            // Usamos directamente 'createdRecord' que es lo que devolvió el servidor
-            if (createdRecord) {
-                openDetailModal(createdRecord);
-            }
-
-            console.log("✅ Proceso culminado: Tabla refrescada y detalle abierto.");
+        console.log("✅ Proceso culminado: Tabla refrescada y detalle abierto.");
           
         } else {
             toggleGlobalLoader(false);
@@ -2849,47 +2929,6 @@ async function saveRecord() {
         }
     }
     
-//no usar
-    async function loadUserAccountsMetadata() {
-        const usuarioId = localStorage.getItem('Usuario_ID');
-        // Usamos la misma lógica de tu Dashboard
-        const url = `${GAS_URL}?action=getDashboardSummary&usuarioId=${encodeURIComponent(usuarioId)}`;
-
-        try {
-            const response = await fetch(url);
-            const res = await response.json();
-
-            if (res.success && res.cuentas) {
-                // Guardamos en memoria global para acceso rápido
-                window.dashboardState = {
-                    cuentas: res.cuentas // Aquí vienen con ID, NUMERO, ALIAS y MONEDA
-                };
-                // También en storage por si se refresca la página
-                localStorage.setItem('MATRIZ_CUENTAS_USUARIO', JSON.stringify(res.cuentas));
-                //console.log("✅ Metadatos de cuentas cargados:", res.cuentas.length);
-            }
-        } catch (err) {
-            console.error("❌ Error cargando metadatos de cuentas:", err);
-        }
-    }
-
-function getAccountIdByAlias(aliasBuscado) {
-    // 1. Intentamos obtener de la memoria RAM (más rápido)
-    let cuentas = window.dashboardState?.cuentas;
-
-    // 2. Si no está en RAM, intentamos del Storage
-    if (!cuentas) {
-        const stored = localStorage.getItem('MATRIZ_CUENTAS_USUARIO');
-        cuentas = stored ? JSON.parse(stored) : [];
-    }
-
-    // 3. Buscamos la coincidencia exacta del Alias
-    // El backend en getDashboardSummary devuelve "ID" y "ALIAS"
-    const cuentaEncontrada = cuentas.find(c => c.ALIAS === aliasBuscado);
-    
-    return cuentaEncontrada ? cuentaEncontrada.ID : '';
-}
-
 </script>
 </body>
 </html>
