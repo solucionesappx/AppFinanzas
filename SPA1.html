@@ -614,9 +614,10 @@
     async function fetchData(tableName) {
         const now = Date.now();
         const dataViewContainer = document.getElementById('data-view-container');
+        const btnTransfer = document.getElementById('btn-main-transfer-record');
         const tablasSinMetricas = ["TD102_CUENTAS", "TD999_BORRADOS"];
         const debeOcultar = tablasSinMetricas.includes(tableName);
-
+        
         // 1. Verificación de Caché
         if (!needsRefresh && 
             TABLE_CACHE.tableName === tableName && 
@@ -787,6 +788,23 @@
                     dataViewContainer.classList.add('hidden'); // Oculta metricas totalmente para tablas sin metricas
                 } else {
                     dataViewContainer.classList.remove('hidden'); // Muestra metricas para las demás
+                }
+            }
+
+            // --- Control de estado del botón de transferencia ---
+            if (btnTransfer) {
+                if (tableName === "TD101_MAIN") {
+                    // Estado Activo
+                    btnTransfer.classList.remove('opacity-20', 'cursor-not-allowed', 'grayscale');
+                    btnTransfer.classList.add('hover:scale-110', 'cursor-pointer');
+                    btnTransfer.disabled = false;
+                    btnTransfer.title = "Transferencia entre Cuentas";
+                } else {
+                    // Estado Opaco y Bloqueado
+                    btnTransfer.classList.add('opacity-20', 'cursor-not-allowed', 'grayscale');
+                    btnTransfer.classList.remove('hover:scale-110', 'cursor-pointer');
+                    btnTransfer.disabled = true;
+                    btnTransfer.title = "Función solo disponible en Tabla Principal";
                 }
             }
 
@@ -1876,80 +1894,86 @@ function renderTable(data) {
         
     }
 
-    function renderColumnConfig() {
-        const container = document.getElementById('columns-list-container');
-        const panel = document.getElementById('column-config-panel');
+function renderColumnConfig() {
+    const container = document.getElementById('columns-list-container');
+    const panel = document.getElementById('column-config-panel');
 
-        // --- NUEVO: RESPALDO DE SEGURIDAD ---
-        // Si el panel está oculto, significa que el usuario lo está abriendo AHORA.
-        // Guardamos una copia profunda de los filtros actuales.
-        if (panel && panel.classList.contains('hidden')) {
-            originalFiltersBackup = currentHeadersConfig.map(col => ({
-                id: col.id,
-                filterValue: col.filterValue || ""
-            }));
-        }
+    // 1. Sincronizar el título del modal
+    if (typeof currentTableName !== 'undefined' && currentTableName) {
+        updateModalTitle(currentTableName);
+    }
 
-        // 1. Sincronizar el título del modal
-        if (typeof currentTableName !== 'undefined' && currentTableName) {
-            updateModalTitle(currentTableName);
-        }
+    // --- CORRECCIÓN CLAVE: REINICIALIZACIÓN ---
+    // Si el panel estaba oculto, forzamos la limpieza para cargar la tabla nueva
+    if (panel && panel.classList.contains('hidden')) {
+        currentHeadersConfig = []; // Vaciamos para obligar al Paso 2 a ejecutarse
+        
+        // (Opcional) Tu respaldo de seguridad original
+        // originalFiltersBackup = ... (tu lógica de backup aquí si la necesitas)
+    }
 
-        // 2. Inicialización de currentHeadersConfig (Tu lógica intacta)
-        if (currentHeadersConfig.length === 0 && originalData.length > 0) {
-            const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
-            const filteredHeaders = rawHeaders.filter(header => {
-                const cleanKey = header.toUpperCase();
-                return !cleanKey.includes('REGISTRO'); 
-            });
-
-            currentHeadersConfig = filteredHeaders.map((header, index) => {
-                const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
-                return {
-                    id: header,
-                    label: (tableConfig.displayMap && tableConfig.displayMap[header]) ? tableConfig.displayMap[header] : header,
-                    order: index + 1,
-                    visible: colConfig ? colConfig.visible : true,
-                    filterValue: ""
-                };
-            });
-        }
-
-        // 3. Renderizado del HTML
-        let html = "";
-        currentHeadersConfig.forEach((col, idx) => {
-            const hasFilter = col.filterValue && col.filterValue.trim() !== "";
-            const isVisible = col.visible !== false;
-            
-            html += `
-                <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
-                    <div class="flex flex-row gap-1 text-gray-300"> 
-                        <button onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
-                            <i data-lucide="chevron-up" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="moveColumn(${idx}, 1)" ${idx === currentHeadersConfig.length - 1 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
-                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                        <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
-                        ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
-                            <i data-lucide="${hasFilter ? 'search-x' : 'search'}" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="updateColVis(${idx}, ${!isVisible})" class="w-5 h-5 ${isVisible ? 'bg-green-600/20 border-green-500/50' : 'bg-gray-800 border-gray-700'} border rounded flex items-center justify-center transition-all hover:scale-110">
-                            <i data-lucide="check" class="w-3.5 h-3.5 ${isVisible ? 'text-green-500' : 'text-transparent'} font-black"></i>
-                        </button>
-                    </div>
-                </div>`;
+    // 2. Inicialización de currentHeadersConfig (Ahora sí entrará aquí siempre al abrir)
+    if (currentHeadersConfig.length === 0 && originalData.length > 0) {
+        // Obtenemos los headers directamente de tableConfig que corresponde a la tabla actual
+        const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
+        
+        const filteredHeaders = rawHeaders.filter(header => {
+            const cleanKey = header.toUpperCase();
+            return !cleanKey.includes('REGISTRO'); 
         });
 
-        container.innerHTML = html;
-        if (window.lucide) lucide.createIcons();
-        panel.classList.remove('hidden');
+        currentHeadersConfig = filteredHeaders.map((header, index) => {
+            // Asegúrate de usar el configMap o mappedConfig actualizado para la tabla actual
+            const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
+            
+            return {
+                id: header,
+                label: (tableConfig.displayMap && tableConfig.displayMap[header]) 
+                        ? tableConfig.displayMap[header] 
+                        : header,
+                order: index + 1,
+                // Validamos 'x' o 'xx' según tu estándar de visibilidad
+                visible: colConfig ? (colConfig.visible === 'x' || colConfig.visible === 'xx') : true,
+                filterValue: ""
+            };
+        });
     }
+
+    // 3. Renderizado del HTML (Tu lógica de generación de HTML)
+    let html = "";
+    currentHeadersConfig.forEach((col, idx) => {
+        const hasFilter = col.filterValue && col.filterValue.trim() !== "";
+        const isVisible = col.visible !== false;
+        
+        html += `
+            <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
+                <div class="flex flex-row gap-1 text-gray-300 flex-shrink-0"> 
+                    <button onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="moveColumn(${idx}, 1)" ${idx === currentHeadersConfig.length - 1 ? 'disabled' : ''} class="btn-move p-1 bg-gray-700 rounded transition-colors disabled:opacity-20 hover:bg-gray-600">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="flex-grow min-w-0">
+                    <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
+                    ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
+                        <i data-lucide="${hasFilter ? 'search-x' : 'search'}" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="updateColVis(${idx}, ${!isVisible})" class="w-5 h-5 ${isVisible ? 'bg-green-600/20 border-green-500/50' : 'bg-gray-800 border-gray-700'} border rounded flex items-center justify-center transition-all hover:scale-110">
+                        <i data-lucide="check" class="w-3.5 h-3.5 ${isVisible ? 'text-green-500' : 'text-transparent'} font-black"></i>
+                    </button>
+                </div>
+            </div>`;
+    });
+
+    container.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+    panel.classList.remove('hidden');
+}
 
     function closeConfigPanel() {
         // 1. Restaurar filtros desde el respaldo
@@ -2677,7 +2701,8 @@ function showRegisterMode() {
 function TransferAccountRecord() {
     // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
     const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+    const tableOrigin = "TD101_MAIN";
+    //const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
     const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
     
     const tableClean = String(tableOrigin).toUpperCase();
