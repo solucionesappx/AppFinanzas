@@ -123,7 +123,7 @@
                             </div>
 
                             <div class="metric-card flex items-center justify-center min-w-[70px] sm:min-w-[90px]">
-                                <i data-lucide="trending-down" class="w-7 h-7 text-red-500 flex-shrink-0"></i>
+                                <i data-lucide="circle-minus" class="w-7 h-7 text-red-500 flex-shrink-0"></i>
                                 <div class="flex flex-col">
                                     <span class="text-xl font-extrabold text-red-500 leading-none" data-metric="Debitos">0,00</span>
                                     <span class="text-[10px] uppercase tracking-wider text-gray-400 mt-1">Débitos</span>
@@ -131,7 +131,7 @@
                             </div>
 
                             <div class="metric-card flex items-center justify-center min-w-[70px] sm:min-w-[90px]">
-                                <i data-lucide="trending-up" class="w-7 h-7 text-green-500 flex-shrink-0"></i>
+                                <i data-lucide="circle-plus" class="w-7 h-7 text-green-500 flex-shrink-0"></i>
                                 <div class="flex flex-col">
                                     <span class="text-xl font-extrabold text-green-500 leading-none" data-metric="Abonos">0,00</span>
                                     <span class="text-[10px] uppercase tracking-wider text-gray-400 mt-1">Créditos</span>
@@ -166,13 +166,13 @@
                             autocomplete="off">
                         <i data-lucide="search" class="search-icon w-5 h-5 text-gray-500 dark:text-gray-300"></i>
                     </div>
-                    <button id="config-search-btn" class="p-0 rounded-full text-yellow-500 hover:scale-110 transition-transform" title="Configurar Búsqueda">
+                    <button id="config-search-btn" class="p-0 rounded-full text-gray-400 hover:text-yellow-500 hover:scale-110 transition-transform" title="Configurar Búsqueda">
                         <i data-lucide="sliders-horizontal" class="w-8 h-8"></i>
                     </button>                    
-                    <button id="clear-search-btn" class="p-0 rounded-full text-red-500 hover:scale-110 transition-transform" title="Reiniciar Filtros y Ordenación">
+                    <button id="clear-search-btn" class="p-0 rounded-full text-gray-400 hover:text-red-500 hover:scale-110 transition-transform" title="Reiniciar Filtros y Ordenación">
                         <i data-lucide="x-circle" class="w-8 h-8"></i>
                     </button>
-                    <button id="reload-icon" class="p-0 rounded-full text-blue-400 hover:scale-110 transition-transform" title="Recargar Datos (Omitir Caché)">
+                    <button id="reload-icon" class="p-0 rounded-full text-gray-400 hover:text-blue-400 hover:scale-110 transition-transform" title="Recargar Datos (Omitir Caché)">
                         <i data-lucide="refresh-cw" class="w-8 h-8"></i>
                     </button>
                 </div>
@@ -380,7 +380,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index.html');
+            window.location.replace('index_SPA1.html');
             return;
         }
         
@@ -473,7 +473,7 @@
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -800,7 +800,7 @@
         }
     }
 
-    function renderTable(data) {
+function renderTable(data) {
         const container = document.getElementById('data-table-container');
         if (!container) return;
         
@@ -825,22 +825,29 @@
 
             const colFilterObj = currentHeadersConfig.find(c => c.id === h);
             const hasActiveFilter = colFilterObj && colFilterObj.filterValue && colFilterObj.filterValue.trim() !== "";
-            let filterIndicator = hasActiveFilter ? `<span class="relative inline-flex items-center justify-center h-4 w-4 ml-1 flex-shrink-0"><span class="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75"></span><span class="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-red-600 text-[9px] font-bold text-white cursor-help shadow-sm leading-none">f</span></span>` : '';
+            
+            let filterIndicator = hasActiveFilter ? `
+                <span class="relative inline-flex items-center justify-center h-4 w-4 ml-1 flex-shrink-0">
+                    <span class="animate-ping absolute inset-0 rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-red-600 text-[9px] font-bold text-white cursor-help shadow-sm leading-none">f</span>
+                </span>` : '';
 
             const th = document.createElement('th');
-            th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group"; 
+            th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group text-center"; 
+            
             const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
 
             th.innerHTML = `
-                <div class="grid grid-cols-[1fr_auto] items-center gap-2 w-full leading-tight">
+                <div class="flex items-center justify-center gap-2 w-full leading-tight">
+                    <div class="w-4 h-4 flex-shrink-0 opacity-0 hidden sm:block"></div>
                     <div class="flex items-center min-w-0">
-                        <span class="font-semibold uppercase tracking-wider text-[13px] text-blue-500 font-bold group-hover:whitespace-normal">
+                        <span class="font-semibold uppercase tracking-wider text-[13px] text-blue-500 font-bold group-hover:whitespace-normal truncate">
                             ${tableConfig.displayMap[h] || h}
                         </span>
                         ${filterIndicator}
                     </div>
-                    <div class="flex items-center justify-end w-5 h-5 flex-shrink-0">
-                        <i data-lucide="${iconName}" class="w-4 h-4 ${sortConfig.key === h ? 'text-blue-400 opacity-100' : 'opacity-80 group-hover:opacity-50'} transition-all"></i>
+                    <div class="flex items-center justify-start w-4 h-4 flex-shrink-0">
+                        <i data-lucide="${iconName}" class="w-4 h-4 ${sortConfig.key === h ? 'text-blue-400 opacity-100' : 'opacity-30 group-hover:opacity-100'} transition-all"></i>
                     </div>
                 </div>`;
                 
@@ -867,17 +874,33 @@
             tableConfig.columnOrder.forEach(h => {
                 const cfg = configMap[h] || {};
                 const cleanH = h.toUpperCase();
+                
                 if (String(cfg.visible || '').toLowerCase() !== 'x' && String(cfg.visible || '').toLowerCase() !== 'xx') return;
                 if (cleanH.endsWith('TYPEREG')) return;
 
                 const td = document.createElement('td');
                 td.className = 'px-3 py-1 text-[12px] text-gray-300 font-bold';
-                td.style.textAlign = tableConfig.alignMap[h] || 'left';
+                
+                // Alineación desde Configuración
+                const alignment = (cfg.align || '').toLowerCase().trim();
+                
+                if (['left', 'center', 'right'].includes(alignment)) {
+                    td.style.textAlign = alignment;
+                } else {
+                    // Fallback automático
+                    if (cleanH.includes('IMPORTE') || cleanH.includes('MONTO')) {
+                        td.style.textAlign = 'right';
+                    } else if (cleanH.includes('FECHA') || cleanH.includes('DATE') || cleanH.endsWith('NUMERO')) {
+                        td.style.textAlign = 'center';
+                    } else {
+                        td.style.textAlign = 'left';
+                    }
+                }
                 
                 // Lógica de Formato
                 let val = getFormattedValue(h, row[h]);
 
-                // Forzar dd/mm/yyyy si es campo fecha
+                // Formateo específico de Fecha
                 if (cleanH.includes('FECHA') || cleanH.includes('DATE')) {
                     const d = new Date(row[h]);
                     if (!isNaN(d.getTime())) {
@@ -887,7 +910,7 @@
 
                 td.innerHTML = highlightText(val, currentSearchTerm);
                 tr.appendChild(td);
-            });
+            }); // Aquí terminaba prematuramente antes
             
             tableBody.appendChild(tr);
         });
@@ -1402,7 +1425,7 @@
                 toggleGlobalLoader(false);
                 await showSystemModal({ 
                     title: 'Proceso Completado', 
-                    text: 'Registros eliminados correctamente.', 
+                    text: 'Registro eliminado correctamente.', 
                     type: 'info' 
                 });
             } else {
@@ -1729,748 +1752,6 @@
     }
 }
 
-function showEditMode() {
-        normalizeToolbar(); // Limpiamos la barra de herramientas
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-        
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-
-        // Normalización del configMap
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.add('hidden');
-
-        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const row = storageData.DATOS_REGISTRO;
-        if (!row) return;
-
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-        const idFieldName = tablePrefix + 'ID';
-        const refFieldName = tablePrefix + 'REF';
-        content.innerHTML = '';
-
-        // --- 0. LÓGICA DE DETECCIÓN DE TRANSFERENCIA ---
-        const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
-        const valorRefActual = String(row[refFieldName] || '').toUpperCase();
-        const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRefActual.includes('TRANSFERENCIA ');
-
-        // --- 1. INYECTAMOS ID OCULTO PARA QUE saveRecord LO DETECTE ---
-        const hiddenId = document.createElement('input');
-        hiddenId.type = 'hidden';
-        hiddenId.dataset.field = idFieldName;
-        hiddenId.value = row[idFieldName] || '';
-        content.appendChild(hiddenId);
-
-        // --- 2. CONFIGURACIÓN DE TÍTULO Y STATUS ---
-        const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
-        const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
-
-        const statusIconClass = isTransferRelated ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 rounded-full transition-all';
-
-        title.innerHTML = `
-            <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
-                <div class="min-w-10 flex justify-start">
-                    <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
-                    <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
-                </div>
-                <div class="flex justify-center min-w-0">
-                    <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
-                </div>
-                <div id="status-icon-container" class="flex justify-end ${statusIconClass}" title="${isTransferRelated ? 'No se puede bloquear una transferencia' : 'Cambiar Estatus'}">
-                    <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
-                </div>
-            </div>`;
-
-        // --- 3. RENDERIZADO DE CAMPOS DINÁMICOS ---
-        Object.keys(row).forEach(key => {
-            const cleanKey = key.toUpperCase();
-            
-            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-
-            // Ocultar CUENTA2 y TYPEREG si no es transferencia
-             if (cleanKey.endsWith('CUENTA2') && !isTransferRelated) return
-             if (cleanKey.includes('TYPEREG') && isTransferRelated) return;
-                        
-            const cfg = configMap[cleanKey] || {};
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-
-            if (visValue === "") return;
-
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            
-            // --- AJUSTE DE EDICIÓN PARA TRANSFERENCIAS ---
-            // Solo es editable si: es 'x' Y NO es calculado Y (no es transferencia O es la descripción)
-            let isEditable = (visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true);
-            
-            if (isTransferRelated && !isDescription) {
-                isEditable = false; // Bloqueo maestro por transferencia
-            }
-
-            // Bloqueo específico de REF si contiene la palabra transferencia
-            const isLockedTransferRef = cleanKey === refFieldName && valorRefActual.includes('TRANSFERENCIA');
-            if (isLockedTransferRef) isEditable = false;
-
-            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            const istoggle = cleanKey.includes('TYPEREG');
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-            
-            const dictKey = `${currentTableName}|${key}`.toUpperCase();
-            const dictOptions = dictionary[dictKey];
-            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || cleanKey.endsWith('ALIASCUENTA')
-            );       
-            const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
-
-            const item = document.createElement('div');
-            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-            
-            let valueElement = '';
-            const val = row[key] || '';
-
-            // --- LÓGICA DE RENDERIZADO ---
-            if (!isEditable) {
-                // CAMPOS INHABILITADOS (Incluye lógica de opacidad solicitada)
-                const rawValue = row[key] !== null ? row[key] : '';
-                const isSpecialLock = isLockedTransferRef || (isTransferRelated && !isDescription);
-                
-                valueElement = `
-                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between ${isSpecialLock ? 'bg-orange-500/5 rounded opacity-60' : 'opacity-50'}">
-                        <span class="text-sm font-bold uppercase tracking-tight ${isSpecialLock ? 'text-orange-400/80' : 'text-gray-500'}">
-                            ${getFormattedValue(key, rawValue)}
-                        </span>
-                        <input type="hidden" data-field="${key}" value="${rawValue}">
-                        <i data-lucide="${isSpecialLock ? 'lock-keyhole' : (cfg.Es_Calculado ? 'calculator' : 'lock')}" 
-                        class="w-3.5 h-3.5 ${isSpecialLock ? 'text-orange-500/50' : 'text-gray-700'}"></i>
-                    </div>`;
-            } 
-            else if (istoggle) {
-                const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
-                const toggleDisabled = isTransferRelated ? 'pointer-events-none opacity-30' : '';
-                
-                valueElement = `
-                    <div class="flex items-center gap-3 ${toggleDisabled}">
-                        <button type="button" 
-                            ${isTransferRelated ? '' : `onclick="toggleStatus(this, '${key}')"`} 
-                            class="focus:outline-none transition-transform active:scale-90" 
-                            id="btn-toggle-${key}">
-                            <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
-                        </button>
-                        <span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">
-                            ${isBlocked ? 'Bloqueado' : 'Registrado'}
-                        </span>
-                        <input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}">
-                    </div>`;
-            } 
-            else if (isIdCuenta) {
-                valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
-                item.className = 'hidden'; 
-            } 
-            else if (isSelect) {
-                const valActual = String(val || '').trim();
-                const existeEnOpciones = dictOptions.some(opt => String(opt).trim() === valActual);
-                const optionsHtml = dictOptions.map(opt => {
-                    const isSelected = String(opt).trim() === valActual;
-                    return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
-                }).join('');
-
-                valueElement = `
-                    <div class="relative w-full group">
-                        <select data-field="${key}" 
-                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                            ${!existeEnOpciones ? `<option value="${valActual}" selected style="background-color: var(--bg); color: var(--txt);">${valActual || '-- SELECCIONE --'}</option>` : ''}
-                            ${optionsHtml}
-                        </select>
-                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                        </div>
-                    </div>`;
-            }
-            else if (isDate) {
-                let dateISO = '';
-                if (val) {dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];}
-                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            } 
-
-            else if (isNumeric) {
-                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
-            } 
-
-            else if (isDescription && isTransferRelated) {
-                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border gray-800 focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase">${val}</textarea>`;
-            } 
-
-            else if (isDescription) {
-                valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase">${val}</textarea>`;
-            } 
-
-            else {
-                valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            }
-
-            item.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${valueElement}`;
-                
-            content.appendChild(item);
-        });
-
-        if (window.lucide) lucide.createIcons();
-    }
-
-    function showRegisterMode() {
-        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-        
-        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-            TABLA_ORIGEN: tableOrigin,
-            DATOS_REGISTRO: null 
-        }));
-
-        // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); 
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-        
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.remove('hidden');
-        document.getElementById('detail-modal')?.classList.remove('hidden');
-
-        const btnReturn = document.getElementById('btn-modal-return');
-        if (btnReturn) {
-            btnReturn.onclick = (e) => {
-                e.preventDefault();
-                cancelActualForm();
-            };
-        }
-
-        const btnCancel = document.getElementById('btn-modal-cancel');
-        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
-
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => {
-            configMap[k.toUpperCase()] = configMapRaw[k];
-        });
-        
-        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-        const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
-        const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
-
-        content.innerHTML = '';
-
-        // 3. TÍTULO
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <div class="flex items-center gap-2">
-                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        BORRADOR NV
-                    </span>
-                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-                </div>
-            </div>`;
-
-        // 4. RENDERIZADO DINÁMICO DE CAMPOS
-        Object.keys(configMap).forEach(key => {
-            const cfg = configMap[key]; 
-            const cleanKey = key.toUpperCase();
-            
-            // --- REGLA DE VISIBILIDAD ---
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-            if (visValue === "") return;
-
-            // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
-            // Si es el ID de la tabla o el ID de la Cuenta, los creamos ocultos y vacíos
-            if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.dataset.field = key; 
-                hiddenInput.value = ''; // Crítico: Vacío para que mande el Alias en saveRecord
-                content.appendChild(hiddenInput);
-                return; 
-            }
-
-            // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
-            if (cleanKey.endsWith('CUENTA2') || cleanKey.endsWith('IDOWNER') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
-
-            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
-
-            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
-            const currentTableClean = String(currentTableName).trim().toUpperCase();
-            const dictKey = `${currentTableClean}|${cleanKey}`;
-            let dictOptions = dictionary[dictKey] || [];
-            
-            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-            
-            // Soporte dinámico para Alias de Cuentas si el diccionario no lo trae
-            if (isAliasField && dictOptions.length === 0) {
-                dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-            }
-
-            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
-            );
-
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-            const rowItem = document.createElement('div');
-            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            if (!isEditable) {
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                        <span>---</span>
-                        <input type="hidden" data-field="${key}" value="">
-                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-
-            } else if (isSelect) {
-                const optionsHtml = dictOptions.map(opt => 
-                    `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
-                ).join('');
-
-                inputHTML = `
-                    <div class="relative w-full group px-1">
-                        <select data-field="${key}" 
-                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                            <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                            ${optionsHtml}
-                        </select>
-                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                        </div>
-                    </div>`;
-
-            } else if (isDescription) {
-                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px]"></textarea>`;
-
-            } else if (isDate) {
-                // Obtenemos la fecha local del sistema (Año-Mes-Día)
-                const d = new Date();
-                const year = d.getFullYear();
-                const month = (d.getMonth() + 1).toString().padStart(2, '0');
-                const day = d.getDate().toString().padStart(2, '0');
-                
-                const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
-
-                inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-            
-            } else if (isNumeric) {
-                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-
-            } else {
-                inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            }
-
-            rowItem.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
-        });
-
-        if (window.lucide) lucide.createIcons();
-        
-        setTimeout(() => {
-            const firstInput = content.querySelector('input, textarea, select');
-            if (firstInput) firstInput.focus();
-        }, 200);
-    }
-
-    function TransferAccountRecord() {
-        // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
-        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-        
-        const tableClean = String(tableOrigin).toUpperCase();
-        const prefix = tableClean.split('_')[0]; 
-        const dictionaryTR = { ...dictionary };
-
-        // Inyectamos CUENTA2 en el diccionario para el select receptora
-        const keyEmisora = `${tableClean}|${prefix}ALIASCUENTA`;
-        const keyReceptora = `${tableClean}|${prefix}CUENTA2`;
-        
-        if (dictionary[keyEmisora]) {
-            dictionaryTR[keyReceptora] = dictionary[keyEmisora];
-        }
-
-        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-            TABLA_ORIGEN: tableOrigin,
-            DATOS_REGISTRO: null 
-        }));
-
-        // 2. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar(); 
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
-        
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden'); 
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('detail-modal')?.classList.remove('hidden');
-
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => { configMap[k.toUpperCase()] = configMapRaw[k]; });
-        
-        content.innerHTML = '';
-
-        // 3. TÍTULO DE LA OPERACIÓN
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <div class="flex items-center gap-2">
-                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        BORRADOR TR
-                    </span>
-                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-                </div>
-            </div>`;
-
-        // 4. RENDERIZADO DINÁMICO DE CAMPOS
-        Object.keys(configMap).forEach(key => {
-            const cfg = configMap[key]; 
-            const cleanKey = key.toUpperCase();
-            
-            // --- A. GESTIÓN ROBUSTA DEL ID DE CUENTA (SILENCIOSO) ---
-            // Al igual que en Duplicate, necesitamos que el input exista para saveRecord
-            if (cleanKey === `${prefix}CUENTA`) {
-                const hiddenIdInput = document.createElement('input');
-                hiddenIdInput.type = 'hidden';
-                hiddenIdInput.dataset.field = key; 
-                hiddenIdInput.value = ''; // Se llenará vía Alias en saveRecord
-                content.appendChild(hiddenIdInput);
-                return;
-            }
-
-            // --- B. FILTROS DE VISIBILIDAD Y EXCLUSIÓN ---
-            const visibility = String(cfg.visible || '').toLowerCase().trim();
-            if (visibility !== 'x' && visibility !== 'xx') return;
-            if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
-            if (cleanKey.endsWith('ID') || cleanKey.includes('IDOWNER')) return;
-            if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
-
-            const isMovementField = cleanKey.includes('MOVIMIENTO');
-            const isTypeRegField = cleanKey.includes('TYPEREG');
-            const isReadOnly = visibility === 'xx' || cfg.editable === false;
-            const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
-            const asterisco = isRequired && !isReadOnly ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            // Identificación de tipos para el renderizado
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-            
-            const rowItem = document.createElement('div');
-            if (isTypeRegField) rowItem.className = 'hidden';
-            else rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            // --- C. LÓGICA DE DIBUJO ---
-            if (isMovementField) {
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 py-0">
-                        <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">TRANSFERENCIA</span>
-                        <input type="hidden" data-field="${key}" value="TRANSFERENCIA">
-                    </div>`;
-            } 
-            else if (isTypeRegField) {
-                inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
-            }
-            else if (isReadOnly) {
-                const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 py-0">
-                        <span class="text-sm text-gray-500 font-bold uppercase opacity-70">${val}</span>
-                        <input type="hidden" data-field="${key}" value="${val}">
-                    </div>`;
-            }
-            else {
-                const dictOptions = dictionaryTR[`${tableClean}|${cleanKey}`];
-                const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-                const isCuenta2 = cleanKey.endsWith('CUENTA2');
-
-                // --- DISEÑO SELECT RESTAURADO ---
-                if (dictOptions || isAliasField || isCuenta2) {
-                    let optionsArray = dictOptions || [];
-                    // Carga de emergencia si es Alias y el diccionario está vacío
-                    if ((isAliasField || isCuenta2) && optionsArray.length === 0) {
-                        optionsArray = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-                    }
-
-                    const optionsHtml = optionsArray.map(opt => 
-                        `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
-                    ).join('');
-
-                    inputHTML = `
-                        <div class="relative w-full group">
-                            <select data-field="${key}" 
-                                style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                                class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                                <option value="" selected style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                                ${optionsHtml}
-                            </select>
-                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                                <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                            </div>
-                        </div>`;
-                } 
-                else if (cleanKey.includes('DESCRIPCION')) {
-                    inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]"></textarea>`;
-                } 
-                else if (isDate) {
-                    // Obtenemos la fecha local del sistema (Año-Mes-Día)
-                    const d = new Date();
-                    const year = d.getFullYear();
-                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-                    const day = d.getDate().toString().padStart(2, '0');
-                    
-                    const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
-
-                    inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-                } 
-                else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
-                    inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right">`;
-                } 
-                else {
-                    inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
-                }
-            }
-
-             rowItem.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
-        });
-
-        if (window.lucide) lucide.createIcons();
-        
-        // 5. VALIDACIÓN VISUAL INTEGRAL (Simetría de errores)
-        setTimeout(() => {
-            const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
-            const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
-            const selectMoneda = content.querySelector(`[data-field$="MONEDA"]`); 
-            const matrizCuentas = JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
-
-            if (selectEmisora && selectReceptora && selectMoneda) {
-                const validarTodoVisual = () => {
-                    const aliasE = selectEmisora.value?.trim();
-                    const aliasR = selectReceptora.value?.trim();
-                    const monedaReg = selectMoneda.value?.trim().toUpperCase();
-
-                    const infoE = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasE);
-                    const infoR = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasR);
-
-                    // --- VALIDACIÓN 1: MONEDA REGISTRO VS CUENTA ORIGEN ---
-                    const monedaInconsistente = infoE && monedaReg && infoE.TD102MONEDA !== monedaReg;
-                    
-                    // Aplicamos error a AMBOS campos involucrados en la moneda
-                    [selectEmisora, selectMoneda].forEach(el => {
-                        el.style.borderColor = monedaInconsistente ? 'rgb(239 68 68)' : 'var(--th)';
-                        el.style.backgroundColor = monedaInconsistente ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
-                    });
-
-                    // --- VALIDACIÓN 2: TRANSFERENCIA (CUENTA DESTINO) ---
-                    if (infoE && infoR) {
-                        const sonIguales = (infoE.TD102ID || infoE.ID) === (infoR.TD102ID || infoR.ID);
-                        const monedasTrDiff = infoE.TD102MONEDA !== infoR.TD102MONEDA;
-
-                        const hayErrorDestino = sonIguales || monedasTrDiff;
-                        
-                        selectReceptora.style.borderColor = hayErrorDestino ? 'rgb(239 68 68)' : 'var(--th)';
-                        selectReceptora.style.backgroundColor = hayErrorDestino ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
-                        
-                        // Si el error en la receptora es por moneda, también marcamos la moneda del registro
-                        if (monedasTrDiff) {
-                            selectMoneda.style.borderColor = 'rgb(239 68 68)';
-                            selectMoneda.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-                        }
-                    }
-                };
-
-                selectEmisora.addEventListener('change', validarTodoVisual);
-                selectReceptora.addEventListener('change', validarTodoVisual);
-                selectMoneda.addEventListener('change', validarTodoVisual);
-                
-                validarTodoVisual();
-            }
-        }, 500);
-    }
-       
-    function duplicateCurrentRecord() {
-        const rawData = localStorage.getItem('TABLE_DATA');
-        const dataObj = JSON.parse(rawData || '{}');
-        const row = dataObj.DATOS_REGISTRO; // El registro base
-        
-        if (!row) return;
-
-        // 1. CONFIGURACIÓN DE INTERFAZ
-        normalizeToolbar();
-        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-        
-        document.getElementById('btn-modal-save')?.classList.remove('hidden');
-        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-        document.getElementById('footer-save-container')?.classList.remove('hidden');
-        document.getElementById('btn-modal-return')?.classList.add('hidden');
-
-        const content = document.getElementById('detail-modal-content');
-        const title = document.getElementById('detail-modal-title');
-        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-
-        // Normalización del configMap
-        const configMap = {};
-        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
-
-        const tablePrefix = (dataObj.TABLA_ORIGEN || currentTableName).split('_')[0].toUpperCase();
-        const idFieldName = tablePrefix + 'ID';
-        
-        content.innerHTML = '';
-
-        // 2. TÍTULO (Estilo Duplicado)
-        title.innerHTML = `
-            <div class="flex items-center justify-end w-full px-2 py-1">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                    NUEVO (DUPLICADO)
-                </span>
-            </div>`;
-
-        // 3. RENDERIZADO DE CAMPOS (Iteramos sobre el registro, igual que showEditMode)
-        Object.keys(row).forEach(key => {
-            const cleanKey = key.toUpperCase();
-            
-            // Exclusión: En duplicado NO inyectamos el ID original como PK (idFieldName), 
-            // pero SI necesitamos el ID de la cuenta (CUENTA).
-            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
-            
-            const cfg = configMap[cleanKey] || {};
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-
-            // Si el campo no es CUENTA y no tiene visibilidad, se ignora (igual que showEditMode)
-            const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
-            if (visValue === "" && !isIdCuenta) return;
-
-            // Reglas de edición (Si es duplicado, tratamos casi todo como editable si tiene 'x')
-            const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
-            
-            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            const item = document.createElement('div');
-            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
-            
-            const val = row[key] || '';
-            let valueElement = '';
-
-            // --- LÓGICA DE RENDERIZADO (ESPEJO DE showEditMode) ---
-            if (isIdCuenta) {
-                // IGUAL QUE EN EDIT: Input hidden para que saveRecord lo gestione/asigne
-                valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
-                item.className = 'hidden'; 
-            } 
-            else if (!isEditable) {
-                // Campos bloqueados o fijos
-                valueElement = `
-                    <div class="flex items-center h-[24px] px-2 w-full justify-between">
-                        <span class="text-sm font-bold uppercase text-gray-500 opacity-90">${getFormattedValue(key, val)}</span>
-                        <input type="hidden" data-field="${key}" value="${val}">
-                        <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-            } 
-            else {
-                // Detectamos si es Select (Moneda, Movimiento, AliasCuenta)
-                const dictKey = `${currentTableName}|${key}`.toUpperCase();
-                const dictOptions = dictionary[dictKey];
-                const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-                const isSelect = dictOptions && dictOptions.length > 0 && (
-                    cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || isAliasField
-                );
-
-                if (isSelect) {
-                    const valActual = String(val || '').trim();
-                    let options = dictOptions || [];
-                    
-                    // Carga de emergencia de alias si el diccionario falla
-                    if (isAliasField && options.length === 0) {
-                        options = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-                    }
-
-                    const existeEnOpciones = options.some(opt => String(opt).trim() === valActual);
-                    const optionsHtml = options.map(opt => {
-                        const isSelected = String(opt).trim() === valActual;
-                        return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
-                    }).join('');
-
-                    valueElement = `
-                        <div class="relative w-full group">
-                            <select data-field="${key}" 
-                                class="bg-transparent border border-gray-700 rounded px-2 py-0 text-sm font-bold w-full focus:outline-none appearance-none cursor-pointer pr-8 shadow-sm">
-                                ${!existeEnOpciones ? `<option value="${valActual}" selected>${valActual || '-- SELECCIONE --'}</option>` : ''}
-                                ${optionsHtml}
-                            </select>
-                            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60">
-                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                            </div>
-                        </div>`;
-                } else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
-                    let dateISO = val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0];
-                    valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
-                } else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
-                    valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="${getFormattedValue(key, val)}" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none">`;
-                } else if (cleanKey.includes('DESCRIPCION')) {
-                    valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]">${val}</textarea>`;
-                } else {
-                    valueElement = `<input type="text" data-field="${key}" value="${val}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
-                }
-            }
-
-            item.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${valueElement}`;
-                
-            content.appendChild(item);
-        });
-
-        if (window.lucide) lucide.createIcons();
-    }
-
     function disableButton(title) {
         const btn = document.querySelector(`button[title="${title}"]`);
         if (btn) {
@@ -2788,23 +2069,37 @@ async function saveRecord() {
     }
 
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-
-    // B. VALIDACIÓN: IMPORTE MAYOR A 0.00
     const keyImporte = `${tablePrefix}IMPORTE`;
-    const valorImporte = parseFloat(String(payload[keyImporte] || "0").replace(',', '.'));
 
-    if (isNaN(valorImporte) || valorImporte <= 0) {
+// --- 3. VALIDACIONES DE NEGOCIO (BLOQUEO) ---
+
+    // A. Validación de Campos Obligatorios (Se mantiene igual)
+    if (missingFields.length > 0) {
         toggleGlobalLoader(false);
-        const inputImporte = container.querySelector(`[data-field="${keyImporte}"]`);
-        if (inputImporte) inputImporte.classList.add('border-red-500', 'bg-red-500/10');
-
-        await showSystemModal({ 
-            title: 'Importe Inválido', 
-            text: 'El <b>Importe</b> debe ser un monto mayor a <b>0,00</b>.', 
-            type: 'warning' 
-        });
-        return;
+        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
+        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
+        return; 
     }
+
+    // B. VALIDACIÓN: IMPORTE MAYOR A 0.00 (SOLO SI EL CAMPO EXISTE)
+    // Verificamos si 'keyImporte' es una propiedad del objeto payload
+    if (Object.prototype.hasOwnProperty.call(payload, keyImporte)) {
+        const valorImporte = parseFloat(String(payload[keyImporte] || "0").replace(',', '.'));
+
+        if (isNaN(valorImporte) || valorImporte <= 0) {
+            toggleGlobalLoader(false);
+            const inputImporte = container.querySelector(`[data-field="${keyImporte}"]`);
+            if (inputImporte) inputImporte.classList.add('border-red-500', 'bg-red-500/10');
+
+            await showSystemModal({ 
+                title: 'Importe Inválido', 
+                text: 'El campo <b>Importe</b> debe ser un monto mayor a <b>0,00</b>.', 
+                type: 'warning' 
+            });
+            return;
+        }
+    }
+
 
 // C. Traducción de Cuentas y Validación de Monedas/Negocio
     const badgeMode = document.getElementById('title-badge-mode')?.innerText.toUpperCase() || '';
@@ -2922,7 +2217,7 @@ async function saveRecord() {
         
         await showSystemModal({ 
             title: 'Proceso Completado', 
-            text: 'Registro(s) procesado(s) correctamente.', 
+            text: 'Solicitud ejecutada correctamente.', 
             type: 'info' 
         });
 
@@ -2984,6 +2279,767 @@ async function saveRecord() {
         }
     }
     
+    // FUNCIÓN GLOBAL PARA EL CÁLCULO DEL ALIAS
+function updateTD102Alias() {
+    const content = document.getElementById('detail-modal-content');
+    if (!content) return;
+
+    const prefix = currentTableName.split('_')[0].toUpperCase();
+    
+    // Obtenemos valores de los campos que componen el alias
+    const banco = content.querySelector(`[data-field="${prefix}BANCO"]`)?.value || '';
+    const tipo = content.querySelector(`[data-field="${prefix}TIPO"]`)?.value || '';
+    const moneda = content.querySelector(`[data-field="${prefix}MONEDA"]`)?.value || '';
+    
+    const aliasKey = "TD102ALIAS";
+    const nuevoAlias = `${banco} ${tipo} ${moneda}`.replace(/\s+/g, ' ').trim().toUpperCase();
+    
+    const aliasInput = content.querySelector(`[data-field="${aliasKey}"]`);
+    if (aliasInput) {
+        aliasInput.value = nuevoAlias;
+
+        // Actualización visual si está bloqueado (span) o es input
+        const container = aliasInput.closest('div');
+        const visualSpan = container?.querySelector('span'); // El span que muestra "---"
+        
+        if (visualSpan && visualSpan.tagName === 'SPAN') {
+            visualSpan.textContent = nuevoAlias || '---';
+            if (nuevoAlias) {
+                visualSpan.classList.remove('text-gray-500');
+                visualSpan.classList.add('text-blue-400/90');
+            }
+        }
+    }
+}
+
+function applyCardMask(input) {
+    // 1. Limpiar todo lo que no sea número
+    let value = input.value.replace(/\D/g, '');
+    
+    // 2. Cortar a un máximo de 16 dígitos (opcional, ajusta según tu DB)
+    value = value.substring(0, 16);
+    
+    // 3. Agrupar de a 4 usando regex
+    // El match(/(.{1,4})/g) crea un array de trozos de hasta 4 caracteres
+    const sections = value.match(/.{1,4}/g);
+    
+    if (sections) {
+        input.value = sections.join('-');
+    } else {
+        input.value = value;
+    }
+}
+
 </script>
+
+<script>
+function showEditMode() {
+    normalizeToolbar();
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const row = storageData.DATOS_REGISTRO;
+    if (!row) return;
+
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const idFieldName = tablePrefix + 'ID';
+    const refFieldName = tablePrefix + 'REF';
+    content.innerHTML = '';
+
+    const movTipo = String(row[tablePrefix + 'MOVIMIENTO'] || '').toUpperCase();
+    const valorRefActual = String(row[refFieldName] || '').toUpperCase();
+    const isTransferRelated = movTipo === 'TRANSFERENCIA' || valorRefActual.includes('TRANSFERENCIA ');
+
+    const hiddenId = document.createElement('input');
+    hiddenId.type = 'hidden';
+    hiddenId.dataset.field = idFieldName;
+    hiddenId.value = row[idFieldName] || '';
+    content.appendChild(hiddenId);
+
+    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+    const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
+    const statusIconClass = isTransferRelated ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 rounded-full transition-all';
+
+    title.innerHTML = `
+        <div class="grid grid-cols-[1fr_90px_20px] items-center w-full gap-2">
+            <div class="min-w-10 flex justify-start">
+                <span class="text-xl font-bold text-gray-500 tracking-tight mr-4">Doc: </span>
+                <span class="text-blue-400 text-2xl font-bold truncate">${row[idFieldName] || 'Detalle'}</span>
+            </div>
+            <div class="flex justify-center min-w-0">
+                <span id="badge-status" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border truncate ${isActuallyBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}">${rawStatus}</span>
+            </div>
+            <div id="status-icon-container" class="flex justify-end ${statusIconClass}" title="${isTransferRelated ? 'No se puede bloquear una transferencia' : 'Cambiar Estatus'}">
+                <i data-lucide="${isActuallyBlocked ? 'lock' : 'check-circle'}" class="w-5 h-5 ${isActuallyBlocked ? 'text-red-400' : 'text-green-400'}"></i>
+            </div>
+        </div>`;
+
+    Object.keys(row).forEach(key => {
+            const cleanKey = key.toUpperCase();
+            if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+            if (cleanKey.endsWith('CUENTA2') && !isTransferRelated) return;
+            if (cleanKey.includes('TYPEREG') && isTransferRelated) return;
+            
+            const cfg = configMap[cleanKey] || {};
+            const visValue = String(cfg.visible || '').toLowerCase().trim();
+            if (visValue === "") return;
+
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            let isEditable = (visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true);
+            
+            if (isTransferRelated && !isDescription) isEditable = false;
+            const isLockedTransferRef = cleanKey === refFieldName && valorRefActual.includes('TRANSFERENCIA');
+            if (isLockedTransferRef) isEditable = false;
+
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+            const istoggle = cleanKey.includes('TYPEREG');
+            const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+            
+            const dictKey = `${currentTableName}|${key}`.toUpperCase();
+            const dictOptions = dictionary[dictKey];
+            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || cleanKey.endsWith('ALIASCUENTA')
+            );       
+            const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
+
+            const item = document.createElement('div');
+            item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+            
+            let valueElement = '';
+            const val = row[key] || '';
+
+            if (!isEditable) {
+                const rawValue = row[key] !== null ? row[key] : '';
+                const isSpecialLock = isLockedTransferRef || (isTransferRelated && !isDescription);
+                const isAliasField = cleanKey.endsWith('ALIAS'); // Identificador para el span visual
+                
+                valueElement = `
+                    <div class="flex items-center h-[24px] px-2 py-0 w-full justify-between ${isSpecialLock ? 'bg-orange-500/5 rounded opacity-60' : 'opacity-50'}">
+                        <span class="text-sm font-bold uppercase tracking-tight ${isAliasField ? 'visual-alias-span' : ''} ${isSpecialLock ? 'text-orange-400/80' : 'text-gray-500'}">
+                            ${getFormattedValue(key, rawValue)}
+                        </span>
+                        <input type="hidden" data-field="${key}" value="${rawValue}">
+                        <i data-lucide="${isSpecialLock ? 'lock-keyhole' : (cfg.Es_Calculado ? 'calculator' : 'lock')}" 
+                        class="w-3.5 h-3.5 ${isSpecialLock ? 'text-orange-500/50' : 'text-gray-700'}"></i>
+                    </div>`;
+            } 
+            else if (istoggle) {
+                const isBlocked = String(row[key]).toUpperCase() === 'BLOQUEADO';
+                const toggleDisabled = isTransferRelated ? 'pointer-events-none opacity-30' : '';
+                valueElement = `
+                    <div class="flex items-center gap-3 ${toggleDisabled}">
+                        <button type="button" ${isTransferRelated ? '' : `onclick="toggleStatus(this, '${key}')"`} class="focus:outline-none transition-transform active:scale-90" id="btn-toggle-${key}">
+                            <i data-lucide="${isBlocked ? 'toggle-left' : 'toggle-right'}" class="w-6 h-6 ${isBlocked ? 'text-red-500' : 'text-green-500'} pointer-events-none"></i>
+                        </button>
+                        <span id="label-${key}" class="text-[11px] font-bold uppercase ${isBlocked ? 'text-red-500' : 'text-green-500'}">${isBlocked ? 'Bloqueado' : 'Registrado'}</span>
+                        <input type="hidden" data-field="${key}" id="input-${key}" value="${row[key]}">
+                    </div>`;
+            } 
+            else if (isIdCuenta) {
+                valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
+                item.className = 'hidden'; 
+            } 
+            else if (isSelect) {
+                const valActual = String(val || '').trim();
+                const existeEnOpciones = dictOptions.some(opt => String(opt).trim() === valActual);
+                const optionsHtml = dictOptions.map(opt => `<option value="${opt}" ${String(opt).trim() === valActual ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`).join('');
+
+                valueElement = `
+                    <div class="relative w-full group">
+                        <select data-field="${key}" onchange="updateTD102Alias()"
+                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                            ${!existeEnOpciones ? `<option value="${valActual}" selected style="background-color: var(--bg); color: var(--txt);">${valActual || '-- SELECCIONE --'}</option>` : ''}
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                        </div>
+                    </div>`;
+            }
+            else if (isDate) {
+                let dateISO = val ? (val.includes('/') ? val.split('/').reverse().join('-') : val.split('T')[0]) : '';
+                valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="custom-date-input bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            } 
+            else if (isNumeric) {
+                valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
+            } 
+            else {
+                // Lógica específica para NUMERO con máscara de guiones
+                const isNumeroCard = cleanKey.endsWith('NUMERO');
+                const onInputEvent = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
+                const maxLengthAttr = isNumeroCard ? 'maxlength="19"' : '';
+
+                valueElement = `<input type="text" data-field="${key}" value="${val}" oninput="${onInputEvent}" ${maxLengthAttr} class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            }
+
+            item.innerHTML = `<span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">${cfg.label || key}${asterisco}</span>${valueElement}`;
+            content.appendChild(item);
+        });
+
+        // Aplicar formato inicial al número si existe
+        const numInput = content.querySelector(`[data-field$="NUMERO"]`);
+        if (numInput && typeof applyCardMask === 'function') applyCardMask(numInput);
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function showRegisterMode() {
+    // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    
+    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+        TABLA_ORIGEN: tableOrigin,
+        DATOS_REGISTRO: null 
+    }));
+
+    // 2. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar(); 
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.remove('hidden');
+    document.getElementById('detail-modal')?.classList.remove('hidden');
+
+    const btnReturn = document.getElementById('btn-modal-return');
+    if (btnReturn) {
+        btnReturn.onclick = (e) => {
+            e.preventDefault();
+            cancelActualForm();
+        };
+    }
+
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => {
+        configMap[k.toUpperCase()] = configMapRaw[k];
+    });
+    
+    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+    const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
+    const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
+
+    content.innerHTML = '';
+
+    // 3. TÍTULO
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <div class="flex items-center gap-2">
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    BORRADOR NV
+                </span>
+                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+            </div>
+        </div>`;
+
+    // 4. RENDERIZADO DINÁMICO DE CAMPOS
+    Object.keys(configMap).forEach(key => {
+            const cfg = configMap[key]; 
+            const cleanKey = key.toUpperCase();
+            
+            // --- REGLA DE VISIBILIDAD ---
+            const visValue = String(cfg.visible || '').toLowerCase().trim();
+            if (visValue === "") return;
+
+            // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
+            if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.dataset.field = key; 
+                hiddenInput.value = ''; 
+                content.appendChild(hiddenInput);
+                return; 
+            }
+
+            // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
+            if (cleanKey.endsWith('CUENTA2') || cleanKey.endsWith('IDOWNER') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+
+            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
+
+            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+            // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
+            const currentTableClean = String(currentTableName).trim().toUpperCase();
+            const dictKey = `${currentTableClean}|${cleanKey}`;
+            let dictOptions = dictionary[dictKey] || [];
+            
+            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+            
+            if (isAliasField && dictOptions.length === 0) {
+                dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+            }
+
+            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
+            );
+
+            const isDescription = cleanKey.includes('DESCRIPCION');
+            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+            const rowItem = document.createElement('div');
+            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+            
+            let inputHTML = '';
+
+            if (!isEditable) {
+                const isAliasTarget = cleanKey.endsWith('ALIAS'); // Para identificar donde inyectar el alias calculado
+                inputHTML = `
+                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
+                        <span class="truncate ${isAliasTarget ? 'visual-alias-span' : ''}">---</span>
+                        <input type="hidden" data-field="${key}" value="">
+                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                    </div>`;
+
+            } else if (isSelect) {
+                const optionsHtml = dictOptions.map(opt => 
+                    `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+                ).join('');
+
+                inputHTML = `
+                    <div class="relative w-full group px-1">
+                        <select data-field="${key}" onchange="updateTD102Alias()"
+                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                            <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                        </div>
+                    </div>`;
+
+            } else if (isDescription) {
+                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase"></textarea>`;
+
+            } else if (isDate) {
+                const d = new Date();
+                const hoy = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+            
+            } else if (isNumeric) {
+                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
+
+            } else {
+                // Lógica unificada para campos de texto: NUMERO (máscara) vs OTROS (update alias)
+                const isNumeroCard = cleanKey.endsWith('NUMERO');
+                const onInputCall = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
+                const maxLen = isNumeroCard ? 'maxlength="19"' : '';
+
+                inputHTML = `<input type="text" data-field="${key}" oninput="${onInputCall}" ${maxLen} class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+            }
+
+            rowItem.innerHTML = `
+                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                    ${cfg.label || key}${asterisco}
+                </span>
+                ${inputHTML}`;
+                
+            content.appendChild(rowItem);
+        });
+
+    if (window.lucide) lucide.createIcons();
+    
+    setTimeout(() => {
+        const firstInput = content.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }, 200);
+}
+
+function TransferAccountRecord() {
+    // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
+    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    
+    const tableClean = String(tableOrigin).toUpperCase();
+    const prefix = tableClean.split('_')[0]; 
+    const dictionaryTR = { ...dictionary };
+
+    // Inyectamos CUENTA2 en el diccionario para el select receptora
+    const keyEmisora = `${tableClean}|${prefix}ALIASCUENTA`;
+    const keyReceptora = `${tableClean}|${prefix}CUENTA2`;
+    
+    if (dictionary[keyEmisora]) {
+        dictionaryTR[keyReceptora] = dictionary[keyEmisora];
+    }
+
+    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+        TABLA_ORIGEN: tableOrigin,
+        DATOS_REGISTRO: null 
+    }));
+
+    // 2. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar(); 
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar', 'Cancelar'].forEach(disableButton);
+    
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden'); 
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('detail-modal')?.classList.remove('hidden');
+
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => { configMap[k.toUpperCase()] = configMapRaw[k]; });
+    
+    content.innerHTML = '';
+
+    // 3. TÍTULO DE LA OPERACIÓN
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <div class="flex items-center gap-2">
+                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    BORRADOR TR
+                </span>
+                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+            </div>
+        </div>`;
+
+    // 4. RENDERIZADO DINÁMICO DE CAMPOS
+    Object.keys(configMap).forEach(key => {
+        const cfg = configMap[key]; 
+        const cleanKey = key.toUpperCase();
+        
+        // --- A. GESTIÓN ROBUSTA DEL ID DE CUENTA (SILENCIOSO) ---
+        // Al igual que en Duplicate, necesitamos que el input exista para saveRecord
+        if (cleanKey === `${prefix}CUENTA`) {
+            const hiddenIdInput = document.createElement('input');
+            hiddenIdInput.type = 'hidden';
+            hiddenIdInput.dataset.field = key; 
+            hiddenIdInput.value = ''; // Se llenará vía Alias en saveRecord
+            content.appendChild(hiddenIdInput);
+            return;
+        }
+
+        // --- B. FILTROS DE VISIBILIDAD Y EXCLUSIÓN ---
+        const visibility = String(cfg.visible || '').toLowerCase().trim();
+        if (visibility !== 'x' && visibility !== 'xx') return;
+        if (cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc") return;
+        if (cleanKey.endsWith('ID') || cleanKey.includes('IDOWNER')) return;
+        if (cleanKey.includes('REGISTRO') && !cleanKey.includes('TYPEREG')) return;
+
+        const isMovementField = cleanKey.includes('MOVIMIENTO');
+        const isTypeRegField = cleanKey.includes('TYPEREG');
+        const isReadOnly = visibility === 'xx' || cfg.editable === false;
+        const isRequired = cfg.Es_Obligatorio === true || cleanKey.includes('CUENTA');
+        const asterisco = isRequired && !isReadOnly ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+        // Identificación de tipos para el renderizado
+        const isDescription = cleanKey.includes('DESCRIPCION');
+        const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+        const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+        
+        const rowItem = document.createElement('div');
+        if (isTypeRegField) rowItem.className = 'hidden';
+        else rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+        
+        let inputHTML = '';
+
+        // --- C. LÓGICA DE DIBUJO ---
+        if (isMovementField) {
+            inputHTML = `
+                <div class="flex items-center h-[24px] px-2 py-0">
+                    <span class="text-sm text-blue-400 font-bold uppercase tracking-tight">TRANSFERENCIA</span>
+                    <input type="hidden" data-field="${key}" value="TRANSFERENCIA">
+                </div>`;
+        } 
+        else if (isTypeRegField) {
+            inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
+        }
+        else if (isReadOnly) {
+            const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
+            inputHTML = `
+                <div class="flex items-center h-[24px] px-2 py-0">
+                    <span class="text-sm text-gray-500 font-bold uppercase opacity-70">${val}</span>
+                    <input type="hidden" data-field="${key}" value="${val}">
+                </div>`;
+        }
+        else {
+            const dictOptions = dictionaryTR[`${tableClean}|${cleanKey}`];
+            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+            const isCuenta2 = cleanKey.endsWith('CUENTA2');
+
+            // --- DISEÑO SELECT RESTAURADO ---
+            if (dictOptions || isAliasField || isCuenta2) {
+                let optionsArray = dictOptions || [];
+                // Carga de emergencia si es Alias y el diccionario está vacío
+                if ((isAliasField || isCuenta2) && optionsArray.length === 0) {
+                    optionsArray = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                }
+
+                const optionsHtml = optionsArray.map(opt => 
+                    `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+                ).join('');
+
+                inputHTML = `
+                    <div class="relative w-full group">
+                        <select data-field="${key}" 
+                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                            <option value="" selected style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                        </div>
+                    </div>`;
+            } 
+            else if (cleanKey.includes('DESCRIPCION')) {
+                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px]"></textarea>`;
+            } 
+            else if (isDate) {
+                // Obtenemos la fecha local del sistema (Año-Mes-Día)
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                const day = d.getDate().toString().padStart(2, '0');
+                
+                const hoy = `${year}-${month}-${day}`; // Formato YYYY-MM-DD que requiere el input type="date"
+
+                inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+            } 
+            else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right">`;
+            } 
+            else {
+                inputHTML = `<input type="text" data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+            }
+        }
+
+            rowItem.innerHTML = `
+            <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                ${cfg.label || key}${asterisco}
+            </span>
+            ${inputHTML}`;
+            
+        content.appendChild(rowItem);
+    });
+
+    if (window.lucide) lucide.createIcons();
+    
+    // 5. VALIDACIÓN VISUAL INTEGRAL (Simetría de errores)
+    setTimeout(() => {
+        const selectEmisora = content.querySelector(`[data-field$="ALIASCUENTA"]`);
+        const selectReceptora = content.querySelector(`[data-field$="CUENTA2"]`);
+        const selectMoneda = content.querySelector(`[data-field$="MONEDA"]`); 
+        const matrizCuentas = JSON.parse(localStorage.getItem('MATRIZ_CUENTAS_USUARIO') || "[]");
+
+        if (selectEmisora && selectReceptora && selectMoneda) {
+            const validarTodoVisual = () => {
+                const aliasE = selectEmisora.value?.trim();
+                const aliasR = selectReceptora.value?.trim();
+                const monedaReg = selectMoneda.value?.trim().toUpperCase();
+
+                const infoE = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasE);
+                const infoR = matrizCuentas.find(c => String(c.TD102ALIAS || c.ALIAS).trim() === aliasR);
+
+                // --- VALIDACIÓN 1: MONEDA REGISTRO VS CUENTA ORIGEN ---
+                const monedaInconsistente = infoE && monedaReg && infoE.TD102MONEDA !== monedaReg;
+                
+                // Aplicamos error a AMBOS campos involucrados en la moneda
+                [selectEmisora, selectMoneda].forEach(el => {
+                    el.style.borderColor = monedaInconsistente ? 'rgb(239 68 68)' : 'var(--th)';
+                    el.style.backgroundColor = monedaInconsistente ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+                });
+
+                // --- VALIDACIÓN 2: TRANSFERENCIA (CUENTA DESTINO) ---
+                if (infoE && infoR) {
+                    const sonIguales = (infoE.TD102ID || infoE.ID) === (infoR.TD102ID || infoR.ID);
+                    const monedasTrDiff = infoE.TD102MONEDA !== infoR.TD102MONEDA;
+
+                    const hayErrorDestino = sonIguales || monedasTrDiff;
+                    
+                    selectReceptora.style.borderColor = hayErrorDestino ? 'rgb(239 68 68)' : 'var(--th)';
+                    selectReceptora.style.backgroundColor = hayErrorDestino ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg)';
+                    
+                    // Si el error en la receptora es por moneda, también marcamos la moneda del registro
+                    if (monedasTrDiff) {
+                        selectMoneda.style.borderColor = 'rgb(239 68 68)';
+                        selectMoneda.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+                    }
+                }
+            };
+
+            selectEmisora.addEventListener('change', validarTodoVisual);
+            selectReceptora.addEventListener('change', validarTodoVisual);
+            selectMoneda.addEventListener('change', validarTodoVisual);
+            
+            validarTodoVisual();
+        }
+    }, 500);
+}
+       
+function duplicateCurrentRecord() {
+    const rawData = localStorage.getItem('TABLE_DATA');
+    const dataObj = JSON.parse(rawData || '{}');
+    const row = dataObj.DATOS_REGISTRO; // El registro base
+    
+    if (!row) return;
+
+    // 1. CONFIGURACIÓN DE INTERFAZ
+    normalizeToolbar();
+    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+    
+    document.getElementById('btn-modal-save')?.classList.remove('hidden');
+    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+    document.getElementById('footer-save-container')?.classList.remove('hidden');
+    document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const content = document.getElementById('detail-modal-content');
+    const title = document.getElementById('detail-modal-title');
+    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+
+    // Normalización del configMap
+    const configMap = {};
+    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+
+    const tablePrefix = (dataObj.TABLA_ORIGEN || currentTableName).split('_')[0].toUpperCase();
+    const idFieldName = tablePrefix + 'ID';
+    
+    content.innerHTML = '';
+
+    // 2. TÍTULO (Estilo Duplicado)
+    title.innerHTML = `
+        <div class="flex items-center justify-end w-full px-2 py-1">
+            <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                NUEVO (DUPLICADO)
+            </span>
+        </div>`;
+
+    // 3. RENDERIZADO DE CAMPOS
+    Object.keys(row).forEach(key => {
+                const cleanKey = key.toUpperCase();
+                
+                // Exclusión de IDs de registro
+                if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+                
+                const cfg = configMap[cleanKey] || {};
+                const visValue = String(cfg.visible || '').toLowerCase().trim();
+
+                const isIdCuenta = cleanKey === `${tablePrefix}CUENTA`;
+                if (visValue === "" && !isIdCuenta) return;
+
+                const isEditable = visValue === 'x' && cfg.editable !== false && cfg.Es_Calculado !== true;
+                const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+                const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+                const item = document.createElement('div');
+                item.className = 'grid grid-cols-[110px_1fr] px-2 py-1 border-b border-gray-800/50 last:border-0 hover:bg-white/5 justify-items-start';
+                
+                const val = row[key] || '';
+                let valueElement = '';
+
+                if (isIdCuenta) {
+                    valueElement = `<input type="hidden" data-field="${key}" value="${val}">`;
+                    item.className = 'hidden'; 
+                } 
+                else if (!isEditable) {
+                    const isAliasTarget = cleanKey.endsWith('ALIAS');
+                    valueElement = `
+                        <div class="flex items-center h-[24px] px-2 w-full justify-between">
+                            <span class="text-sm font-bold uppercase text-gray-500 opacity-90 ${isAliasTarget ? 'visual-alias-span' : ''}">${getFormattedValue(key, val)}</span>
+                            <input type="hidden" data-field="${key}" value="${val}">
+                            <i data-lucide="${cfg.Es_Calculado ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                        </div>`;
+                } 
+                else {
+                    const dictKey = `${currentTableName}|${key}`.toUpperCase();
+                    const dictOptions = dictionary[dictKey];
+                    const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+                    const isSelect = dictOptions && dictOptions.length > 0 && (
+                        cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
+                    );
+
+                    if (isSelect) {
+                        const valActual = String(val || '').trim();
+                        let options = dictOptions || [];
+                        
+                        if (isAliasField && options.length === 0) {
+                            options = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                        }
+
+                        const existeEnOpciones = options.some(opt => String(opt).trim() === valActual);
+                        const optionsHtml = options.map(opt => {
+                            const isSelected = String(opt).trim() === valActual;
+                            return `<option value="${opt}" ${isSelected ? 'selected' : ''} style="background-color: var(--bg); color: var(--txt);">${opt}</option>`;
+                        }).join('');
+
+                        valueElement = `
+                            <div class="relative w-full group">
+                                <select data-field="${key}" onchange="updateTD102Alias()"
+                                    class="bg-transparent border border-gray-700 rounded px-2 py-0 text-sm font-bold w-full focus:outline-none appearance-none cursor-pointer pr-8 shadow-sm">
+                                    ${!existeEnOpciones ? `<option value="${valActual}" selected>${valActual || '-- SELECCIONE --'}</option>` : ''}
+                                    ${optionsHtml}
+                                </select>
+                                <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none opacity-60">
+                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>`;
+                    } else if (cleanKey.includes('FECHA') || cleanKey.includes('DATE')) {
+                        let dateISO = val.includes('/') ? val.split('/').reverse().join('-') : (val.includes('T') ? val.split('T')[0] : val);
+                        valueElement = `<input type="date" data-field="${key}" value="${dateISO}" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none">`;
+                    } else if (cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO')) {
+                        valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="${getFormattedValue(key, val)}" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none">`;
+                    } else if (cleanKey.includes('DESCRIPCION')) {
+                        valueElement = `<textarea data-field="${key}" class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none resize-none h-[60px] uppercase">${val}</textarea>`;
+                    } else {
+                        // Lógica para campos de texto: NUMERO (máscara) vs OTROS (update alias)
+                        const isNumeroCard = cleanKey.endsWith('NUMERO');
+                        const onInputCall = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
+                        const maxLen = isNumeroCard ? 'maxlength="19"' : '';
+
+                        valueElement = `<input type="text" data-field="${key}" value="${val}" oninput="${onInputCall}" ${maxLen} class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase">`;
+                    }
+                }
+
+                item.innerHTML = `<span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">${cfg.label || key}${asterisco}</span>${valueElement}`;
+                content.appendChild(item);
+            });
+
+            // Aplicar máscara inicial al duplicar si el registro base ya tenía un número
+            const numInput = content.querySelector(`[data-field$="NUMERO"]`);
+            if (numInput && typeof applyCardMask === 'function') applyCardMask(numInput);
+
+            if (window.lucide) lucide.createIcons();
+            if (typeof updateTD102Alias === 'function') updateTD102Alias();
+
+    if (window.lucide) lucide.createIcons();
+    
+    // Ejecutamos una actualización inicial por si el registro duplicado requiere recalcular el Alias
+    if (typeof updateTD102Alias === 'function') updateTD102Alias();
+}
+</script>
+
 </body>
 </html>
