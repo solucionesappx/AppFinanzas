@@ -90,6 +90,7 @@
         main { padding: 64px 0.5rem; } 
         .table-scroll-container { max-height: calc(100vh - 200px); } 
     }
+/* .btn-disabled-visual {opacity: 0.2 !important; pointer-events: none !important; filter: grayscale(1); cursor: not-allowed;} */
     
 </style>
 
@@ -792,6 +793,7 @@
             }
 
             // --- Control de estado del botón de transferencia ---
+            //btnTransfer.classList.toggle('btn-disabled-visual', tableName !== "TD101_MAIN");
             if (btnTransfer) {
                 if (tableName === "TD101_MAIN") {
                     // Estado Activo
@@ -2054,12 +2056,13 @@ async function saveRecord() {
         i.classList.add('border-transparent'); 
     });
 
-    // 2. EXTRACCIÓN Y FORMATEO DE DATOS
+ // 2. EXTRACCIÓN Y FORMATEO DE DATOS
     inputs.forEach(input => {
         const key = input.dataset.field;
         const cleanKey = key.toUpperCase();
         const cfg = configMap[cleanKey] || {};
         const isDate = cleanKey.includes('FECHA') || cleanKey.includes('DATE');
+        const isTextArea = input.tagName.toLowerCase() === 'textarea';
         
         let value;
         if (input.hasAttribute('data-raw')) {
@@ -2068,13 +2071,41 @@ async function saveRecord() {
             value = input.checked;
         } else {
             value = input.value.trim();
+
+            // --- LÓGICA DE MAYÚSCULAS SELECTIVA ---
+            // Solo convertimos a mayúsculas si:
+            // 1. NO es un textarea
+            // 2. NO es un campo de fecha (para no romper el formato ISO yyyy-mm-dd antes de convertirlo)
+            if (!isTextArea && !isDate && typeof value === 'string') {
+                value = value.toUpperCase();
+            }
         }
 
-        if (isDate && value && value.includes('-')) {
-            const parts = value.split('-');
-            if (parts.length === 3) value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        // --- FORMATEO ESTRICTO DE FECHA ---
+        if (isDate && value && typeof value === 'string') {
+            // 1. Limpieza absoluta: Nos quedamos solo con lo que esté antes de la 'T' o el espacio
+            // Esto elimina "T04:00:00.000Z" de un solo golpe
+            let dateOnly = value.split('T')[0].split(' ')[0].trim();
+
+            // 2. Si la fecha viene en formato ISO (YYYY-MM-DD)
+            if (dateOnly.includes('-')) {
+                const parts = dateOnly.split('-');
+                if (parts.length === 3) {
+                    // Si el primer bloque es el año (4 dígitos), la invertimos a DD/MM/YYYY
+                    if (parts[0].length === 4) {
+                        value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    } else {
+                        // Por si acaso viene DD-MM-YYYY
+                        value = `${parts[0]}/${parts[1]}/${parts[2]}`;
+                    }
+                }
+            } else {
+                // Si no tiene guiones, asumimos que ya es DD/MM/YYYY pero nos aseguramos de que esté limpia
+                value = dateOnly;
+            }
         }
 
+        // Validación de campos obligatorios
         if (cfg.Es_Obligatorio === true && !value) {
             missingFields.push(cfg.label || key);
             input.classList.add('border-red-500', 'bg-red-500/10');
@@ -2084,19 +2115,8 @@ async function saveRecord() {
     });
 
 // --- 3. VALIDACIONES DE NEGOCIO (BLOQUEO) ---
-
-    // A. Validación de Campos Obligatorios
-    if (missingFields.length > 0) {
-        toggleGlobalLoader(false);
-        const listaHtml = missingFields.map(field => `• ${field}`).join('<br>');
-        await showSystemModal({ title: 'Campos Obligatorios', text: `Complete:<br><br>${listaHtml}`, type: 'warning' });
-        return; 
-    }
-
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
     const keyImporte = `${tablePrefix}IMPORTE`;
-
-// --- 3. VALIDACIONES DE NEGOCIO (BLOQUEO) ---
 
     // A. Validación de Campos Obligatorios (Se mantiene igual)
     if (missingFields.length > 0) {
@@ -2214,9 +2234,15 @@ async function saveRecord() {
     const gasAction = isNewOrDuplicate ? 'registerDynamicDataTD' : 'editDynamicDataTD';
     const userId = localStorage.getItem('Usuario_ID') || ""; 
 
+    // --- ASEGURAR MAYÚSCULAS EN EL ESTATUS (TYPEREG) ---
+    const keyStatus = `${tablePrefix}TYPEREG`;
+    if (payload[keyStatus]) {
+        payload[keyStatus] = String(payload[keyStatus]).toUpperCase();
+    }
+
     if (isNewOrDuplicate) {
         delete payload[`${tablePrefix}ID`];
-        payload[`${tablePrefix}TYPEREG`] = "Registrado"; 
+        payload[`${tablePrefix}TYPEREG`] = "REGISTRADO"; // Forzamos mayúsculas aquí también
         payload[`${tablePrefix}IDOWNER`] = userId;      
     }
 
@@ -2394,7 +2420,7 @@ function showEditMode() {
     hiddenId.value = row[idFieldName] || '';
     content.appendChild(hiddenId);
 
-    const rawStatus = row[tablePrefix + 'TYPEREG'] || "Registrado";
+    const rawStatus = row[tablePrefix + 'TYPEREG'] || "REGISTRADO";
     const isActuallyBlocked = String(rawStatus).toUpperCase() === "BLOQUEADO";
     const statusIconClass = isTransferRelated ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 rounded-full transition-all';
 
@@ -2505,14 +2531,35 @@ function showEditMode() {
                 valueElement = `<input type="text" data-field="${key}" data-raw="${val}" value="" placeholder="${getFormattedValue(key, val)}" onfocus="setupNumericAccounting(this)" onblur="restoreNumericFormat(this, '${key}')" oninput="applyAccountingMask(this)" class="bg-gray-800/50 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full text-right focus:outline-none transition-colors placeholder:text-blue-400/60">`;
             } 
             else {
-                // Lógica específica para NUMERO con máscara de guiones
-                const isNumeroCard = cleanKey.endsWith('NUMERO');
-                const onInputEvent = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
-                const maxLengthAttr = isNumeroCard ? 'maxlength="19"' : '';
+                // 1. Identificamos si es el campo de descripción
+                const isDescriptionField = cleanKey.includes('DESCRIPCION');
+                
+                // 2. Tu configuración: Borde Rojo + Fondo Azul si es Transferencia/Descripción
+                const specialStyle = (isTransferRelated && isDescriptionField) 
+                    ? 'border rounded border-red-500/50 bg-blue-500/10' 
+                    : 'bg-gray-800/30 border border-transparent';
 
-                valueElement = `<input type="text" data-field="${key}" value="${val}" oninput="${onInputEvent}" ${maxLengthAttr} class="bg-gray-800/30 border border-transparent focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+                if (isDescriptionField) {
+                    // 3. Placeholder solo si el valor está vacío
+                    const placeholderAttr = !val ? 'placeholder="Escriba una nota o referencia aquí..."' : '';
+                    
+                    valueElement = `
+                        <textarea data-field="${key}" rows="2" ${placeholderAttr}
+                            class="${specialStyle} focus:border-red-500 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-all resize-none placeholder:text-gray-500 placeholder:italic placeholder:font-normal uppercase">${val}</textarea>`;
+                } else {
+                    // 4. Lógica estándar para otros campos (como NUMERO)
+                    const isNumeroCard = cleanKey.endsWith('NUMERO');
+                    const onInputEvent = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
+                    const maxLengthAttr = isNumeroCard ? 'maxlength="19"' : '';
+
+                    valueElement = `
+                        <input type="text" data-field="${key}" value="${val}" 
+                            oninput="${onInputEvent}" ${maxLengthAttr} 
+                            class="${specialStyle} focus:border-gray-500 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+                }
             }
 
+            // Renderizado final del item
             item.innerHTML = `<span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">${cfg.label || key}${asterisco}</span>${valueElement}`;
             content.appendChild(item);
         });
@@ -2800,7 +2847,7 @@ function TransferAccountRecord() {
                 </div>`;
         } 
         else if (isTypeRegField) {
-            inputHTML = `<input type="hidden" data-field="${key}" value="Registrado">`;
+            inputHTML = `<input type="hidden" data-field="${key}" value="REGISTRADO">`;
         }
         else if (isReadOnly) {
             const val = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO') ? "0,00" : "";
