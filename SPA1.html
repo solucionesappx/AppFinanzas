@@ -646,6 +646,7 @@
         const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
         const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
         const perfil = localStorage.getItem(KEYS.PERFIL); 
+        const tiendaId = localStorage.getItem(KEYS.TIENDA_ID); 
 
         const requestDiagnostic = {
             tableName: tableName,
@@ -657,6 +658,7 @@
 
         // Construcción de URL con parámetros estrictos
         const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
+                    `&tiendaId=${encodeURIComponent(tiendaId)}` + 
                     `&userTienda=${encodeURIComponent(userTienda)}` +
                     `&appId=${encodeURIComponent(appId)}` +
                     `&usuarioId=${encodeURIComponent(usuarioId)}` + 
@@ -854,7 +856,7 @@ function renderTable(data) {
                 </span>` : '';
 
             const th = document.createElement('th');
-            th.className = "py-3 px-3 min-w-[120px] align-middle border-b border-gray-700 select-none cursor-pointer group text-center"; 
+            th.className = "py-3 px-3 min-w-[100px] align-middle border-b border-gray-700 select-none cursor-pointer group text-center"; 
             
             const iconName = sortConfig.key === h ? (sortConfig.direction === 'desc' ? 'chevron-down' : 'chevron-up') : 'chevrons-up-down';
 
@@ -1424,6 +1426,8 @@ function renderTable(data) {
 
         const finalPayload = {
             action: esPadre ? 'deleteTransferCascade' : 'deleteDynamicDataTD',
+            // SIN comillas para que use la constante:
+            tiendaId: localStorage.getItem(KEYS.TIENDA_ID), 
             TABLA_DESTINO: tableOrigin,
             [prefix + 'ID']: recordId,
             REF_CASCADE: esPadre ? `TRANSFERENCIA ${recordId}` : '',
@@ -1493,11 +1497,18 @@ function renderTable(data) {
         toggleGlobalLoader(true, title, desc);
 
         try {
-            // 4. Petición al servidor (GAS)
-            // Usamos URLSearchParams para asegurar que el backend reciba los datos correctamente
+            // Aseguramos que siempre viaje el ID de la tienda si no viene en el payload
+            if (!payload.tiendaId) {
+                payload.tiendaId = localStorage.getItem('KEYS.TIENDA_ID');
+            }
+
             const r = await fetch(GAS_URL, { 
                 method: 'POST', 
-                body: new URLSearchParams(payload) 
+                // Cambiar a JSON suele ser más estable para Apps Script con payloads complejos
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8', // Evita problemas de CORS Preflight
+                }
             });
             
             const res = await r.json();
@@ -2249,6 +2260,7 @@ async function saveRecord() {
     const finalPayload = {
         ...payload,
         action: gasAction,
+        tiendaId: localStorage.getItem(KEYS.TIENDA_ID), 
         TABLA_DESTINO: currentTableName,
         currentUser: userId
     };
@@ -2309,6 +2321,7 @@ async function saveRecord() {
 
         const payload = {
             action: "actualizarValorEnDiccionario", // O la acción que procese tu GAS
+            tiendaId: localStorage.getItem(KEYS.TIENDA_ID), 
             usuarioId: localStorage.getItem('Usuario_ID'), // El ID que identifica al dueño
             columnaNombre: "Valores_Encabezado",
             nuevoValor: JSON.stringify(listaAlias), // Formato JSON correcto
