@@ -163,7 +163,7 @@
         </div>
     
 <script>
-    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',USUARIO_ID:'Usuario_ID',INPUT_ID:'Filter_ID'};
+    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID',INPUT_ID:'Filter_ID'};
     document.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem(KEYS.CORREO))window.location.replace('index.html');initUI();if(window.lucide)lucide.createIcons()});
     function toggleView(){const m=localStorage.getItem(KEYS.VIEW_MODE)==='desktop'?'mobile':'desktop';localStorage.setItem(KEYS.VIEW_MODE,m);applyViewMode(m)}
     function applyViewMode(m){
@@ -376,9 +376,11 @@ async function fetchDashboardData() {
     const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
     const usuarioId = localStorage.getItem('Usuario_ID');
     const perfil = localStorage.getItem(KEYS.PERFIL);
+    const tiendaId = localStorage.getItem(KEYS.TIENDA_ID); 
 
     const url = `${GAS_URL}?action=getDashboardSummary` +
                 `&userTienda=${encodeURIComponent(userTienda)}` +
+                `&tiendaId=${encodeURIComponent(tiendaId)}` + 
                 `&usuarioId=${encodeURIComponent(usuarioId)}` +
                 `&perfil=${encodeURIComponent(perfil)}`;
 
