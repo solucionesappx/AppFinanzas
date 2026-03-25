@@ -374,7 +374,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 </body>
 <script>
     // 1. CONSTANTES Y ESTADO GLOBAL
-    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID'};
+    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID',INPUT_ID:'Filter_ID'};
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbySY71ObLBUZeO9LwdOkH1Qh5Mmv-V-uws_Yvz_cN8L51baFWm9WgloRBCzteqBRCUi/exec';
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCNpyLy2e59m3A03v10PZKYSsRvyJz4llCk_6OWQPQV0yMotgTj303bXGcxTiClVmTGQ/exec";
     const DEFAULT_TABLE_NAME = 'TD101_MAIN';   
@@ -395,7 +395,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     document.addEventListener('DOMContentLoaded', () => {
         // Verificación de seguridad
         if(!localStorage.getItem(KEYS.CORREO)) {
-            window.location.replace('index.html');
+            window.location.replace('index_SPA1.html');
             return;
         }
         
@@ -488,7 +488,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         if (tiendaIdDisplay && tiendaIdValue) tiendaIdDisplay.textContent = tiendaIdValue; fetchData(currentTableName);
     }
 
-    function logout(){localStorage.clear();window.location.href='index.html'}  
+    function logout(){localStorage.clear();window.location.href='index_SPA1.html'}  
 
     // 3. GESTIÓN DE VISTA (Mobile/Desktop)
     function adjustLayoutForOrientation() {
@@ -612,7 +612,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         if(clear) clear.onclick = () => {
             input.value = '';
             currentSearchTerm = "";
-            applyFiltersAndSort();
+            resetAllColumnFilters(true);
+            //applyFiltersAndSort();
         };
         if(config) config.onclick = () => {
             const panel = document.getElementById('column-config-panel');
@@ -1286,7 +1287,7 @@ function showSystemModal({
     placeholder = 'Valor...',
     inputType = 'text',
     inputValue = '',
-    isRange = false // Nuevo parámetro para activar el doble input
+    isRange = false
 }) {
     return new Promise(res => {
         const m = document.getElementById('system-modal'),
@@ -1295,7 +1296,7 @@ function showSystemModal({
             ic = document.getElementById('sys-modal-icon'),
             ac = document.getElementById('sys-modal-actions'),
             iCont = document.getElementById('sys-modal-input-container'),
-            input = document.getElementById('sys-modal-input');
+            inputDefault = document.getElementById('sys-modal-input'); // Tu input del HTML
 
         ti.textContent = title;
         te.innerHTML = text;
@@ -1306,60 +1307,58 @@ function showSystemModal({
         
         ac.innerHTML = '';
 
-        if (isPrompt) {
-            iCont.classList.remove('hidden');
-            iCont.className = "mt-4 mb-6 flex flex-col gap-3"; // Cambiamos a columna para el rango
+// --- Dentro de showSystemModal, sección if (isPrompt) ---
 
-            // Limpiar contenedor
-            iCont.innerHTML = '';
+if (isPrompt) {
+    iCont.classList.remove('hidden');
+    
+    if (isRange && inputType === 'date') {
+        iCont.className = "mb-6 flex flex-col gap-3";
+        const [val1, val2] = (inputValue || "").split('|');
+        
+        iCont.innerHTML = `
+            <div class="flex flex-col gap-1 w-full text-left">
+                <label class="text-[10px] text-gray-500 uppercase ml-1">Desde:</label>
+                <input type="date" id="sys-modal-input-from" value="${val1 || ''}" 
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
+            </div>
+            <div class="flex flex-col gap-1 w-full text-left">
+                <label class="text-[10px] text-gray-500 uppercase ml-1">Hasta:</label>
+                <input type="date" id="sys-modal-input-to" value="${val2 || ''}" 
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
+            </div>
+        `;
+    } else {
+        // --- MODO SIMPLE: Re-creación segura del input ---
+        iCont.className = "relative mb-6 flex items-center";
+        iCont.innerHTML = ''; // Limpiamos el contenido del contenedor
+        
+        // Creamos un nuevo input en lugar de intentar reusar uno que pudo ser borrado
+        const nuevoInput = document.createElement('input');
+        nuevoInput.id = 'sys-modal-input'; // Mantenemos el ID que espera la función close
+        nuevoInput.type = inputType;
+        nuevoInput.value = inputValue;
+        nuevoInput.placeholder = placeholder;
+        
+        const pr = (inputType === 'date') ? 'px-3' : 'pl-3 pr-10';
+        nuevoInput.className = `w-full bg-gray-900 border border-gray-700 rounded-lg py-2 text-white text-left focus:border-blue-500 outline-none ${pr}`;
+        
+        iCont.appendChild(nuevoInput);
 
-            if (isRange && inputType === 'date') {
-                // --- MODO RANGO DE FECHAS ---
-                const [val1, val2] = (inputValue || "").split('|');
-                
-                iCont.innerHTML = `
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-500 uppercase ml-1">Desde:</label>
-                        <input type="date" id="sys-modal-input-from" value="${val1 || ''}" 
-                               class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-4 text-sm text-white outline-none focus:border-blue-500 transition-all">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-gray-500 uppercase ml-1">Hasta:</label>
-                        <input type="date" id="sys-modal-input-to" value="${val2 || ''}" 
-                               class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-4 text-sm text-white outline-none focus:border-blue-500 transition-all">
-                    </div>
-                `;
-            } else {
-                // --- MODO ÚNICO (TEXTO O FECHA SIMPLE) ---
-                const isDate = (inputType === 'date');
-                const pr = isDate ? 'pr-4' : 'pr-10';
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = "relative w-full";
-                wrapper.innerHTML = `
-                    <input type="${inputType}" id="sys-modal-input-single" value="${inputValue}" placeholder="${placeholder}"
-                           class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-4 ${pr} text-sm text-white outline-none focus:border-blue-500 transition-all">
-                `;
+        if (inputType !== 'date') {
+            const btnX = document.createElement('button');
+            btnX.className = "absolute right-3 text-red-400 hover:text-red-600 focus:outline-none";
+            btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+            btnX.onclick = () => { nuevoInput.value = ''; nuevoInput.focus(); };
+            iCont.appendChild(btnX);
+        }
+    }
 
-                if (!isDate) {
-                    const btnX = document.createElement('button');
-                    btnX.className = "absolute right-3 top-1/2 -translate-y-1/2 text-red-400 hover:text-red-600";
-                    btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
-                    btnX.onclick = () => { 
-                        const inp = document.getElementById('sys-modal-input-single');
-                        inp.value = ''; inp.focus(); 
-                    };
-                    wrapper.appendChild(btnX);
-                }
-                iCont.appendChild(wrapper);
-            }
-
-            setTimeout(() => {
-                const firstInput = iCont.querySelector('input');
-                if (firstInput) firstInput.focus();
-            }, 150);
-
-        } else {
+    setTimeout(() => {
+        const first = iCont.querySelector('input');
+        if (first) first.focus();
+    }, 150);
+} else {
             iCont.classList.add('hidden');
         }
 
@@ -1369,20 +1368,23 @@ function showSystemModal({
                 return res(null);
             }
 
-            let finalVal;
+            let finalVal = '';
             if (isRange && inputType === 'date') {
                 const d1 = document.getElementById('sys-modal-input-from').value;
                 const d2 = document.getElementById('sys-modal-input-to').value;
-                finalVal = (d1 || d2) ? `${d1}|${d2}` : '';
+                if (d1 && d2) finalVal = `${d1}|${d2}`;
+                else if (d1 || d2) finalVal = d1 || d2;
             } else {
-                finalVal = document.getElementById('sys-modal-input-single').value;
+                // Buscamos el input que esté presente (el default o el single)
+                const el = document.getElementById('sys-modal-input');
+                finalVal = el ? el.value : '';
             }
 
             m.classList.add('hidden');
             res(finalVal);
         };
 
-        // Botones
+        // Acciones
         if (showCancel || isPrompt) {
             const bc = document.createElement('button');
             bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
@@ -1970,17 +1972,12 @@ function renderColumnConfig() {
     }
 
     // --- CORRECCIÓN CLAVE: REINICIALIZACIÓN ---
-    // Si el panel estaba oculto, forzamos la limpieza para cargar la tabla nueva
     if (panel && panel.classList.contains('hidden')) {
-        currentHeadersConfig = []; // Vaciamos para obligar al Paso 2 a ejecutarse
-        
-        // (Opcional) Tu respaldo de seguridad original
-        // originalFiltersBackup = ... (tu lógica de backup aquí si la necesitas)
+        currentHeadersConfig = []; 
     }
 
-    // 2. Inicialización de currentHeadersConfig (Ahora sí entrará aquí siempre al abrir)
+    // 2. Inicialización de currentHeadersConfig
     if (currentHeadersConfig.length === 0 && originalData.length > 0) {
-        // Obtenemos los headers directamente de tableConfig que corresponde a la tabla actual
         const rawHeaders = tableConfig.columnOrder || Object.keys(originalData[0]);
         
         const filteredHeaders = rawHeaders.filter(header => {
@@ -1989,7 +1986,6 @@ function renderColumnConfig() {
         });
 
         currentHeadersConfig = filteredHeaders.map((header, index) => {
-            // Asegúrate de usar el configMap o mappedConfig actualizado para la tabla actual
             const colConfig = (typeof mappedConfig !== 'undefined') ? mappedConfig[header] : null;
             
             return {
@@ -1998,18 +1994,27 @@ function renderColumnConfig() {
                         ? tableConfig.displayMap[header] 
                         : header,
                 order: index + 1,
-                // Validamos 'x' o 'xx' según tu estándar de visibilidad
                 visible: colConfig ? (colConfig.visible === 'x' || colConfig.visible === 'xx') : true,
                 filterValue: ""
             };
         });
     }
 
-    // 3. Renderizado del HTML (Tu lógica de generación de HTML)
+    // 3. Renderizado del HTML
     let html = "";
     currentHeadersConfig.forEach((col, idx) => {
         const hasFilter = col.filterValue && col.filterValue.trim() !== "";
         const isVisible = col.visible !== false;
+
+        // --- NUEVA LÓGICA DE FORMATEO PARA EL LABEL DEL FILTRO ---
+        let filterDisplay = col.filterValue;
+        if (hasFilter && col.filterValue.includes('|')) {
+            const [desde, hasta] = col.filterValue.split('|');
+            // Si tiene ambos valores, ponemos "Desde... Hasta...", si no, solo el que tenga
+            if (desde && hasta) filterDisplay = `DEL ${desde} AL ${hasta}`;
+            else filterDisplay = desde || hasta;
+        }
+        // ---------------------------------------------------------
         
         html += `
             <div class="flex items-center gap-3 p-2 bg-[#1e293b] rounded border ${hasFilter ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-700/50'} ${!isVisible ? 'opacity-50' : ''}">
@@ -2021,9 +2026,9 @@ function renderColumnConfig() {
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <div class="flex-grow min-w-0">
+                <div class="flex-grow min-w-0 text-left">
                     <span class="text-[12px] font-medium ${isVisible ? 'text-gray-200' : 'text-gray-500'} uppercase block truncate">${col.label}</span>
-                    ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Buscando: "${col.filterValue}"</span>` : ''}
+                    ${hasFilter ? `<span class="text-[10px] text-blue-400 italic block truncate font-medium">Filtro: ${filterDisplay}</span>` : ''}
                 </div>
                 <div class="flex items-center gap-3 flex-shrink-0">
                     <button onclick="setColumnFilter(${idx})" class="${hasFilter ? 'text-blue-400 hover:text-red-400' : 'text-gray-600 hover:text-blue-400'} transition-colors">
@@ -2368,29 +2373,111 @@ async function saveRecord() {
     }
 }
 
-    function resetAllColumnFilters() {
-        // 1. Limpiar el estado de los filtros en el array de configuración
-        if (currentHeadersConfig) {
-            currentHeadersConfig.forEach(col => {
-                col.filterValue = "";
+async function saveCurrentConfig() {
+    if (!currentTableName) return;
+
+    // 1. Elementos de UI
+    const configPanel = document.getElementById('column-config-panel');
+
+    // 2. Resolver mappedConfig (Variable global o localStorage)
+    let activeMappedConfig = (typeof mappedConfig !== 'undefined') 
+        ? mappedConfig 
+        : JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+
+    // --- MEJORA: Loader Personalizado ---
+    toggleGlobalLoader(true, "Guardando configuración filtros", "Sincronizando Base de Datos<br>Por favor espere...");
+
+    try {
+        // --- A. ACTUALIZACIÓN DE LÓGICA LOCAL ---
+        if (typeof tableConfig !== 'undefined') {
+            tableConfig.columnOrder = currentHeadersConfig.map(col => col.id);
+        }
+
+        // Sincronizamos visibilidad Y el valor del filtro
+        currentHeadersConfig.forEach(col => {
+            if (activeMappedConfig[col.id]) {
+                activeMappedConfig[col.id].visible = col.visible ? 'X' : '';
+                // CLAVE: Guardamos el filtro para que renderColumnConfig lo lea después
+                activeMappedConfig[col.id].filterValue = col.filterValue; 
+            }
+        });
+
+        // 3. Persistencia local
+        const configData = JSON.stringify(currentHeadersConfig);
+        localStorage.setItem(`config_${currentTableName}`, configData);
+        localStorage.setItem('TABLE_CONFIG', JSON.stringify(activeMappedConfig));
+
+        if (typeof mappedConfig !== 'undefined') {
+            mappedConfig = activeMappedConfig;
+        }
+
+        // --- B. SINCRONIZACIÓN CON EL BACKEND ---
+        const userId = localStorage.getItem('USUARIO_ID') || 'N/A'; 
+        const userName = localStorage.getItem('NOMBRE') || 'Sin Nombre';    
+        const userTienda = localStorage.getItem('TIENDA') || 'General';  
+        const userTiendaID = localStorage.getItem('TIENDA_ID') || 'N/A';
+
+        const url = `${SCRIPT_URL}?action=saveTableConfig` + 
+                    `&userId=${encodeURIComponent(userId)}` + 
+                    `&userName=${encodeURIComponent(userName)}` +      
+                    `&userTienda=${encodeURIComponent(userTienda)}` +  
+                    `&userTiendaID=${encodeURIComponent(userTiendaID)}` + 
+                    `&tableName=${encodeURIComponent(currentTableName)}` + 
+                    `&configData=${encodeURIComponent(configData)}`;
+                        
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            if (configPanel) configPanel.classList.add('hidden');
+
+            // Cerramos loader antes del modal de éxito
+            toggleGlobalLoader(false);
+
+            showSystemModal({ 
+                title: 'Proceso Completado', 
+                text: `La configuración de <b>${currentTableName}</b> se ha sincronizado correctamente.`, 
+                type: 'info' 
             });
+
+            if (typeof applyFiltersAndSort === 'function') {
+                applyFiltersAndSort(); 
+            } else if (typeof renderTable === 'function') {
+                renderTable(originalData);
+            }
         }
-
-        // 2. Refrescar la interfaz visual del modal
-        renderColumnConfig();
-
-        // 3. RE-APLICAR LA LÓGICA GLOBAL
-        // Llamamos a applyFiltersAndSort para que recalcule la tabla
-        // considerando el buscador global y el ordenamiento actual,
-        // pero ya sin los filtros de columna que acabamos de borrar.
-        if (typeof applyFiltersAndSort === 'function') {
-            applyFiltersAndSort();
-        } else if (typeof renderTable === 'function' && typeof originalData !== 'undefined') {
-            // Respaldo por si la función maestra no estuviera disponible
-            renderTable(originalData);
-        }
-
+    } catch (e) { 
+        console.error("Error en saveCurrentConfig:", e);
+        toggleGlobalLoader(false);
+        if (typeof applyFiltersAndSort === 'function') applyFiltersAndSort();
+    } finally {
+        // Garantizamos que el loader se cierre siempre
+        toggleGlobalLoader(false);
     }
+}
+
+function resetAllColumnFilters(silent = false) {
+    // 1. Limpiar el estado de los filtros en el array
+    if (currentHeadersConfig) {
+        currentHeadersConfig.forEach(col => {
+            col.filterValue = "";
+        });
+    }
+
+    // 2. Refrescar la interfaz visual SOLO si NO es silencio
+    // O mejor aún: solo si el panel YA está abierto.
+    if (!silent) {
+        const panel = document.getElementById('column-config-panel');
+        if (panel && !panel.classList.contains('hidden')) {
+            renderColumnConfig();
+        }
+    }
+
+    // 3. Re-aplicar la lógica de la tabla (Esto es lo que limpia los datos)
+    if (typeof applyFiltersAndSort === 'function') {
+        applyFiltersAndSort();
+    }
+}
 
     async function sincronizarAliasAlDiccionario(listaAlias) {
         if (!listaAlias || listaAlias.length === 0) return;
