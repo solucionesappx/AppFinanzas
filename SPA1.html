@@ -90,6 +90,19 @@
         main { padding: 64px 0.5rem; } 
         .table-scroll-container { max-height: calc(100vh - 200px); } 
     }
+    /* Cambiar el icono a Blanco (Invertir color) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* Pasa de negro a blanco */
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+/* Efecto Hover para que resalte al pasar el mouse */
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
 /* .btn-disabled-visual {opacity: 0.2 !important; pointer-events: none !important; filter: grayscale(1); cursor: not-allowed;} */
     
 </style>
@@ -1264,90 +1277,130 @@ function renderTable(data) {
         }).sort((a, b) => a.order - b.order);
     }
 
-    function showSystemModal({
-        title,
-        text,
-        type = 'info',
-        showCancel = false,
-        isPrompt = false,
-        placeholder = 'Valor...',
-        inputType = 'text',
-        inputValue = '' // Nuevo parámetro para recibir el filtro actual
-    }) {
-        return new Promise(res => {
-            const m = document.getElementById('system-modal'),
-                ti = document.getElementById('sys-modal-title'),
-                te = document.getElementById('sys-modal-text'),
-                ic = document.getElementById('sys-modal-icon'),
-                ac = document.getElementById('sys-modal-actions'),
-                iCont = document.getElementById('sys-modal-input-container'),
-                input = document.getElementById('sys-modal-input');
+function showSystemModal({
+    title,
+    text,
+    type = 'info',
+    showCancel = false,
+    isPrompt = false,
+    placeholder = 'Valor...',
+    inputType = 'text',
+    inputValue = '',
+    isRange = false // Nuevo parámetro para activar el doble input
+}) {
+    return new Promise(res => {
+        const m = document.getElementById('system-modal'),
+            ti = document.getElementById('sys-modal-title'),
+            te = document.getElementById('sys-modal-text'),
+            ic = document.getElementById('sys-modal-icon'),
+            ac = document.getElementById('sys-modal-actions'),
+            iCont = document.getElementById('sys-modal-input-container'),
+            input = document.getElementById('sys-modal-input');
 
-            ti.textContent = title;
-            te.innerHTML = text;
+        ti.textContent = title;
+        te.innerHTML = text;
 
-            // Iconografía y Colores
-            const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
-            const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
-            ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
-            
-            ac.innerHTML = '';
+        const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
+        const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
+        ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
+        
+        ac.innerHTML = '';
 
-            // Manejo del Input (Modo Prompt)
-            if (isPrompt) {
-                iCont.classList.remove('hidden');
-                iCont.className = "relative mt-4 mb-6 flex items-center"; 
+        if (isPrompt) {
+            iCont.classList.remove('hidden');
+            iCont.className = "mt-4 mb-6 flex flex-col gap-3"; // Cambiamos a columna para el rango
+
+            // Limpiar contenedor
+            iCont.innerHTML = '';
+
+            if (isRange && inputType === 'date') {
+                // --- MODO RANGO DE FECHAS ---
+                const [val1, val2] = (inputValue || "").split('|');
                 
-                input.value = inputValue; 
-                input.type = inputType; 
-                input.placeholder = placeholder;
-                // Estilo del input según tu diseño
-                input.className = "w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-4 pr-10 text-sm text-white outline-none focus:border-blue-500";
-
-                // Limpiar botones previos (como el ojo de password o X antiguas)
-                const oldExtras = iCont.querySelectorAll('.absolute');
-                oldExtras.forEach(el => el.remove());
-
-                // Botón de limpieza rápida (X)
-                const clearBtn = document.createElement('button');
-                clearBtn.type = "button";
-                clearBtn.className = "absolute right-3 text-gray-500 hover:text-red-500 transition-colors";
-                clearBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
-                clearBtn.onclick = () => { input.value = ''; input.focus(); };
-                iCont.appendChild(clearBtn);
-
-                setTimeout(() => input.focus(), 150);
+                iCont.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-gray-500 uppercase ml-1">Desde:</label>
+                        <input type="date" id="sys-modal-input-from" value="${val1 || ''}" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-4 text-sm text-white outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-gray-500 uppercase ml-1">Hasta:</label>
+                        <input type="date" id="sys-modal-input-to" value="${val2 || ''}" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-4 text-sm text-white outline-none focus:border-blue-500 transition-all">
+                    </div>
+                `;
             } else {
-                iCont.classList.add('hidden');
+                // --- MODO ÚNICO (TEXTO O FECHA SIMPLE) ---
+                const isDate = (inputType === 'date');
+                const pr = isDate ? 'pr-4' : 'pr-10';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative w-full";
+                wrapper.innerHTML = `
+                    <input type="${inputType}" id="sys-modal-input-single" value="${inputValue}" placeholder="${placeholder}"
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-4 ${pr} text-sm text-white outline-none focus:border-blue-500 transition-all">
+                `;
+
+                if (!isDate) {
+                    const btnX = document.createElement('button');
+                    btnX.className = "absolute right-3 top-1/2 -translate-y-1/2 text-red-400 hover:text-red-600";
+                    btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+                    btnX.onclick = () => { 
+                        const inp = document.getElementById('sys-modal-input-single');
+                        inp.value = ''; inp.focus(); 
+                    };
+                    wrapper.appendChild(btnX);
+                }
+                iCont.appendChild(wrapper);
             }
 
-            const close = (val) => {
+            setTimeout(() => {
+                const firstInput = iCont.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 150);
+
+        } else {
+            iCont.classList.add('hidden');
+        }
+
+        const close = (confirmed) => {
+            if (!confirmed) {
                 m.classList.add('hidden');
-                res(val);
-            };
-
-            // Botón Cancelar
-            if (showCancel || isPrompt) {
-                const bc = document.createElement('button');
-                bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
-                bc.textContent = 'Cancelar';
-                bc.onclick = () => close(null);
-                ac.appendChild(bc);
+                return res(null);
             }
 
-            // Botón Aceptar
-            const bp = document.createElement('button');
-            bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
-            bp.textContent = 'Aceptar';
-            bp.onclick = () => close(isPrompt ? input.value : true);
-            ac.appendChild(bp);
+            let finalVal;
+            if (isRange && inputType === 'date') {
+                const d1 = document.getElementById('sys-modal-input-from').value;
+                const d2 = document.getElementById('sys-modal-input-to').value;
+                finalVal = (d1 || d2) ? `${d1}|${d2}` : '';
+            } else {
+                finalVal = document.getElementById('sys-modal-input-single').value;
+            }
 
-            input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); bp.click(); } };
+            m.classList.add('hidden');
+            res(finalVal);
+        };
 
-            m.classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-        });
-    }
+        // Botones
+        if (showCancel || isPrompt) {
+            const bc = document.createElement('button');
+            bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
+            bc.textContent = 'Cancelar';
+            bc.onclick = () => close(false);
+            ac.appendChild(bc);
+        }
+
+        const bp = document.createElement('button');
+        bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
+        bp.textContent = 'Aceptar';
+        bp.onclick = () => close(true);
+        ac.appendChild(bp);
+
+        m.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    });
+}
 
     async function deleteRecord() {
         // 1. EXTRACCIÓN DE DATOS DE USUARIO Y REGISTRO
@@ -2025,23 +2078,46 @@ function renderColumnConfig() {
         renderColumnConfig();
     }
 
-    async function setColumnFilter(idx) {
-        const col = currentHeadersConfig[idx];
-        
-        const newValue = await showSystemModal({
-            title: `Filtrar: ${col.label}`,
-            text: `Criterio para "${col.label}":`,
-            isPrompt: true,
-            inputValue: col.filterValue || '',
-            type: 'info',
-            showCancel: true
-        });
+async function setColumnFilter(idx) {
+    const col = currentHeadersConfig[idx];
+    const isDate = col.label.toUpperCase().includes('FECHA') || col.label.toUpperCase().includes('DATE');
+    
+    let initialValue = col.filterValue || '';
 
-        if (newValue !== null) {
-        currentHeadersConfig[idx].filterValue = newValue.trim();
-        renderColumnConfig(); // Esto refresca el modal para mostrar el texto "Filtrando: ..."
+    // 1. CONVERSIÓN DE IDA (Para el modal)
+    // Ahora manejamos si el valor tiene un rango "DD/MM/YYYY|DD/MM/YYYY"
+    if (isDate && initialValue) {
+        initialValue = initialValue.split('|').map(v => {
+            return v.includes('/') ? v.split('/').reverse().join('-') : v;
+        }).join('|');
     }
+
+    const newValue = await showSystemModal({
+        title: `Filtrar: ${col.label}`,
+        text: isDate ? `Seleccione el rango para "${col.label}":` : `Criterio para "${col.label}":`,
+        isPrompt: true,
+        inputType: isDate ? 'date' : 'text',
+        isRange: isDate, // <--- Esta es la funcionalidad nueva que activa el doble input
+        inputValue: initialValue,
+        type: 'info',
+        showCancel: true
+    });
+
+    if (newValue !== null) {
+        let finalValue = newValue.trim();
+        
+        // 2. CONVERSIÓN DE VUELTA (Para la configuración)
+        // Convertimos el rango "YYYY-MM-DD|YYYY-MM-DD" de vuelta a "DD/MM/YYYY|DD/MM/YYYY"
+        if (isDate && finalValue.includes('-')) {
+            finalValue = finalValue.split('|').map(v => {
+                return v.includes('-') ? v.split('-').reverse().join('/') : v;
+            }).join('|');
+        }
+
+        currentHeadersConfig[idx].filterValue = finalValue;
+        renderColumnConfig(); 
     }
+}
 
     function updateColVis(idx, val) { 
         // val es un booleano (true para mostrar, false para ocultar)
