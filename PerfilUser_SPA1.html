@@ -88,7 +88,7 @@
     </div>
     
 <script>
-    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',USUARIO_ID:'Usuario_ID',INPUT_ID:'Filter_ID'};
+    const KEYS={NOMBRE:'Usuario_Nombre',PERFIL:'Usuario_Perfil',CORREO:'Usuario_Correo',VIEW_MODE:'App_View_Mode',THEME:'App_Theme',TIENDA:'Usuario_Tienda',TIENDA_ID:'Usuario_Tienda_ID',USUARIO_ID:'Usuario_ID',INPUT_ID:'Filter_ID'};
     document.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem(KEYS.CORREO))window.location.replace('index.html');initUI();if(window.lucide)lucide.createIcons()});
     function initUI(){
         const nom = localStorage.getItem(KEYS.NOMBRE);
@@ -156,6 +156,7 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
             { id: 'Nombre', l: 'Nombre Usuario', v: localStorage.getItem(PROFILE_KEYS.NOMBRE), i: true },
             { id: 'Usuario_ID', l: 'ID Usuario', v: localStorage.getItem(PROFILE_KEYS.USUARIO_ID), i: true },
             { id: 'Tienda', l: 'Tienda', v: localStorage.getItem(PROFILE_KEYS.TIENDA), i: true },
+            { id: 'Tienda_ID', l: 'Tienda ID', v: localStorage.getItem(PROFILE_KEYS.TIENDA_ID), i: true },
             { id: 'Perfil', l: 'Perfil', v: localStorage.getItem(PROFILE_KEYS.PERFIL), i: true },
             { id: 'Tema', l: 'Tema Interfaz App', v: currentTheme.toUpperCase() }, // Texto estático: DARK o LIGHT
             { id: 'Correo', l: 'Correo registrado', v: localStorage.getItem(PROFILE_KEYS.CORREO) },
@@ -195,7 +196,8 @@ console.log(`${key}: ${localStorage.getItem(storageKey)}`);
         const fields = [
             { id: 'Nombre', l: 'Nombre Usuario', v: localStorage.getItem(PROFILE_KEYS.NOMBRE), edit: false, i: true },
             { id: 'Usuario_ID', l: 'ID Usuario', v: localStorage.getItem(PROFILE_KEYS.USUARIO_ID), edit: false, i: true }, 
-            { id: 'Tienda', l: 'Tienda', v: localStorage.getItem(PROFILE_KEYS.TIENDA), edit: false, i: true },              
+            { id: 'Tienda', l: 'App', v: localStorage.getItem(PROFILE_KEYS.TIENDA), edit: false, i: true }, 
+            { id: 'Tienda_ID', l: 'App ID', v: localStorage.getItem(PROFILE_KEYS.TIENDA_ID), edit: false, i: true },            
             { id: 'Perfil', l: 'Perfil', v: localStorage.getItem(PROFILE_KEYS.PERFIL), edit: false, i: true },
             { id: 'Usuario_Tema', l: 'Tema Interfaz App', v: currentTheme, edit: true, isTheme: true },
             { id: 'Usuario_Correo', l: 'Correo registrado', v: localStorage.getItem(PROFILE_KEYS.CORREO), edit: true, type: 'email' },
@@ -289,6 +291,7 @@ async function handleEditSubmit(e) {
     const d = { 
         action: 'editProfile', 
         Usuario_Tienda: localStorage.getItem(PROFILE_KEYS.TIENDA), 
+        Usuario_Tienda_ID: localStorage.getItem(PROFILE_KEYS.TIENDA_ID), 
         Usuario_Correo_Actual: f.Usuario_Correo_Actual.value,
         Usuario_Correo: f.Usuario_Correo.value.trim() || localStorage.getItem(PROFILE_KEYS.CORREO), 
         Usuario_Telefono: f.Usuario_Telefono.value.trim() || localStorage.getItem(PROFILE_KEYS.TELEFONO),
