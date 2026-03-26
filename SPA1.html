@@ -91,19 +91,11 @@
         .table-scroll-container { max-height: calc(100vh - 200px); } 
     }
     /* Cambiar el icono a Blanco (Invertir color) */
-input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1); /* Pasa de negro a blanco */
-    cursor: pointer;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
+    input[type="date"]::-webkit-calendar-picker-indicator {filter: invert(1); cursor: pointer; opacity: 0.6; transition: opacity 0.2s;}
+    /* Efecto Hover para que resalte al pasar el mouse */
+    input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1;}
 
-/* Efecto Hover para que resalte al pasar el mouse */
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-}
-
-/* .btn-disabled-visual {opacity: 0.2 !important; pointer-events: none !important; filter: grayscale(1); cursor: not-allowed;} */
+    /* .btn-disabled-visual {opacity: 0.2 !important; pointer-events: none !important; filter: grayscale(1); cursor: not-allowed;} */
     
 </style>
 
@@ -549,7 +541,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
         // 3. EXCEPCIONES DE TEXTO (Configuración, EO y Identificadores)
         // Excepción para Números de cuenta, Tarjetas y Referencias
-        if (cleanKey.includes('NUMERO') || cleanKey.includes('CUENTA') || cleanKey.includes('REFERENCIA') || cleanKey.includes('IDOWNER')) {
+        if (cleanKey.includes('NUMERO') || cleanKey.includes('CUENTA') || cleanKey.endsWith('TD101REF') || cleanKey.includes('IDOWNER')) {
             return stringValue; 
         }
 
@@ -657,24 +649,25 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
         // --- EXTRACCIÓN DE SEGURIDAD DESDE LOCALSTORAGE ---
         const userTienda = localStorage.getItem(KEYS.TIENDA) || 'DEFAULT';
-        const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL'; 
+        const tiendaId = localStorage.getItem(KEYS.TIENDA_ID); 
         const usuarioId = localStorage.getItem('Usuario_ID'); // ID crítico para el filtro
         const perfil = localStorage.getItem(KEYS.PERFIL); 
-        const tiendaId = localStorage.getItem(KEYS.TIENDA_ID); 
+        //const appId = localStorage.getItem(KEYS.APP_ID) || 'GENERAL';         
+
 
         const requestDiagnostic = {
             tableName: tableName,
             usuarioId: usuarioId,
             perfil: perfil,
             userTienda: userTienda,
-            appId: appId
+            //appId: appId
         };
 
         // Construcción de URL con parámetros estrictos
         const url = `${GAS_URL}?tableName=${encodeURIComponent(tableName)}` +
                     `&tiendaId=${encodeURIComponent(tiendaId)}` + 
                     `&userTienda=${encodeURIComponent(userTienda)}` +
-                    `&appId=${encodeURIComponent(appId)}` +
+                    //`&appId=${encodeURIComponent(appId)}` +
                     `&usuarioId=${encodeURIComponent(usuarioId)}` + 
                     `&perfil=${encodeURIComponent(perfil)}`;
 
@@ -1004,77 +997,79 @@ function renderTable(data) {
         applyFiltersAndSort();
     }
 
-    function applyFiltersAndSort() {
-        // 1. Clonamos los datos originales
-        let data = [...originalData];
-        
-        // 2. LÓGICA DE FILTRADO GLOBAL (Buscador superior)
-        if (currentSearchTerm) {
-            const term = currentSearchTerm.toLowerCase();
-            data = data.filter(row => 
-                Object.entries(row).some(([key, v]) => {
-                    const cleanKey = key.toUpperCase();
-                    const isExcluded = cleanKey.includes('ID_INTERNO') || 
-                                    cleanKey.includes('NOTAS') || 
-                                    cleanKey.endsWith('ID');
-                    
-                    if (isExcluded || v == null) return false;
-
-                    const displayValue = String(getFormattedValue(key, v)).toLowerCase();
-                    const rawValue = String(v).toLowerCase();
-                    return displayValue.includes(term) || rawValue.includes(term);
-                })
-            );
-        }
-
-        // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
-        const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
-
-        if (activeColFilters.length > 0) {
-            data = data.filter(row => {
-                // "every" asegura que la fila cumpla TODOS los filtros de columna activos (Lógica AND)
-                return activeColFilters.every(filterObj => {
-                    const cellValue = row[filterObj.id];
-                    if (cellValue == null) return false;
-
-                    const searchTarget = String(cellValue).toLowerCase();
-                    const filterTerm = filterObj.filterValue.toLowerCase();
-                    
-                    return searchTarget.includes(filterTerm);
-                });
-            });
-        }
-
-        // 3. LÓGICA DE ORDENAMIENTO (Sort)
-        if (sortConfig.key) {
-            data.sort((a, b) => {
-                let vA = a[sortConfig.key] ?? '';
-                let vB = b[sortConfig.key] ?? '';
+function applyFiltersAndSort() {
+    // 1. Clonamos los datos originales
+    let data = [...originalData];
+    
+    // 2. LÓGICA DE FILTRADO GLOBAL (Buscador superior)
+    if (currentSearchTerm) {
+        const term = currentSearchTerm.toLowerCase();
+        data = data.filter(row => 
+            Object.entries(row).some(([key, v]) => {
+                const cleanKey = key.toUpperCase();
+                const isExcluded = cleanKey.includes('ID_INTERNO') || 
+                                   cleanKey.includes('NOTAS') || 
+                                   cleanKey.endsWith('ID');
                 
-                if (typeof vA === 'number' && typeof vB === 'number') {
-                    return sortConfig.direction === 'asc' ? vA - vB : vB - vA;
-                }
+                if (isExcluded || v == null) return false;
 
-                vA = String(vA).toLowerCase();
-                vB = String(vB).toLowerCase();
-
-                return sortConfig.direction === 'asc' 
-                    ? vA.localeCompare(vB) 
-                    : vB.localeCompare(vA);
-            });
-        }
-
-        // --- ACTUALIZACIÓN DE ESTADO Y UI ---
-        window.currentTableData = data; 
-        renderTable(data);
-
-        // Iluminar el botón de configuración si hay filtros de columna activos
-        const configBtn = document.getElementById('config-columns-btn'); // Ajusta al ID real de tu botón
-        if (configBtn) {
-            configBtn.classList.toggle('text-blue-400', activeColFilters.length > 0);
-            configBtn.classList.toggle('animate-pulse', activeColFilters.length > 0);
-        }
+                const displayValue = String(getFormattedValue(key, v)).toLowerCase();
+                const rawValue = String(v).toLowerCase();
+                return displayValue.includes(term) || rawValue.includes(term);
+            })
+        );
     }
+
+    // --- 2.1 FILTRADO ESPECÍFICO POR COLUMNA (Desde el Modal) ---
+    const activeColFilters = currentHeadersConfig.filter(c => c.filterValue && c.filterValue.trim() !== "");
+
+    if (activeColFilters.length > 0) {
+        data = data.filter(row => {
+            return activeColFilters.every(filterObj => {
+                const cellValue = row[filterObj.id];
+                if (cellValue == null) return false;
+
+                const searchTarget = String(cellValue).toLowerCase();
+                const filterTerm = filterObj.filterValue.toLowerCase();
+                
+                return searchTarget.includes(filterTerm);
+            });
+        });
+    }
+
+    // 3. LÓGICA DE ORDENAMIENTO (Sort)
+    if (sortConfig.key) {
+        data.sort((a, b) => {
+            let vA = a[sortConfig.key] ?? '';
+            let vB = b[sortConfig.key] ?? '';
+            
+            if (typeof vA === 'number' && typeof vB === 'number') {
+                return sortConfig.direction === 'asc' ? vA - vB : vB - vA;
+            }
+
+            vA = String(vA).toLowerCase();
+            vB = String(vB).toLowerCase();
+
+            return sortConfig.direction === 'asc' 
+                ? vA.localeCompare(vB) 
+                : vB.localeCompare(vA);
+        });
+    }
+
+    // --- ACTUALIZACIÓN DE ESTADO Y UI ---
+    window.currentTableData = data; 
+    renderTable(data);
+
+    // --- NUEVO: Actualización de Métricas según el filtro aplicado ---
+    updateMetrics(data);
+
+    // Iluminar el botón de configuración si hay filtros de columna activos
+    const configBtn = document.getElementById('config-columns-btn'); 
+    if (configBtn) {
+        configBtn.classList.toggle('text-blue-400', activeColFilters.length > 0);
+        configBtn.classList.toggle('animate-pulse', activeColFilters.length > 0);
+    }
+}
 
     function updateStatusTag(n) {
         const tag = document.getElementById('table-status-tag');
@@ -1857,71 +1852,79 @@ if (isPrompt) {
         }
     }
 
-    function updateMetrics() {
-        if (!originalData || originalData.length === 0) return;
-
-        const firstRow = originalData[0];
-        const keys = Object.keys(firstRow);
-        
-        const colImporte = keys.find(k => k.toUpperCase().endsWith('IMPORTE'));
-        const colMovimiento = keys.find(k => k.toUpperCase().endsWith('MOVIMIENTO'));
-        const colMoneda = keys.find(k => k.toUpperCase().endsWith('MONEDA'));
-        const colTypeReg = keys.find(k => k.toUpperCase().endsWith('TYPEREG')); 
-
-        if (!colImporte || !colMovimiento || !colMoneda) return;
-
-        // FILTRADO ROBUSTO
-        const filtered = originalData.filter(row => {
-            // 1. Validar Moneda (Indispensable)
-            const monedaMatch = row[colMoneda] === currentCurrency;
-            if (!monedaMatch) return false;
-
-            // 2. Normalizar valores para evitar errores de null/undefined
-            const movTipo = String(row[colMovimiento] || '').toUpperCase().trim();
-            const estatus = String(row[colTypeReg] || '').toLowerCase().trim();
-
-            // 3. REGLA DE EXCLUSIÓN: 
-            // Solo descartamos si es estrictamente 'TRANSFERENCIA' 
-            // o si el estatus contiene 'bloqueado'
-            const esTransferenciaMaestra = (movTipo === 'TRANSFERENCIA');
-            const estaBloqueado = estatus.includes('bloqueado');
-
-            return !esTransferenciaMaestra && !estaBloqueado;
-        });
-
-        let totalDebitos = 0;
-        let totalCreditos = 0;
-
-        filtered.forEach(row => {
-            const importe = parseFloat(row[colImporte]) || 0;
-            const tipo = String(row[colMovimiento] || '').toUpperCase().trim();
-
-            // Usamos includes para capturar "DÉBITO" con o sin tilde
-            if (tipo.includes('DÉB') || tipo.includes('DEB')) {
-                totalDebitos += importe;
-            } else if (tipo.includes('CRÉD') || tipo.includes('CRED')) {
-                totalCreditos += importe;
-            }
-        });
-
-        const saldoNeto = totalCreditos - totalDebitos;
-        
-        // --- Renderizado idéntico al original ---
-        const fmt = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const metricsMap = { 'Balance': saldoNeto, 'Debitos': totalDebitos, 'Abonos': totalCreditos };
-
-        Object.keys(metricsMap).forEach(key => {
-            const el = document.querySelector(`[data-metric="${key}"]`);
-            if (el) {
-                el.textContent = fmt.format(metricsMap[key]);
-                if (key === 'Balance') {
-                    el.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
-                    if (saldoNeto === 0) el.classList.add('text-white');
-                    else el.classList.add(saldoNeto < 0 ? 'text-red-400' : 'text-emerald-400');
-                }
-            }
-        });
+function updateMetrics(dataToUse = null) {
+    // Si no se pasan datos, usamos originalData como fallback inicial
+    const dataSource = dataToUse || originalData;
+    
+    if (!dataSource || dataSource.length === 0) {
+        // Opcional: Podrías resetear los textos a 0,00 aquí si dataSource está vacío
+        return;
     }
+
+    const firstRow = originalData[0]; // Usamos originalData solo para mapear las llaves
+    const keys = Object.keys(firstRow);
+    
+    const colImporte = keys.find(k => k.toUpperCase().endsWith('IMPORTE'));
+    const colMovimiento = keys.find(k => k.toUpperCase().endsWith('MOVIMIENTO'));
+    const colMoneda = keys.find(k => k.toUpperCase().endsWith('MONEDA'));
+    const colTypeReg = keys.find(k => k.toUpperCase().endsWith('TYPEREG')); 
+
+    if (!colImporte || !colMovimiento || !colMoneda) return;
+
+    // FILTRADO DE NEGOCIO (Sobre los datos ya filtrados por el usuario)
+    const filtered = dataSource.filter(row => {
+        // 1. Validar Moneda
+        const monedaMatch = row[colMoneda] === currentCurrency;
+        if (!monedaMatch) return false;
+
+        // 2. Normalizar valores
+        const movTipo = String(row[colMovimiento] || '').toUpperCase().trim();
+        const estatus = String(row[colTypeReg] || '').toLowerCase().trim();
+
+        // 3. Reglas de exclusión
+        const esTransferenciaMaestra = (movTipo === 'TRANSFERENCIA');
+        const estaBloqueado = estatus.includes('bloqueado');
+
+        return !esTransferenciaMaestra && !estaBloqueado;
+    });
+
+    let totalDebitos = 0;
+    let totalCreditos = 0;
+
+    filtered.forEach(row => {
+        const importe = parseFloat(row[colImporte]) || 0;
+        const tipo = String(row[colMovimiento] || '').toUpperCase().trim();
+
+        if (tipo.includes('DÉB') || tipo.includes('DEB')) {
+            totalDebitos += importe;
+        } else if (tipo.includes('CRÉD') || tipo.includes('CRED')) {
+            totalCreditos += importe;
+        }
+    });
+
+    const saldoNeto = totalCreditos - totalDebitos;
+    
+    // --- Renderizado con useGrouping ---
+    const fmt = new Intl.NumberFormat('es-ES', { 
+        useGrouping: true, 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+    });
+    
+    const metricsMap = { 'Balance': saldoNeto, 'Debitos': totalDebitos, 'Abonos': totalCreditos };
+
+    Object.keys(metricsMap).forEach(key => {
+        const el = document.querySelector(`[data-metric="${key}"]`);
+        if (el) {
+            el.textContent = fmt.format(metricsMap[key]);
+            if (key === 'Balance') {
+                el.classList.remove('text-emerald-400', 'text-red-400', 'text-white');
+                if (saldoNeto === 0) el.classList.add('text-white');
+                else el.classList.add(saldoNeto < 0 ? 'text-red-400' : 'text-emerald-400');
+            }
+        }
+    });
+}
 
     function changeCurrency(currency, btnElement) {
         currentCurrency = currency;
@@ -2581,6 +2584,9 @@ function showEditMode() {
     const row = storageData.DATOS_REGISTRO;
     if (!row) return;
 
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
     const idFieldName = tablePrefix + 'ID';
     const refFieldName = tablePrefix + 'REF';
@@ -3191,7 +3197,7 @@ function duplicateCurrentRecord() {
                 const cleanKey = key.toUpperCase();
                 
                 // Exclusión de IDs de registro
-                if (cleanKey.includes('REGISTRO') || cleanKey === idFieldName) return;
+                if (cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG') || cleanKey === idFieldName) return;
                 
                 const cfg = configMap[cleanKey] || {};
                 const visValue = String(cfg.visible || '').toLowerCase().trim();
