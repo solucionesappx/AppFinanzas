@@ -1290,96 +1290,83 @@ function showSystemModal({
             te = document.getElementById('sys-modal-text'),
             ic = document.getElementById('sys-modal-icon'),
             ac = document.getElementById('sys-modal-actions'),
-            iCont = document.getElementById('sys-modal-input-container'),
-            inputDefault = document.getElementById('sys-modal-input'); // Tu input del HTML
+            iCont = document.getElementById('sys-modal-input-container');
 
         ti.textContent = title;
         te.innerHTML = text;
 
         const colors = { warning: 'text-amber-400', info: 'text-blue-400', danger: 'text-red-400' };
         const icons = { warning: 'alert-triangle', info: 'info', danger: 'trash-2' };
-        ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
         
+        ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
         ac.innerHTML = '';
 
-// --- Dentro de showSystemModal, sección if (isPrompt) ---
+        // --- MANEJO DE INPUTS ---
+        if (isPrompt) {
+            iCont.classList.remove('hidden');
+            if (isRange && inputType === 'date') {
+                iCont.className = "mb-6 flex flex-col gap-3";
+                const [val1, val2] = (inputValue || "").split('|');
+                iCont.innerHTML = `
+                    <div class="flex flex-col gap-1 w-full text-left">
+                        <label class="text-[10px] text-gray-500 uppercase ml-1">Desde:</label>
+                        <input type="date" id="sys-modal-input-from" value="${val1 || ''}" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="flex flex-col gap-1 w-full text-left">
+                        <label class="text-[10px] text-gray-500 uppercase ml-1">Hasta:</label>
+                        <input type="date" id="sys-modal-input-to" value="${val2 || ''}" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
+                    </div>`;
+            } else {
+                iCont.className = "relative mb-6 flex items-center";
+                iCont.innerHTML = '';
+                const nuevoInput = document.createElement('input');
+                nuevoInput.id = 'sys-modal-input';
+                nuevoInput.type = inputType;
+                nuevoInput.value = inputValue;
+                nuevoInput.placeholder = placeholder;
+                const pr = (inputType === 'date') ? 'px-3' : 'pl-3 pr-10';
+                nuevoInput.className = `w-full bg-gray-900 border border-gray-700 rounded-lg py-2 text-white text-left focus:border-blue-500 outline-none ${pr}`;
+                iCont.appendChild(nuevoInput);
 
-if (isPrompt) {
-    iCont.classList.remove('hidden');
-    
-    if (isRange && inputType === 'date') {
-        iCont.className = "mb-6 flex flex-col gap-3";
-        const [val1, val2] = (inputValue || "").split('|');
-        
-        iCont.innerHTML = `
-            <div class="flex flex-col gap-1 w-full text-left">
-                <label class="text-[10px] text-gray-500 uppercase ml-1">Desde:</label>
-                <input type="date" id="sys-modal-input-from" value="${val1 || ''}" 
-                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
-            </div>
-            <div class="flex flex-col gap-1 w-full text-left">
-                <label class="text-[10px] text-gray-500 uppercase ml-1">Hasta:</label>
-                <input type="date" id="sys-modal-input-to" value="${val2 || ''}" 
-                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-center focus:border-blue-500 outline-none">
-            </div>
-        `;
-    } else {
-        // --- MODO SIMPLE: Re-creación segura del input ---
-        iCont.className = "relative mb-6 flex items-center";
-        iCont.innerHTML = ''; // Limpiamos el contenido del contenedor
-        
-        // Creamos un nuevo input en lugar de intentar reusar uno que pudo ser borrado
-        const nuevoInput = document.createElement('input');
-        nuevoInput.id = 'sys-modal-input'; // Mantenemos el ID que espera la función close
-        nuevoInput.type = inputType;
-        nuevoInput.value = inputValue;
-        nuevoInput.placeholder = placeholder;
-        
-        const pr = (inputType === 'date') ? 'px-3' : 'pl-3 pr-10';
-        nuevoInput.className = `w-full bg-gray-900 border border-gray-700 rounded-lg py-2 text-white text-left focus:border-blue-500 outline-none ${pr}`;
-        
-        iCont.appendChild(nuevoInput);
-
-        if (inputType !== 'date') {
-            const btnX = document.createElement('button');
-            btnX.className = "absolute right-3 text-red-400 hover:text-red-600 focus:outline-none";
-            btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
-            btnX.onclick = () => { nuevoInput.value = ''; nuevoInput.focus(); };
-            iCont.appendChild(btnX);
-        }
-    }
-
-    setTimeout(() => {
-        const first = iCont.querySelector('input');
-        if (first) first.focus();
-    }, 150);
-} else {
+                if (inputType !== 'date') {
+                    const btnX = document.createElement('button');
+                    btnX.className = "absolute right-3 text-red-400 hover:text-red-600 focus:outline-none";
+                    btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+                    btnX.onclick = () => { nuevoInput.value = ''; nuevoInput.focus(); };
+                    iCont.appendChild(btnX);
+                }
+            }
+            setTimeout(() => iCont.querySelector('input')?.focus(), 150);
+        } else {
             iCont.classList.add('hidden');
         }
 
+        // --- LÓGICA DE CIERRE (EL CAMBIO CLAVE) ---
         const close = (confirmed) => {
             if (!confirmed) {
                 m.classList.add('hidden');
-                return res(null);
+                return res(null); // Retorna nulo si cancela
             }
 
-            let finalVal = '';
-            if (isRange && inputType === 'date') {
-                const d1 = document.getElementById('sys-modal-input-from').value;
-                const d2 = document.getElementById('sys-modal-input-to').value;
-                if (d1 && d2) finalVal = `${d1}|${d2}`;
-                else if (d1 || d2) finalVal = d1 || d2;
+            if (isPrompt) {
+                let finalVal = '';
+                if (isRange && inputType === 'date') {
+                    const d1 = document.getElementById('sys-modal-input-from').value;
+                    const d2 = document.getElementById('sys-modal-input-to').value;
+                    finalVal = (d1 && d2) ? `${d1}|${d2}` : (d1 || d2 || '');
+                } else {
+                    const el = document.getElementById('sys-modal-input');
+                    finalVal = el ? el.value : '';
+                }
+                m.classList.add('hidden');
+                res(finalVal); // Retorna el String en modo Prompt
             } else {
-                // Buscamos el input que esté presente (el default o el single)
-                const el = document.getElementById('sys-modal-input');
-                finalVal = el ? el.value : '';
+                m.classList.add('hidden');
+                res(true); // <--- CAMBIO: Retorna TRUE en modo confirmación simple
             }
-
-            m.classList.add('hidden');
-            res(finalVal);
         };
 
-        // Acciones
+        // --- BOTONES ---
         if (showCancel || isPrompt) {
             const bc = document.createElement('button');
             bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
@@ -1389,7 +1376,7 @@ if (isPrompt) {
         }
 
         const bp = document.createElement('button');
-        bp.className = 'px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-800 transition-all';
+        bp.className = `px-6 py-2 rounded-lg text-white text-sm font-medium transition-all ${type === 'danger' ? 'bg-red-600 hover:bg-red-800' : 'bg-blue-600 hover:bg-blue-800'}`;
         bp.textContent = 'Aceptar';
         bp.onclick = () => close(true);
         ac.appendChild(bp);
@@ -2563,29 +2550,32 @@ function applyCardMask(input) {
 </script>
 
 <script>
-function showEditMode() {
-    normalizeToolbar();
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+    function showEditMode() {
+        normalizeToolbar();
+        // Bloqueamos acciones paralelas
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+        
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
 
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => configMap[k.toUpperCase()] = configMapRaw[k]);
 
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.add('hidden');
+        // Gestión de visibilidad de botones
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.add('hidden'); // Ocultamos regresar para forzar "Cancelar"
 
-    const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const row = storageData.DATOS_REGISTRO;
-    if (!row) return;
+        const storageData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const row = storageData.DATOS_REGISTRO;
+        if (!row) return;
 
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+        // Vinculación de retorno con validación
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) btnCancel.onclick = () => cancelActualForm();
 
     const tablePrefix = currentTableName.split('_')[0].toUpperCase();
     const idFieldName = tablePrefix + 'ID';
@@ -2753,179 +2743,179 @@ function showEditMode() {
     if (window.lucide) lucide.createIcons();
 }
 
-function showRegisterMode() {
-    // 1. LIMPIEZA DE DATOS Y RESET DE MODO
-    const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
-    const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
-    const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
-    
-    localStorage.setItem('TABLE_DATA', JSON.stringify({ 
-        TABLA_ORIGEN: tableOrigin,
-        DATOS_REGISTRO: null 
-    }));
+    function showRegisterMode() {
+        // 1. LIMPIEZA DE DATOS Y RESET DE MODO
+        const tableData = JSON.parse(localStorage.getItem('TABLE_DATA') || '{}');
+        const tableOrigin = tableData.TABLA_ORIGEN || currentTableName;
+        const dictionary = JSON.parse(localStorage.getItem('VALUE_DICTIONARY') || '{}');
+        
+        localStorage.setItem('TABLE_DATA', JSON.stringify({ 
+            TABLA_ORIGEN: tableOrigin,
+            DATOS_REGISTRO: null 
+        }));
 
-    // 2. CONFIGURACIÓN DE INTERFAZ
-    normalizeToolbar(); 
-    ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
-    
-    document.getElementById('btn-modal-save')?.classList.remove('hidden');
-    document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
-    document.getElementById('btn-modal-return')?.classList.remove('hidden');
-    document.getElementById('detail-modal')?.classList.remove('hidden');
+        // 2. CONFIGURACIÓN DE INTERFAZ
+        normalizeToolbar(); 
+        ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
+        
+        document.getElementById('btn-modal-save')?.classList.remove('hidden');
+        document.getElementById('btn-modal-cancel')?.classList.add('hidden'); 
+        document.getElementById('footer-save-container')?.classList.remove('hidden');
+        document.getElementById('btn-modal-return')?.classList.remove('hidden');
+        document.getElementById('detail-modal')?.classList.remove('hidden');
 
-    const btnReturn = document.getElementById('btn-modal-return');
-    if (btnReturn) {
-        btnReturn.onclick = (e) => {
-            e.preventDefault();
-            cancelActualForm();
-        };
-    }
+        const btnReturn = document.getElementById('btn-modal-return');
+        if (btnReturn) {
+            btnReturn.onclick = (e) => {
+                e.preventDefault();
+                cancelActualForm();
+            };
+        }
 
-    const btnCancel = document.getElementById('btn-modal-cancel');
-    if (btnCancel) btnCancel.onclick = () => closeDetailModal();
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        if (btnCancel) btnCancel.onclick = () => closeDetailModal();
 
-    const content = document.getElementById('detail-modal-content');
-    const title = document.getElementById('detail-modal-title');
-    
-    const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
-    const configMap = {};
-    Object.keys(configMapRaw).forEach(k => {
-        configMap[k.toUpperCase()] = configMapRaw[k];
-    });
-    
-    const tablePrefix = currentTableName.split('_')[0].toUpperCase();
-    const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
-    const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
-
-    content.innerHTML = '';
-
-    // 3. TÍTULO
-    title.innerHTML = `
-        <div class="flex items-center justify-end w-full px-2 py-1">
-            <div class="flex items-center gap-2">
-                <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    BORRADOR NV
-                </span>
-                <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
-            </div>
-        </div>`;
-
-    // 4. RENDERIZADO DINÁMICO DE CAMPOS
-    Object.keys(configMap).forEach(key => {
-            const cfg = configMap[key]; 
-            const cleanKey = key.toUpperCase();
-            
-            // --- REGLA DE VISIBILIDAD ---
-            const visValue = String(cfg.visible || '').toLowerCase().trim();
-            if (visValue === "") return;
-
-            // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
-            if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.dataset.field = key; 
-                hiddenInput.value = ''; 
-                content.appendChild(hiddenInput);
-                return; 
-            }
-
-            // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
-            if (cleanKey.endsWith('CUENTA2') || cleanKey.endsWith('IDOWNER') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
-
-            const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
-            const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
-
-            const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
-            const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
-
-            // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
-            const currentTableClean = String(currentTableName).trim().toUpperCase();
-            const dictKey = `${currentTableClean}|${cleanKey}`;
-            let dictOptions = dictionary[dictKey] || [];
-            
-            const isAliasField = cleanKey.endsWith('ALIASCUENTA');
-            
-            if (isAliasField && dictOptions.length === 0) {
-                dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
-            }
-
-            const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
-                cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
-            );
-
-            const isDescription = cleanKey.includes('DESCRIPCION');
-            const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
-            const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
-
-            const rowItem = document.createElement('div');
-            rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
-            
-            let inputHTML = '';
-
-            if (!isEditable) {
-                const isAliasTarget = cleanKey.endsWith('ALIAS'); // Para identificar donde inyectar el alias calculado
-                inputHTML = `
-                    <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
-                        <span class="truncate ${isAliasTarget ? 'visual-alias-span' : ''}">---</span>
-                        <input type="hidden" data-field="${key}" value="">
-                        <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
-                    </div>`;
-
-            } else if (isSelect) {
-                const optionsHtml = dictOptions.map(opt => 
-                    `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
-                ).join('');
-
-                inputHTML = `
-                    <div class="relative w-full group px-1">
-                        <select data-field="${key}" onchange="updateTD102Alias()"
-                            style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
-                            class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
-                            <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
-                            ${optionsHtml}
-                        </select>
-                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                            <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
-                        </div>
-                    </div>`;
-
-            } else if (isDescription) {
-                inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase"></textarea>`;
-
-            } else if (isDate) {
-                const d = new Date();
-                const hoy = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-                inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
-            
-            } else if (isNumeric) {
-                inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
-
-            } else {
-                // Lógica unificada para campos de texto: NUMERO (máscara) vs OTROS (update alias)
-                const isNumeroCard = cleanKey.endsWith('NUMERO');
-                const onInputCall = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
-                const maxLen = isNumeroCard ? 'maxlength="19"' : '';
-
-                inputHTML = `<input type="text" data-field="${key}" oninput="${onInputCall}" ${maxLen} class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
-            }
-
-            rowItem.innerHTML = `
-                <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
-                    ${cfg.label || key}${asterisco}
-                </span>
-                ${inputHTML}`;
-                
-            content.appendChild(rowItem);
+        const content = document.getElementById('detail-modal-content');
+        const title = document.getElementById('detail-modal-title');
+        
+        const configMapRaw = JSON.parse(localStorage.getItem('TABLE_CONFIG') || '{}');
+        const configMap = {};
+        Object.keys(configMapRaw).forEach(k => {
+            configMap[k.toUpperCase()] = configMapRaw[k];
         });
+        
+        const tablePrefix = currentTableName.split('_')[0].toUpperCase();
+        const idCuentaName = `${tablePrefix}CUENTA`; // Ejemplo: TD101CUENTA
+        const idPrincipalName = `${tablePrefix}ID`;   // Ejemplo: TD101ID
 
-    if (window.lucide) lucide.createIcons();
-    
-    setTimeout(() => {
-        const firstInput = content.querySelector('input, textarea, select');
-        if (firstInput) firstInput.focus();
-    }, 200);
-}
+        content.innerHTML = '';
+
+        // 3. TÍTULO
+        title.innerHTML = `
+            <div class="flex items-center justify-end w-full px-2 py-1">
+                <div class="flex items-center gap-2">
+                    <span id="title-badge-mode" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        BORRADOR NV
+                    </span>
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-blue-400"></i>
+                </div>
+            </div>`;
+
+        // 4. RENDERIZADO DINÁMICO DE CAMPOS
+        Object.keys(configMap).forEach(key => {
+                const cfg = configMap[key]; 
+                const cleanKey = key.toUpperCase();
+                
+                // --- REGLA DE VISIBILIDAD ---
+                const visValue = String(cfg.visible || '').toLowerCase().trim();
+                if (visValue === "") return;
+
+                // --- MANEJO DE INPUTS OCULTOS REQUERIDOS POR SAVERECORD ---
+                if (cleanKey === idPrincipalName || cleanKey === idCuentaName) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.dataset.field = key; 
+                    hiddenInput.value = ''; 
+                    content.appendChild(hiddenInput);
+                    return; 
+                }
+
+                // --- REGLAS DE EXCLUSIÓN VISUAL RESTANTES ---
+                if (cleanKey.endsWith('CUENTA2') || cleanKey.endsWith('IDOWNER') || cleanKey.includes('REGISTRO') || cleanKey.includes('TYPEREG')) return;
+
+                const isCalculated = cfg.Es_Calculado === true || String(cfg.Es_Calculado).toLowerCase() === "calc";
+                const isEditable = visValue === 'x' && cfg.editable !== false && !isCalculated;
+
+                const isRequired = cfg.Es_Obligatorio === true || String(cfg.Es_Obligatorio).toLowerCase() === "true";
+                const asterisco = isRequired ? '<span class="text-red-500 ml-1 font-bold">*</span>' : '';
+
+                // --- LÓGICA DE SELECT (DICCIONARIO + ALIASCUENTA) ---
+                const currentTableClean = String(currentTableName).trim().toUpperCase();
+                const dictKey = `${currentTableClean}|${cleanKey}`;
+                let dictOptions = dictionary[dictKey] || [];
+                
+                const isAliasField = cleanKey.endsWith('ALIASCUENTA');
+                
+                if (isAliasField && dictOptions.length === 0) {
+                    dictOptions = (window.dashboardState?.cuentas || []).map(c => c.ALIAS);
+                }
+
+                const isSelect = isEditable && dictOptions && dictOptions.length > 0 && (
+                    cleanKey.includes('MONEDA') || cleanKey.includes('MOVIMIENTO') || cleanKey.includes('TIPO') || isAliasField
+                );
+
+                const isDescription = cleanKey.includes('DESCRIPCION');
+                const isDate = cleanKey.includes('DATE') || cleanKey.includes('FECHA');
+                const isNumeric = cleanKey.includes('IMPORTE') || cleanKey.includes('MONTO');
+
+                const rowItem = document.createElement('div');
+                rowItem.className = 'grid grid-cols-[110px_1fr] gap-6 px-2 py-1 border-b border-gray-800/50 items-center hover:bg-white/5';
+                
+                let inputHTML = '';
+
+                if (!isEditable) {
+                    const isAliasTarget = cleanKey.endsWith('ALIAS'); // Para identificar donde inyectar el alias calculado
+                    inputHTML = `
+                        <div class="flex items-center h-[24px] px-2 w-full justify-between text-gray-500 font-bold uppercase opacity-70 text-sm">
+                            <span class="truncate ${isAliasTarget ? 'visual-alias-span' : ''}">---</span>
+                            <input type="hidden" data-field="${key}" value="">
+                            <i data-lucide="${isCalculated ? 'calculator' : 'lock'}" class="w-3.5 h-3.5 text-gray-700"></i>
+                        </div>`;
+
+                } else if (isSelect) {
+                    const optionsHtml = dictOptions.map(opt => 
+                        `<option value="${opt}" style="background-color: var(--bg); color: var(--txt);">${opt}</option>`
+                    ).join('');
+
+                    inputHTML = `
+                        <div class="relative w-full group px-1">
+                            <select data-field="${key}" onchange="updateTD102Alias()"
+                                style="background-color: var(--bg); border-color: var(--th); color: var(--p-soft);"
+                                class="border rounded px-2 py-0 text-sm font-bold w-full focus:outline-none transition-all appearance-none cursor-pointer pr-8 hover:brightness-110 shadow-sm">
+                                <option value="" style="background-color: var(--bg); color: var(--txt);">-- SELECCIONE --</option>
+                                ${optionsHtml}
+                            </select>
+                            <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--p-soft);"></i>
+                            </div>
+                        </div>`;
+
+                } else if (isDescription) {
+                    inputHTML = `<textarea data-field="${key}" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-1 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors resize-none h-[60px] uppercase"></textarea>`;
+
+                } else if (isDate) {
+                    const d = new Date();
+                    const hoy = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                    inputHTML = `<input type="date" data-field="${key}" value="${hoy}" class="custom-date-input bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none transition-colors">`;
+                
+                } else if (isNumeric) {
+                    inputHTML = `<input type="text" data-field="${key}" data-raw="0" value="0,00" onfocus="this.select()" oninput="applyAccountingMask(this)" class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none text-right transition-colors">`;
+
+                } else {
+                    // Lógica unificada para campos de texto: NUMERO (máscara) vs OTROS (update alias)
+                    const isNumeroCard = cleanKey.endsWith('NUMERO');
+                    const onInputCall = isNumeroCard ? 'applyCardMask(this)' : 'updateTD102Alias()';
+                    const maxLen = isNumeroCard ? 'maxlength="19"' : '';
+
+                    inputHTML = `<input type="text" data-field="${key}" oninput="${onInputCall}" ${maxLen} class="bg-gray-500/20 border border-transparent focus:border-blue-500/50 rounded px-2 py-0 text-sm text-gray-100 font-bold w-full focus:outline-none uppercase transition-colors">`;
+                }
+
+                rowItem.innerHTML = `
+                    <span class="text-gray-200 font-medium uppercase text-[10px] self-start flex items-center">
+                        ${cfg.label || key}${asterisco}
+                    </span>
+                    ${inputHTML}`;
+                    
+                content.appendChild(rowItem);
+            });
+
+        if (window.lucide) lucide.createIcons();
+        
+        setTimeout(() => {
+            const firstInput = content.querySelector('input, textarea, select');
+            if (firstInput) firstInput.focus();
+        }, 200);
+    }
 
 function TransferAccountRecord() {
     // 1. LIMPIEZA DE DATOS Y PREPARACIÓN DEL DICCIONARIO EXPANDIDO
@@ -3157,18 +3147,25 @@ function TransferAccountRecord() {
 function duplicateCurrentRecord() {
     const rawData = localStorage.getItem('TABLE_DATA');
     const dataObj = JSON.parse(rawData || '{}');
-    const row = dataObj.DATOS_REGISTRO; // El registro base
-    
+    const row = dataObj.DATOS_REGISTRO;
     if (!row) return;
 
-    // 1. CONFIGURACIÓN DE INTERFAZ
     normalizeToolbar();
     ['Duplicar', 'Borrar', 'Nuevo', 'Editar'].forEach(disableButton);
     
+    // Al duplicar, tratamos el "Cancelar" como la salida principal
     document.getElementById('btn-modal-save')?.classList.remove('hidden');
     document.getElementById('btn-modal-cancel')?.classList.remove('hidden');
-    document.getElementById('footer-save-container')?.classList.remove('hidden');
     document.getElementById('btn-modal-return')?.classList.add('hidden');
+
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    if (btnCancel) {
+        btnCancel.onclick = () => {
+            // Seteamos DATOS_REGISTRO a null temporalmente para que cancelActualForm 
+            // entienda que si cancela el duplicado, debe cerrar el modal o volver al original
+            cancelActualForm(); 
+        };
+    }
 
     const content = document.getElementById('detail-modal-content');
     const title = document.getElementById('detail-modal-title');
