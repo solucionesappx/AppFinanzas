@@ -1282,7 +1282,8 @@ function showSystemModal({
     placeholder = 'Valor...',
     inputType = 'text',
     inputValue = '',
-    isRange = false
+    isRange = false,
+    inputIcon = 'x' // <--- Nuevo parámetro: por defecto 'x'
 }) {
     return new Promise(res => {
         const m = document.getElementById('system-modal'),
@@ -1301,7 +1302,6 @@ function showSystemModal({
         ic.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-12 h-12 ${colors[type] || 'text-blue-400'}"></i>`;
         ac.innerHTML = '';
 
-        // --- MANEJO DE INPUTS ---
         if (isPrompt) {
             iCont.classList.remove('hidden');
             if (isRange && inputType === 'date') {
@@ -1329,11 +1329,24 @@ function showSystemModal({
                 iCont.appendChild(nuevoInput);
 
                 if (inputType !== 'date') {
-                    const btnX = document.createElement('button');
-                    btnX.className = "absolute right-3 text-red-400 hover:text-red-600 focus:outline-none";
-                    btnX.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
-                    btnX.onclick = () => { nuevoInput.value = ''; nuevoInput.focus(); };
-                    iCont.appendChild(btnX);
+                    const btnIcon = document.createElement('button');
+                    // Cambiamos colores según el icono: si es eye-off lo ponemos gris, si es x lo dejamos rojo
+                    const iconColor = inputIcon === 'eye-off' ? 'text-gray-500 hover:text-gray-300' : 'text-red-400 hover:text-red-600';
+                    btnIcon.className = `absolute right-3 ${iconColor} focus:outline-none`;
+                    
+                    // --- AQUÍ SE ASIGNA EL ICONO DINÁMICO ---
+                    btnIcon.innerHTML = `<i data-lucide="${inputIcon}" class="w-4 h-4"></i>`;
+                    
+                    // Si es eye-off, podemos hacer que alterne la visibilidad del password
+                    btnIcon.onclick = () => {
+                        if (inputIcon === 'eye-off') {
+                            nuevoInput.type = nuevoInput.type === 'password' ? 'text' : 'password';
+                        } else {
+                            nuevoInput.value = ''; 
+                            nuevoInput.focus();
+                        }
+                    };
+                    iCont.appendChild(btnIcon);
                 }
             }
             setTimeout(() => iCont.querySelector('input')?.focus(), 150);
@@ -1341,13 +1354,12 @@ function showSystemModal({
             iCont.classList.add('hidden');
         }
 
-        // --- LÓGICA DE CIERRE (EL CAMBIO CLAVE) ---
+        // --- LÓGICA DE BOTONES Y CIERRE (Se mantiene igual) ---
         const close = (confirmed) => {
             if (!confirmed) {
                 m.classList.add('hidden');
-                return res(null); // Retorna nulo si cancela
+                return res(null);
             }
-
             if (isPrompt) {
                 let finalVal = '';
                 if (isRange && inputType === 'date') {
@@ -1359,14 +1371,13 @@ function showSystemModal({
                     finalVal = el ? el.value : '';
                 }
                 m.classList.add('hidden');
-                res(finalVal); // Retorna el String en modo Prompt
+                res(finalVal);
             } else {
                 m.classList.add('hidden');
-                res(true); // <--- CAMBIO: Retorna TRUE en modo confirmación simple
+                res(true);
             }
         };
 
-        // --- BOTONES ---
         if (showCancel || isPrompt) {
             const bc = document.createElement('button');
             bc.className = 'px-4 py-2 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-red-700 transition-all';
@@ -1444,7 +1455,8 @@ function showSystemModal({
             type: 'danger', 
             isPrompt: true,
             inputType: 'password',
-            placeholder: 'PIN de seguridad...'
+            placeholder: 'PIN de seguridad...',
+            inputIcon: 'eye-off'
         });
 
         if (pinIngresado === null) return; // Canceló
